@@ -1,0 +1,5 @@
+numpy==1.21.1
+numba==0.50.1
+scipy==1.7.3
+scikit-learn==0.24.2
+mpi4py==3.0.3
