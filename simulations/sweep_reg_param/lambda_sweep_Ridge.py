@@ -2,9 +2,9 @@ import linear_regression.sweeps.reg_param_sweep as swreg
 import matplotlib.pyplot as plt
 import numpy as np
 from linear_regression.aux_functions.stability_functions import stability_ridge
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.fixed_point_equations.fpe_L2_loss import (
-    var_hat_func_L2_decorrelated_noise,
+    f_hat_L2_decorrelated_noise,
     order_parameters_ridge
 )
 
@@ -12,8 +12,8 @@ alpha = 2.0
 delta_in, delta_out, percentage, beta = 1.0, 5.0, 0.3, 0.0
 
 reg_params, (sigmas,) = swreg.sweep_reg_param_fixed_point(
-    var_func_L2,
-    var_hat_func_L2_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L2_decorrelated_noise,
     -0.2,
     0.01,
     500,

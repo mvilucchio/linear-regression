@@ -2,6 +2,27 @@ from numpy.random import normal, choice
 from numpy import empty, sqrt, where, divide
 
 
+def measure_gen_no_noise_clasif(generalization: bool, teacher_vector, xs):
+    _, n_features = xs.shape
+    w_xs = divide(xs @ teacher_vector, sqrt(n_features))
+    if generalization:
+        ys = w_xs
+    else:
+        ys = where(w_xs > 0.0, 1.0, -1.0)
+    return ys
+
+
+def measure_gen_single_noise_clasif(generalization: bool, teacher_vector, xs, delta: float):
+    n_samples, n_features = xs.shape
+    w_xs = divide(xs @ teacher_vector, sqrt(n_features))
+    if generalization:
+        ys = w_xs
+    else:
+        error_sample = sqrt(delta) * normal(loc=0.0, scale=1.0, size=(n_samples,))
+        ys = where(w_xs > 0.0, 1.0, -1.0) + error_sample
+    return ys
+
+
 def measure_gen_single(generalization: bool, teacher_vector, xs, delta: float):
     n_samples, n_features = xs.shape
     w_xs = divide(xs @ teacher_vector, sqrt(n_features))
@@ -13,9 +34,7 @@ def measure_gen_single(generalization: bool, teacher_vector, xs, delta: float):
     return ys
 
 
-def measure_gen_double(
-    generalization: bool, teacher_vector, xs, delta_in: float, delta_out: float, percentage: float
-):
+def measure_gen_double(generalization: bool, teacher_vector, xs, delta_in: float, delta_out: float, percentage: float):
     n_samples, n_features = xs.shape
     w_xs = divide(xs @ teacher_vector, sqrt(n_features))
     if generalization:
@@ -54,9 +73,7 @@ def measure_gen_decorrelated(
     return ys
 
 
-def data_generation(
-    measure_fun, n_features: int, n_samples: int, n_generalization: int, measure_fun_args
-):
+def data_generation(measure_fun, n_features: int, n_samples: int, n_generalization: int, measure_fun_args):
     theta_0_teacher = normal(loc=0.0, scale=1.0, size=(n_features,))
 
     xs = normal(loc=0.0, scale=1.0, size=(n_samples, n_features))

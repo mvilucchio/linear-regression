@@ -8,8 +8,8 @@ class TestFixedPointFinder(TestCase):
     def setUp(self):
         self.inital_condition = (0.0, 0.0, 0.0)
         self.expected_solution = (1.0, 3.0, 4.0)
-        self.var_func_kwargs = {}
-        self.var_hat_func_kwargs = {}
+        self.f_kwargs = {}
+        self.f_hat_kwargs = {}
         return super().setUp()
 
     def _var_func(x1_hat, x2_hat, x3_hat, **kwargs):
@@ -18,7 +18,7 @@ class TestFixedPointFinder(TestCase):
         x3 = 2.0 * x3_hat
         return x1, x2, x3
 
-    def _var_hat_func(x1, x2, x3, **kwargs):
+    def _f_hat_func(x1, x2, x3, **kwargs):
         x1_hat = sign(3.0 * x1) + 1.0
         x2_hat = sign(2.0 * x2) + 2.0
         x3_hat = sign(5.0 * x3) + 1.0
@@ -30,10 +30,10 @@ class TestFixedPointFinder(TestCase):
     def test_fixed_point(self):
         m, q, sigma = fpe.fixed_point_finder(
             self._var_func,
-            self._var_hat_func,
+            self._f_hat_func,
             self.inital_condition,
-            self.var_func_kwargs,
-            self.var_hat_func_kwargs,
+            self.f_kwargs,
+            self.f_hat_kwargs,
             abs_tol=1e-8,
             min_iter=100,
             max_iter=10000,
@@ -55,10 +55,10 @@ class TestFixedPointFinder(TestCase):
         with self.assertRaises(ConvergenceError):
             fpe.fixed_point_finder(
                 self._var_func,
-                self._var_hat_func,
+                self._f_hat_func,
                 self.inital_condition,
-                self.var_func_kwargs,
-                self.var_hat_func_kwargs,
+                self.f_kwargs,
+                self.f_hat_kwargs,
                 abs_tol=abs_tol,
                 min_iter=100,
                 max_iter=1,
@@ -68,10 +68,10 @@ class TestFixedPointFinder(TestCase):
         for abs_tol, max_iter in zip([1e-2, 1e-5, 1e-8, 1e-11], [1_000, 1_000, 10_000, 100_000]):
             m, q, sigma = fpe.fixed_point_finder(
                 self._var_func,
-                self._var_hat_func,
+                self._f_hat_func,
                 self.inital_condition,
-                self.var_func_kwargs,
-                self.var_hat_func_kwargs,
+                self.f_kwargs,
+                self.f_hat_kwargs,
                 abs_tol=abs_tol,
                 min_iter=100,
                 max_iter=max_iter,

@@ -42,7 +42,7 @@ def order_parameters_ridge(alpha, reg_param, delta_in, delta_out, percentage, be
 
 
 @njit(error_model="numpy", fastmath=True)
-def var_hat_func_L2_single_noise(m, q, sigma, alpha, delta):
+def f_hat_L2_single_noise(m, q, sigma, alpha, delta):
     m_hat = alpha / (1 + sigma)
     q_hat = alpha * (1 + q + delta - 2 * abs(m)) / ((1 + sigma) ** 2)
     sigma_hat = alpha / (1 + sigma)
@@ -50,7 +50,7 @@ def var_hat_func_L2_single_noise(m, q, sigma, alpha, delta):
 
 
 @njit(error_model="numpy", fastmath=True)
-def var_hat_func_L2_double_noise(m, q, sigma, alpha, delta_in, delta_out, percentage):
+def f_hat_L2_double_noise(m, q, sigma, alpha, delta_in, delta_out, percentage):
     delta_eff = (1 - percentage) * delta_in + percentage * delta_out
     m_hat = alpha / (1 + sigma)
     q_hat = alpha * (1 + q + delta_eff - 2 * abs(m)) / ((1 + sigma) ** 2)
@@ -59,7 +59,7 @@ def var_hat_func_L2_double_noise(m, q, sigma, alpha, delta_in, delta_out, percen
 
 
 # @njit(error_model="numpy", fastmath=True)
-def var_hat_func_L2_decorrelated_noise(m, q, sigma, alpha, delta_in, delta_out, percentage, beta):
+def f_hat_L2_decorrelated_noise(m, q, sigma, alpha, delta_in, delta_out, percentage, beta):
     delta_eff = (1 - percentage) * delta_in + percentage * delta_out
     intermediate_val = 1 + percentage * (beta - 1)
 
@@ -71,7 +71,7 @@ def var_hat_func_L2_decorrelated_noise(m, q, sigma, alpha, delta_in, delta_out, 
     return m_hat, q_hat, sigma_hat
 
 
-def var_hat_func_L2_decorrelated_noise_rescaled_data(m, q, sigma, alpha, delta_in, delta_out, percentage, beta):
+def f_hat_L2_decorrelated_noise_rescaled_data(m, q, sigma, alpha, delta_in, delta_out, percentage, beta):
     delta_eff = (1 - percentage) * delta_in + percentage * delta_out
     intermediate_val = 1 + percentage * (beta - 1)
     normal_const = sqrt(1 + percentage + percentage * beta**2 + delta_eff) / sqrt(1 + delta_eff)
@@ -84,3 +84,5 @@ def var_hat_func_L2_decorrelated_noise_rescaled_data(m, q, sigma, alpha, delta_i
     )
     sigma_hat = alpha / (1 + sigma)
     return m_hat, q_hat, sigma_hat
+
+

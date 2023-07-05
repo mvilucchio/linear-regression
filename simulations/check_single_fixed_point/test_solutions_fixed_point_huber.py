@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
-    var_func_L2,
-    var_hat_func_Huber_decorrelated_noise,
+    f_L2_reg,
+    f_hat_Huber_decorrelated_noise,
 )
 from linear_regression.aux_functions.stability_functions import (
     stability_ridge,
@@ -44,8 +44,8 @@ for idx, m in enumerate(initial_point_m):
                 print(global_idx)
 
             finals[global_idx, :] = fixed_point_finder(
-                var_func_L2,
-                var_hat_func_Huber_decorrelated_noise,
+                f_L2_reg,
+                f_hat_Huber_decorrelated_noise,
                 (m, q, sigma),
                 {"reg_param": reg_param},
                 {

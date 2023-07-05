@@ -2,16 +2,16 @@ import linear_regression.sweeps.alpha_sweeps as alsw
 import matplotlib.pyplot as plt
 from scipy.special import erfc, erf
 from linear_regression.fixed_point_equations.fpe_L2_loss import (
-    var_hat_func_L2_decorrelated_noise,
+    f_hat_L2_decorrelated_noise,
 )
-from linear_regression.fixed_point_equations.fpe_BO import var_func_BO, var_hat_func_BO_num_decorrelated_noise
+from linear_regression.fixed_point_equations.fpe_BO import f_BO, f_hat_BO_decorrelated_noise
 from linear_regression.fixed_point_equations.fpe_L1_loss import (
-    var_hat_func_L1_decorrelated_noise,
+    f_hat_L1_decorrelated_noise,
 )
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
-    var_hat_func_Huber_decorrelated_noise,
+    f_hat_Huber_decorrelated_noise,
 )
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.aux_functions.misc import estimation_error, excess_gen_error, gen_error_BO, angle_teacher_student
 import numpy as np
 
@@ -45,8 +45,8 @@ fname_add = "deltain_{}_deltaout_{}_perc_{}_beta_{}".format(delta_in, delta_out,
     reg_param_opt_L2,
     (sigmas_L2, qs_L2, ms_L2),
 ) = alsw.sweep_alpha_optimal_lambda_fixed_point(
-    var_func_L2,
-    var_hat_func_L2_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L2_decorrelated_noise,
     alpha_min,
     alpha_max,
     n_alpha_pts,
@@ -84,8 +84,8 @@ print("L2 done")
     reg_param_opt_L1,
     (sigmas_L1, qs_L1, ms_L1),
 ) = alsw.sweep_alpha_optimal_lambda_fixed_point(
-    var_func_L2,
-    var_hat_func_L1_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L1_decorrelated_noise,
     alpha_min,
     alpha_max,
     n_alpha_pts,
@@ -123,8 +123,8 @@ print("L1 done")
     (reg_param_opt_Hub, hub_params_opt_Hub),
     (sigmas_Hub, qs_Hub, ms_Hub),
 ) = alsw.sweep_alpha_optimal_lambda_hub_param_fixed_point(
-    var_func_L2,
-    var_hat_func_Huber_decorrelated_noise,
+    f_L2_reg,
+    f_hat_Huber_decorrelated_noise,
     alpha_min,
     alpha_max,
     n_alpha_pts,
@@ -164,8 +164,8 @@ print("Huber done")
     reg_param_opt_Hub_2,
     (sigmas_Hub_2, qs_Hub_2, ms_Hub_2),
 ) = alsw.sweep_alpha_optimal_lambda_fixed_point(
-    var_func_L2,
-    var_hat_func_Huber_decorrelated_noise,
+    f_L2_reg,
+    f_hat_Huber_decorrelated_noise,
     alpha_min,
     alpha_max,
     n_alpha_pts,
@@ -199,8 +199,8 @@ np.savez(
 print("Huber 2 done")
 
 alphas_BO, (gen_error_BO_old, qs_BO) = alsw.sweep_alpha_fixed_point(
-    var_func_BO,
-    var_hat_func_BO_num_decorrelated_noise,
+    f_BO,
+    f_hat_BO_decorrelated_noise,
     alpha_min,
     alpha_max,
     n_alpha_pts_BO,

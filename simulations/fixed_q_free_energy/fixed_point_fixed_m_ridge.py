@@ -4,8 +4,8 @@ from linear_regression.aux_functions.free_energy import (
     Psi_out_L2,
 )
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
-from linear_regression.fixed_point_equations.fpe_L2_loss import order_parameters_ridge, var_hat_func_L2_decorrelated_noise
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
+from linear_regression.fixed_point_equations.fpe_L2_loss import order_parameters_ridge, f_hat_L2_decorrelated_noise
 import numpy as np
 import matplotlib.pyplot as plt
 from linear_regression.utils.errors import ConvergenceError
@@ -59,10 +59,10 @@ for reg_param in reg_params:
         iter_nb = 0
         err = 100.0
         while err > abs_tol or iter_nb < min_iter:
-            m_hat, q_hat, sigma_hat = var_hat_func_L2_decorrelated_noise(
+            m_hat, q_hat, sigma_hat = f_hat_L2_decorrelated_noise(
                 m, q, sigma, alpha, delta_in, delta_out, percentage, beta
             )
-            _, new_q, new_sigma = var_func_L2(m_hat, 0.0, sigma_hat, reg_param)
+            _, new_q, new_sigma = f_L2_reg(m_hat, 0.0, sigma_hat, reg_param)
 
             err = max([abs(new_q - q), abs(new_sigma - sigma)])
 

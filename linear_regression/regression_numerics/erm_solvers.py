@@ -18,6 +18,7 @@ import numpy as np
 import numpy.linalg as LA
 from numpy.random import normal
 from numba import njit
+from sklearn.svm import LinearSVC
 from sklearn.utils import axis0_safe_slice
 from sklearn.utils.extmath import safe_sparse_dot
 from scipy.optimize import minimize, line_search
@@ -204,3 +205,17 @@ def vanillaGD_Huber(
         return w, losses, qs, gen_errors
     else:
         return w
+
+
+def find_coefficients_Hinge(ys, xs, reg_param):
+    clf = LinearSVC(
+        penalty="l2",
+        loss="hinge",
+        fit_intercept=False,
+        C=1 / reg_param,
+        max_iter=MAX_ITER_MINIMIZE,
+        tol=GTOL_MINIMIZE,
+        dual=True,
+    )
+    clf.fit(xs, ys)
+    return clf.coef_[0]

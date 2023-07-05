@@ -13,12 +13,12 @@ from ..fixed_point_equations.optimality_finding import (
 
 def sweep_delta_out_fixed_point(
     var_func,
-    var_hat_func,
+    f_hat_func,
     delta_out_min: float,
     delta_out_max: float,
     n_deltas_pts: int,
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     initial_cond=(0.6, 0.01, 0.9),
     funs=[estimation_error],
     funs_args=[{}],
@@ -54,14 +54,14 @@ def sweep_delta_out_fixed_point(
     )
     out_list = [empty(n_deltas_pts) for _ in range(n_observables)]
 
-    copy_var_hat_func_kwargs = var_hat_func_kwargs.copy()
+    copy_f_hat_kwargs = f_hat_kwargs.copy()
 
     old_initial_cond = initial_cond
     for idx, delta in enumerate(deltas):
-        copy_var_hat_func_kwargs.update({"delta_out": delta})
+        copy_f_hat_kwargs.update({"delta_out": delta})
 
         m, q, sigma = fixed_point_finder(
-            var_func, var_hat_func, old_initial_cond, var_func_kwargs, copy_var_hat_func_kwargs
+            var_func, f_hat_func, old_initial_cond, f_kwargs, copy_f_hat_kwargs
         )
 
         old_initial_cond = tuple([m, q, sigma])
@@ -83,13 +83,13 @@ def sweep_delta_out_fixed_point(
 
 def sweep_delta_out_optimal_lambda_fixed_point(
     var_func,
-    var_hat_func,
+    f_hat_func,
     delta_out_min: float,
     delta_out_max: float,
     n_delta_out_pts: int,
     inital_guess_lambda: float,
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     initial_cond_fpe=(0.6, 0.01, 0.9),
     funs=[estimation_error],
     funs_args=[{}],
@@ -132,15 +132,15 @@ def sweep_delta_out_optimal_lambda_fixed_point(
     reg_params_opt = empty(n_delta_out_pts)
     funs_values = [empty(n_delta_out_pts) for _ in range(n_observables)]
 
-    copy_var_func_kwargs = var_func_kwargs.copy()
-    copy_var_hat_func_kwargs = var_hat_func_kwargs.copy()
+    copy_f_kwargs = f_kwargs.copy()
+    copy_f_hat_kwargs = f_hat_kwargs.copy()
     copy_funs_args = funs_args.copy()
 
     old_initial_cond_fpe = initial_cond_fpe
     old_reg_param_opt = inital_guess_lambda
     for idx, delta_out in enumerate(delta_outs):
-        copy_var_hat_func_kwargs.update({"delta_out": delta_out})
-        copy_var_func_kwargs.update({"reg_param": old_reg_param_opt})
+        copy_f_hat_kwargs.update({"delta_out": delta_out})
+        copy_f_kwargs.update({"reg_param": old_reg_param_opt})
 
         if update_f_min_args:
             f_min_args.update({"delta_out": delta_out})
@@ -156,9 +156,9 @@ def sweep_delta_out_optimal_lambda_fixed_point(
             out_values,
         ) = find_optimal_reg_param_function(
             var_func,
-            var_hat_func,
-            copy_var_func_kwargs,
-            copy_var_hat_func_kwargs,
+            f_hat_func,
+            copy_f_kwargs,
+            copy_f_hat_kwargs,
             old_reg_param_opt if following_sol else float(rand(1)),
             old_initial_cond_fpe,
             funs=funs,
@@ -186,13 +186,13 @@ def sweep_delta_out_optimal_lambda_fixed_point(
 
 def sweep_delta_out_optimal_lambda_hub_param_fixed_point(
     var_func,
-    var_hat_func,
+    f_hat_func,
     delta_out_min: float,
     delta_out_max: float,
     n_delta_out_pts: int,
     inital_guess_params: Tuple[float, float],
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     initial_cond_fpe=(0.6, 0.01, 0.9),
     funs=[estimation_error],
     funs_args=[{}],
@@ -237,16 +237,16 @@ def sweep_delta_out_optimal_lambda_hub_param_fixed_point(
     hub_params_opt = empty(n_delta_out_pts)
     funs_values = [empty(n_delta_out_pts) for _ in range(n_observables)]
 
-    copy_var_func_kwargs = var_func_kwargs.copy()
-    copy_var_hat_func_kwargs = var_hat_func_kwargs.copy()
+    copy_f_kwargs = f_kwargs.copy()
+    copy_f_hat_kwargs = f_hat_kwargs.copy()
     copy_funs_args = funs_args.copy()
 
     old_initial_cond_fpe = initial_cond_fpe
     old_reg_param_opt = inital_guess_params[0]
     old_hub_param_opt = inital_guess_params[1]
     for idx, delta_out in enumerate(delta_outs):
-        copy_var_hat_func_kwargs.update({"delta_out": delta_out, "a": old_hub_param_opt})
-        copy_var_func_kwargs.update({"reg_param": old_reg_param_opt})
+        copy_f_hat_kwargs.update({"delta_out": delta_out, "a": old_hub_param_opt})
+        copy_f_kwargs.update({"reg_param": old_reg_param_opt})
 
         if update_f_min_args:
             f_min_args.update({"delta_out": delta_out})
@@ -261,9 +261,9 @@ def sweep_delta_out_optimal_lambda_hub_param_fixed_point(
             out_values,
         ) = find_optimal_reg_and_huber_parameter_function(
             var_func,
-            var_hat_func,
-            copy_var_func_kwargs,
-            copy_var_hat_func_kwargs,
+            f_hat_func,
+            copy_f_kwargs,
+            copy_f_hat_kwargs,
             (
                 old_reg_param_opt if following_sol else float(rand(1)),
                 old_hub_param_opt if following_sol else float(rand(1)),

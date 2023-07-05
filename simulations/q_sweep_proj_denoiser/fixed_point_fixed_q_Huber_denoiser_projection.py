@@ -1,6 +1,6 @@
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
-from linear_regression.fixed_point_equations.fpe_projection_denoising import (
-    var_func_projection_denoising,
+from linear_regression.fixed_point_equations.regularisation.fpe_projection_denoising import (
+    f_projection_denoising,
 )
 from linear_regression.regression_numerics.numerics import (
     erm_weight_finding,
@@ -11,9 +11,9 @@ from linear_regression.aux_functions.loss_functions import huber_loss
 from linear_regression.aux_functions.stability_functions import stability_l1_l2, stability_huber, stability_ridge
 from linear_regression.regression_numerics.data_generation import measure_gen_decorrelated
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
-    var_hat_func_Huber_decorrelated_noise,
+    f_hat_Huber_decorrelated_noise,
 )
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.aux_functions.training_errors import (
     training_error_huber_loss,
     training_error_huber_loss,
@@ -57,10 +57,10 @@ for idx, q in enumerate(qs):
         iter_nb = 0
         err = 100.0
         while err > abs_tol or iter_nb < min_iter:
-            m_hat, q_hat, sigma_hat = var_hat_func_Huber_decorrelated_noise(
+            m_hat, q_hat, sigma_hat = f_hat_Huber_decorrelated_noise(
                 m, q, sigma, alpha, delta_in, delta_out, percentage, beta, a
             )
-            new_m, new_q, new_sigma = var_func_projection_denoising(m_hat, q_hat, sigma_hat, q)
+            new_m, new_q, new_sigma = f_projection_denoising(m_hat, q_hat, sigma_hat, q)
 
             err = max([abs(new_m - m), abs(new_sigma - sigma)])
 
@@ -94,8 +94,8 @@ for idx, q in enumerate(qs):
 min_idx = np.argmin(training_error)
 
 # m_true, q_true, sigma_true = fixed_point_finder(
-#     var_func_projection_denoising,
-#     var_hat_func_Huber_decorrelated_noise,
+#     f_projection_denoising,
+#     f_hat_Huber_decorrelated_noise,
 #     (ms[min_idx], qs[min_idx], sigmas[min_idx]),
 #     {"q_fixed": qs[min_idx]},
 #     {
@@ -108,7 +108,7 @@ min_idx = np.argmin(training_error)
 #     },
 # )
 
-# m_hat_true, q_hat_true, sigma_hat_true = var_hat_func_Huber_decorrelated_noise(
+# m_hat_true, q_hat_true, sigma_hat_true = f_hat_Huber_decorrelated_noise(
 #     m_true, q_true, sigma_true, alpha, delta_in, delta_out, percentage, beta, a
 # )
 
@@ -156,8 +156,8 @@ np.savetxt(
 # reg_param = 0.0
 
 # m_l2_reg, q_l2_reg, sigma_l2_reg = fixed_point_finder(
-#     var_func_L2,
-#     var_hat_func_Huber_decorrelated_noise,
+#     f_L2_reg,
+#     f_hat_Huber_decorrelated_noise,
 #     (ms[min_idx], qs[min_idx], sigmas[min_idx]),
 #     {"reg_param": reg_param},
 #     {

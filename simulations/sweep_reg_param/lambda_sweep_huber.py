@@ -1,9 +1,9 @@
 import linear_regression.sweeps.reg_param_sweep as swreg
 import matplotlib.pyplot as plt
 import numpy as np
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
-    var_hat_func_Huber_decorrelated_noise,
+    f_hat_Huber_decorrelated_noise,
 )
 from linear_regression.aux_functions.stability_functions import stability_huber
 
@@ -26,8 +26,8 @@ delta_in, delta_out, percentage, beta = 1.0, 5.0, 0.3, 0.0
 a_hub = 0.02 # 0.5 # 0.962
 
 reg_params, (ms, qs, sigmas) = swreg.sweep_reg_param_fixed_point(
-    var_func_L2,
-    var_hat_func_Huber_decorrelated_noise,
+    f_L2_reg,
+    f_hat_Huber_decorrelated_noise,
     -0.15, # -0.0345,
     0.01,
     1000,

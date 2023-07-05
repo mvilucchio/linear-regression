@@ -246,7 +246,7 @@ def domains_double_line_constraint_only_inside(
     x_test_val_2 = x_fun_upper(-max_range, **args3)  # attention
 
     if x_test_val > max_range:
-        # print("Case 1")
+        # # print("Case 1")
         domain_x = [[-max_range, max_range]]
         domain_y = [
             [
@@ -256,7 +256,7 @@ def domains_double_line_constraint_only_inside(
         ]
     elif x_test_val >= 0:
         if x_test_val_2 < -max_range:
-            # print("Case 2.A")
+            # # print("Case 2.A")
             domain_x = [
                 [-max_range, -x_test_val],
                 [x_test_val, max_range],
@@ -268,7 +268,7 @@ def domains_double_line_constraint_only_inside(
                 [lambda x: y_fun_lower(x, **args2), lambda x: y_fun_upper(x, **args1)],
             ]
         else:
-            # print("Case 2.B")
+            # # print("Case 2.B")
             x_test_val_2 = x_fun_upper(-max_range, **args3)
             domain_x = [
                 [x_test_val_2, -x_test_val],
@@ -282,7 +282,7 @@ def domains_double_line_constraint_only_inside(
             ]
     elif x_test_val > -max_range:
         if x_test_val_2 < -max_range:
-            # print("Case 3.A")
+            # # print("Case 3.A")
             domain_x = [
                 [-max_range, x_test_val],
                 [-x_test_val, max_range],
@@ -294,7 +294,7 @@ def domains_double_line_constraint_only_inside(
                 [lambda x: -max_range, lambda x: max_range],
             ]
         else:
-            # print("Case 3.B")
+            # # print("Case 3.B")
             x_test_val_2 = x_fun_upper(-max_range, **args3)
             domain_x = [
                 [x_test_val_2, x_test_val],
@@ -307,7 +307,7 @@ def domains_double_line_constraint_only_inside(
                 [lambda x: -max_range, lambda x: max_range],
             ]
     else:
-        # print("Case 4")
+        # # print("Case 4")
         domain_x = [[-max_range, max_range]]
         domain_y = [[lambda x: -max_range, lambda x: max_range]]
 
@@ -323,9 +323,11 @@ def domains_sep_hyperboles_inside(square_borders, hyp_min, hyp_max, arg_hyp_min,
     if x_test_val_max < 0.0:
         raise ValueError("The max hyperbole should be in the first and third quadrant")
 
-    if x_test_val_min < 0.0: # checked
+    if x_test_val_min < 0.0:
+        # print("Case 1")
         x_test_val_min_abs = abs(x_test_val_min)
         if x_test_val_max > x_test_val_min_abs:
+            # print("Case 1.A")
             domain_x = [
                 [-max_range, -x_test_val_max],
                 [-x_test_val_max, -x_test_val_min_abs],
@@ -340,7 +342,8 @@ def domains_sep_hyperboles_inside(square_borders, hyp_min, hyp_max, arg_hyp_min,
                 [lambda x: hyp_min(x, **arg_hyp_min), lambda x: max_range],
                 [lambda x: hyp_min(x, **arg_hyp_min), lambda x: hyp_max(x, **arg_hyp_max)],
             ]
-        else:
+        elif x_test_val_min_abs < max_range:
+            # print("Case 1.B")
             domain_x = [
                 [-max_range, -x_test_val_min_abs],
                 [-x_test_val_min_abs, -x_test_val_max],
@@ -355,18 +358,35 @@ def domains_sep_hyperboles_inside(square_borders, hyp_min, hyp_max, arg_hyp_min,
                 [lambda x: -max_range, lambda x: hyp_max(x, **arg_hyp_max)],
                 [lambda x: hyp_min(x, **arg_hyp_min), lambda x: hyp_max(x, **arg_hyp_max)],
             ]
+        else:
+            # print("Case 1.C")
+            domain_x = [
+                [-max_range, -x_test_val_max],
+                [-x_test_val_max, x_test_val_max],
+                [x_test_val_max, max_range],
+            ]
+            domain_y = [
+                [lambda x: hyp_max(x, **arg_hyp_max), lambda x: max_range],
+                [lambda x: -max_range, lambda x: max_range],
+                [lambda x: -max_range, lambda x: hyp_max(x, **arg_hyp_max)],
+            ]
     else:
+        # print("Case 2")
         if x_test_val_min > max_range:
+            # print("Case 2.A")
             domain_x = []
             domain_y = []
         else:
+            # print("Case 2.B")
             if x_test_val_max > max_range:
+                # print("Case 2.B.1")
                 domain_x = [[x_test_val_min, max_range], [-max_range, -x_test_val_min]]
                 domain_y = [
                     [lambda x: hyp_min(x, **arg_hyp_min), lambda x: max_range],
                     [lambda x: -max_range, lambda x: hyp_min(x, **arg_hyp_min)],
                 ]
             else:
+                # print("Case 2.B.2")
                 domain_x = [
                     [-max_range, -x_test_val_max],
                     [-x_test_val_max, -x_test_val_min],

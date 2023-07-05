@@ -1,16 +1,16 @@
 import linear_regression.sweeps.alpha_sweeps as alsw
 import matplotlib.pyplot as plt
 from linear_regression.fixed_point_equations.fpe_L2_loss import (
-    var_func_L2,
-    var_hat_func_L2_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L2_decorrelated_noise,
 )
 from linear_regression.fixed_point_equations.fpe_L1_loss import (
-    var_func_L2,
-    var_hat_func_L1_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L1_decorrelated_noise,
 )
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
-    var_func_L2,
-    var_hat_func_Huber_decorrelated_noise,
+    f_L2_reg,
+    f_hat_Huber_decorrelated_noise,
 )
 import numpy as np
 from linear_regression.aux_functions.stability_functions import (
@@ -35,8 +35,8 @@ def m_order_param(m, q, sigma):
 delta_in, delta_out, percentage, beta = 1.0, 5.0, 0.3, 0.0
 
 (alphas, reg_params), (sigmas, qs, ms) = alsw.sweep_alpha_descend_lambda(
-    var_func_L2,
-    var_hat_func_L1_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L1_decorrelated_noise,
     0.1,
     1000,
     100,
@@ -58,8 +58,8 @@ delta_in, delta_out, percentage, beta = 1.0, 5.0, 0.3, 0.0
 print("first_done")
 
 # alphas_ls, last_reg_param_stable = alsw.sweep_alpha_minimal_stable_reg_param(
-#     var_func_L2,
-#     var_hat_func_L1_decorrelated_noise,
+#     f_L2_reg,
+#     f_hat_L1_decorrelated_noise,
 #     0.01,
 #     1000,
 #     1000,

@@ -1,12 +1,12 @@
 import linear_regression.sweeps.eps_sweep as epsw
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 import matplotlib.pyplot as plt
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
-    var_hat_func_Huber_decorrelated_noise,
+    f_hat_Huber_decorrelated_noise,
 )
-from linear_regression.fixed_point_equations.fpe_L2_loss import var_hat_func_L2_decorrelated_noise
-from linear_regression.fixed_point_equations.fpe_BO import var_func_BO, var_hat_func_BO_num_decorrelated_noise
+from linear_regression.fixed_point_equations.fpe_L2_loss import f_hat_L2_decorrelated_noise
+from linear_regression.fixed_point_equations.fpe_BO import f_BO, f_hat_BO_decorrelated_noise
 import numpy as np
 from linear_regression.aux_functions.misc import estimation_error
 from scipy.optimize import curve_fit
@@ -41,8 +41,8 @@ while True:
     (reg_params_opt_hub, hub_params_opt),
     (ms_hub, qs_hub, sigmas_hub),
 ) = epsw.sweep_eps_optimal_lambda_hub_param_fixed_point(
-    var_func_L2,
-    var_hat_func_Huber_decorrelated_noise,
+    f_L2_reg,
+    f_hat_Huber_decorrelated_noise,
     eps_min,
     eps_max,
     n_eps_pts,
@@ -66,7 +66,7 @@ print("Huber done")
 
 mhats_hub, qhats_hub, sigmahats_hub = np.empty_like(ms_hub), np.empty_like(qs_hub), np.empty_like(sigmas_hub)
 for idx, (m, q, sigma) in enumerate(zip(ms_hub, qs_hub, sigmas_hub)):
-    mhats_hub[idx], qhats_hub[idx], sigmahats_hub[idx] = var_hat_func_Huber_decorrelated_noise(
+    mhats_hub[idx], qhats_hub[idx], sigmahats_hub[idx] = f_hat_Huber_decorrelated_noise(
         m, q, sigma, alpha, delta_in, delta_out, epsilons[idx], beta, hub_params_opt[idx]
     )
 
@@ -80,22 +80,22 @@ np.savetxt(
 print("hat evaluated")
 
 m_0, q_0, sigma_0 = fixed_point_finder(
-    var_func_L2,
-    var_hat_func_L2_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L2_decorrelated_noise,
     initial_condition,
     {"reg_param": delta_in},
     {"alpha": alpha, "delta_in": delta_in, "delta_out": delta_out, "percentage": 0.0, "beta": beta},
 )
 
-mhat_0, qhat_0, sigmahat_0 = var_hat_func_L2_decorrelated_noise(
+mhat_0, qhat_0, sigmahat_0 = f_hat_L2_decorrelated_noise(
     m_0, q_0, sigma_0, alpha, delta_in, delta_out, 0.0, beta
 )
 
 print(f"m_0 = {m_0}, q_0 = {q_0}, sigma_0 = {sigma_0}, mhat_0 = {mhat_0}, qhat_0 = {qhat_0}, sigmahat_0 = {sigmahat_0}")
 
 # epsilons, (e_gen_BO,) = epsw.sweep_eps_fixed_point(
-#     var_func_BO,
-#     var_hat_func_BO_num_decorrelated_noise,
+#     f_BO,
+#     f_hat_BO_decorrelated_noise,
 #     eps_min,
 #     eps_max,
 #     n_eps_pts,

@@ -13,9 +13,9 @@ from ..aux_functions.misc import estimation_error
 
 def find_optimal_reg_param_function(
     var_func,
-    var_hat_func,
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_hat_func,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     initial_guess_reg_param: float,
     initial_cond_fpe: Tuple[float, float, float],
     funs=[estimation_error],
@@ -31,16 +31,17 @@ def find_optimal_reg_param_function(
             )
         )
     n_observables = len(funs)
-    copy_var_func_kwargs = var_func_kwargs.copy()
+    copy_f_kwargs = f_kwargs.copy()
 
     def minimize_fun(reg_param):
-        copy_var_func_kwargs.update({"reg_param": float(reg_param)})
+        copy_f_kwargs.update({"reg_param": float(reg_param)})
+        print("\t\tλ = {:.5f}".format(float(reg_param)))
         m, q, sigma = fixed_point_finder(
             var_func,
-            var_hat_func,
+            f_hat_func,
             initial_condition=initial_cond_fpe,
-            var_func_kwargs=copy_var_func_kwargs,
-            var_hat_func_kwargs=var_hat_func_kwargs,
+            f_kwargs=copy_f_kwargs,
+            f_hat_kwargs=f_hat_kwargs,
         )
         return f_min(m, q, sigma, **f_min_args)
 
@@ -57,14 +58,14 @@ def find_optimal_reg_param_function(
         fun_min_val = obj.fun
         reg_param_opt = obj.x
 
-        copy_var_func_kwargs.update({"reg_param": float(reg_param_opt)})
+        copy_f_kwargs.update({"reg_param": float(reg_param_opt)})
         out_values = empty(n_observables)
         m, q, sigma = fixed_point_finder(
             var_func,
-            var_hat_func,
+            f_hat_func,
             initial_condition=initial_cond_fpe,
-            var_func_kwargs=copy_var_func_kwargs,
-            var_hat_func_kwargs=var_hat_func_kwargs,
+            f_kwargs=copy_f_kwargs,
+            f_hat_kwargs=f_hat_kwargs,
         )
 
         for idx, (f, f_args) in enumerate(zip(funs, funs_args)):
@@ -77,9 +78,9 @@ def find_optimal_reg_param_function(
 
 def find_optimal_reg_and_huber_parameter_function(
     var_func,
-    var_hat_func,
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_hat_func,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     initial_guess_reg_and_huber_param: Tuple[float, float],
     initial_cond_fpe: Tuple[float, float, float],
     funs=[estimation_error],
@@ -96,19 +97,19 @@ def find_optimal_reg_and_huber_parameter_function(
             )
         )
     n_observables = len(funs)
-    copy_var_func_kwargs = var_func_kwargs.copy()
-    copy_var_hat_func_kwargs = var_hat_func_kwargs.copy()
+    copy_f_kwargs = f_kwargs.copy()
+    copy_f_hat_kwargs = f_hat_kwargs.copy()
     
     def minimize_fun(x):
-        copy_var_func_kwargs.update({"reg_param": x[0]})
-        copy_var_hat_func_kwargs.update({"a": x[1]})
+        copy_f_kwargs.update({"reg_param": x[0]})
+        copy_f_hat_kwargs.update({"a": x[1]})
 
         m, q, sigma = fixed_point_finder(
             var_func,
-            var_hat_func,
+            f_hat_func,
             initial_condition=initial_cond_fpe,
-            var_func_kwargs=copy_var_func_kwargs,
-            var_hat_func_kwargs=copy_var_hat_func_kwargs,
+            f_kwargs=copy_f_kwargs,
+            f_hat_kwargs=copy_f_hat_kwargs,
         )
         return f_min(m, q, sigma, **f_min_args)
 
@@ -128,15 +129,15 @@ def find_optimal_reg_and_huber_parameter_function(
         fun_min_val = obj.fun
         reg_param_opt, a_opt = obj.x
 
-        copy_var_func_kwargs.update({"reg_param": reg_param_opt})
-        copy_var_hat_func_kwargs.update({"a": a_opt})
+        copy_f_kwargs.update({"reg_param": reg_param_opt})
+        copy_f_hat_kwargs.update({"a": a_opt})
         out_values = empty(n_observables)
         m, q, sigma = fixed_point_finder(
             var_func,
-            var_hat_func,
+            f_hat_func,
             initial_condition=initial_cond_fpe,
-            var_func_kwargs=copy_var_func_kwargs,
-            var_hat_func_kwargs=copy_var_hat_func_kwargs,
+            f_kwargs=copy_f_kwargs,
+            f_hat_kwargs=copy_f_hat_kwargs,
         )
 
         for idx, (f, f_args) in enumerate(zip(funs, funs_args)):

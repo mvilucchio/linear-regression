@@ -11,15 +11,15 @@ from ..fixed_point_equations.optimality_finding import (
 
 def sweep_eps_delta_out_optimal_lambda_fixed_point(
     var_func,
-    var_hat_func,
+    f_hat_func,
     eps_min: float,
     eps_max: float,
     n_eps_pts: int,
     delta_out_min: float,
     delta_out_max: float,
     n_delta_out_pts: int,
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     initial_guess_reg_param: float,
     initial_cond_fpe: Tuple[float, float, float],
     funs=[estimation_error],
@@ -92,8 +92,8 @@ def sweep_eps_delta_out_optimal_lambda_fixed_point(
     reg_params_opt = empty_like(epseps) 
     funs_values = [empty_like(epseps)  for _ in range(n_observables)]
 
-    copy_var_func_kwargs = var_func_kwargs.copy()
-    copy_var_hat_func_kwargs = var_hat_func_kwargs.copy()
+    copy_f_kwargs = f_kwargs.copy()
+    copy_f_hat_kwargs = f_hat_kwargs.copy()
     copy_funs_args = funs_args.copy()
 
     old_reg_param_opt_begin_delta_sweep = initial_guess_reg_param
@@ -109,9 +109,9 @@ def sweep_eps_delta_out_optimal_lambda_fixed_point(
         # print(f"index: {it.multi_index} epsilon: {epseps[it.multi_index]} delta_out: {deltadelta[it.multi_index]}")
 
         # for jdx, delta_out in enumerate(delta_outs):
-        copy_var_func_kwargs.update({"reg_param": old_reg_param_opt})
-        copy_var_hat_func_kwargs.update({"percentage": epseps[it.multi_index], "delta_out": deltadelta[it.multi_index]})
-        # print(copy_var_hat_func_kwargs)
+        copy_f_kwargs.update({"reg_param": old_reg_param_opt})
+        copy_f_hat_kwargs.update({"percentage": epseps[it.multi_index], "delta_out": deltadelta[it.multi_index]})
+        # print(copy_f_hat_kwargs)
 
         if update_f_min_args:
             f_min_args.update({"percentage": epseps[it.multi_index], "delta_out": deltadelta[it.multi_index]})
@@ -127,9 +127,9 @@ def sweep_eps_delta_out_optimal_lambda_fixed_point(
             out_values,
         ) = find_optimal_reg_param_function(
             var_func,
-            var_hat_func,
-            copy_var_func_kwargs,
-            copy_var_hat_func_kwargs,
+            f_hat_func,
+            copy_f_kwargs,
+            copy_f_hat_kwargs,
             initial_guess_reg_param,
             old_initial_cond_fpe,
             funs=funs,
@@ -171,15 +171,15 @@ def sweep_eps_delta_out_optimal_lambda_fixed_point(
 
 def sweep_eps_delta_out_optimal_lambda_hub_param_fixed_point(
     var_func,
-    var_hat_func,
+    f_hat_func,
     eps_min: float,
     eps_max: float,
     n_eps_pts: int,
     delta_out_min: float,
     delta_out_max: float,
     n_delta_out_pts: int,
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     initial_guess_reg_param: float,
     initial_guess_huber_param: float,
     initial_cond_fpe: Tuple[float, float, float],
@@ -254,8 +254,8 @@ def sweep_eps_delta_out_optimal_lambda_hub_param_fixed_point(
     huber_params_opt = empty((n_delta_out_pts, n_eps_pts))
     funs_values = [empty((n_delta_out_pts, n_eps_pts)) for _ in range(n_observables)]
 
-    copy_var_func_kwargs = var_func_kwargs.copy()
-    copy_var_hat_func_kwargs = var_hat_func_kwargs.copy()
+    copy_f_kwargs = f_kwargs.copy()
+    copy_f_hat_kwargs = f_hat_kwargs.copy()
     copy_funs_args = funs_args.copy()
 
     old_reg_param_opt_begin_delta_sweep = initial_guess_reg_param
@@ -272,8 +272,8 @@ def sweep_eps_delta_out_optimal_lambda_hub_param_fixed_point(
         # print(f"index: {it.multi_index} epsilon: {epseps[it.multi_index]:.2e} delta_out: {deltadelta[it.multi_index]:.2e}")
 
         # for jdx, delta_out in enumerate(delta_outs):
-        copy_var_func_kwargs.update({"reg_param": old_reg_param_opt})
-        copy_var_hat_func_kwargs.update({"percentage": epseps[it.multi_index], "delta_out": deltadelta[it.multi_index], "a": old_huber_param_opt})
+        copy_f_kwargs.update({"reg_param": old_reg_param_opt})
+        copy_f_hat_kwargs.update({"percentage": epseps[it.multi_index], "delta_out": deltadelta[it.multi_index], "a": old_huber_param_opt})
 
         if update_f_min_args:
             f_min_args.update({"percentage": epseps[it.multi_index], "delta_out": deltadelta[it.multi_index]})
@@ -291,9 +291,9 @@ def sweep_eps_delta_out_optimal_lambda_hub_param_fixed_point(
             out_values,
         ) = find_optimal_reg_and_huber_parameter_function(
             var_func,
-            var_hat_func,
-            copy_var_func_kwargs,
-            copy_var_hat_func_kwargs,
+            f_hat_func,
+            copy_f_kwargs,
+            copy_f_hat_kwargs,
             (old_reg_param_opt, old_huber_param_opt),
             old_initial_cond_fpe,
             funs=funs,

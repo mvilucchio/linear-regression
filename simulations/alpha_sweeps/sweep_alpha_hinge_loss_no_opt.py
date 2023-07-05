@@ -1,17 +1,17 @@
 import linear_regression.sweeps.alpha_sweeps as alsw
 import matplotlib.pyplot as plt
 from linear_regression.fixed_point_equations.fpe_L2_loss import (
-    var_hat_func_L2_decorrelated_noise,
+    f_hat_L2_decorrelated_noise,
 )
 from linear_regression.fixed_point_equations.fpe_L1_loss import (
-    var_hat_func_L1_decorrelated_noise,
+    f_hat_L1_decorrelated_noise,
 )
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
-    var_hat_func_Huber_decorrelated_noise,
+    f_hat_Huber_decorrelated_noise,
 )
 from linear_regression.aux_functions.misc import estimation_error, excess_gen_error, gen_error_BO, angle_teacher_student
-from linear_regression.fixed_point_equations.fpe_Hinge_loss import var_hat_func_Hinge_num_decorrelated_noise
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.fpe_Hinge_loss import f_hat_Hinge_decorrelated_noise
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 import numpy as np
 from linear_regression.aux_functions.stability_functions import (
     stability_ridge,
@@ -36,7 +36,7 @@ def m_order_param(m, q, sigma):
     return m
 
 
-delta_in, delta_out, percentage, beta = 1.0, 2.0, 0.3, 0.0
+delta_in, delta_out, percentage, beta = 1.0, 2.0, 0.3, 1.0
 alpha_min, alpha_max, n_alpha_pts = 0.01, 1000, 50
 reg_param = 30.0
 delta_eff = (1 - percentage) * delta_in + percentage * delta_out
@@ -47,8 +47,8 @@ fname = "./simulations/data/{}_fixed_lambda_{:.2e}_delta_in_{:.2e}_delta_out_{:.
     alphas_Hinge,
     (estim_error_Hinge, sigmas_Hinge, qs_Hinge, ms_Hinge),
 ) = alsw.sweep_alpha_fixed_point(
-    var_func_L2,
-    var_hat_func_Hinge_num_decorrelated_noise,
+    f_L2_reg,
+    f_hat_Hinge_decorrelated_noise,
     alpha_min,
     alpha_max,
     n_alpha_pts,

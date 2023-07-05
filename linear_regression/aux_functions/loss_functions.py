@@ -1,5 +1,5 @@
 from numba import vectorize, njit
-from math import exp, log, sqrt, pow, pi
+from math import exp, log, cosh, sqrt, pow, pi
 from numpy import log1p
 
 
@@ -9,12 +9,12 @@ def l2_loss(y: float, z: float):
 
 
 @vectorize("float64(float64, float64)")
-def l1_loss(y: float, z: float):
+def l1_loss(y: float, z: float) -> float:
     return abs(y - z)
 
 
 @vectorize("float64(float64, float64, float64)")
-def huber_loss(y: float, z: float, a: float):
+def huber_loss(y: float, z: float, a: float) -> float:
     if abs(y - z) < a:
         return 0.5 * (y - z) ** 2
     else:
@@ -22,15 +22,15 @@ def huber_loss(y: float, z: float, a: float):
 
 
 @vectorize("float64(float64, float64)")
-def hinge_loss(y: float, z: float):
+def hinge_loss(y: float, z: float) -> float:
     return max(0, 1 - y * z)
 
 
-# Compute log(1+exp(x)) componentwise.
+# Compute log(1 + exp(x)) componentwise.
 # inspired from sklearn and https://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
 # and http://fa.bianp.net/blog/2019/evaluate_logistic/
-@njit(error_model="numpy")
-def log1pexp(x):
+@vectorize("float64(float64)")
+def log1pexp(x: float) -> float:
     if x <= -37:
         return exp(x)
     elif -37 < x <= -2:
@@ -44,5 +44,15 @@ def log1pexp(x):
 
 
 @vectorize("float64(float64, float64)")
-def logistic_loss(y: float, z: float):
+def logistic_loss(y: float, z: float) -> float:
     return log1pexp(-y * z)
+
+
+@vectorize("float64(float64, float64)")
+def Dz_logistic_loss(y: float, z: float) -> float:
+    return -y / (1 + exp(y * z))
+
+
+@vectorize("float64(float64, float64)")
+def DDz_logistic_loss(y: float, z: float) -> float:
+    return 0.5 * y**2 / (1 + cosh(y * z))

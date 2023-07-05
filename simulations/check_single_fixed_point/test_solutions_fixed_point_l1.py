@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from linear_regression.fixed_point_equations.fpe_L1_loss import (
-    var_func_L2,
-    var_hat_func_L1_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L1_decorrelated_noise,
 )
 from linear_regression.aux_functions.stability_functions import (
     stability_ridge,
@@ -40,8 +40,8 @@ for idx, m in enumerate(initial_point_m):
             if global_idx % 100 == 0:
                 print(global_idx)
             finals[global_idx, :] = fixed_point_finder(
-                var_func_L2,
-                var_hat_func_L1_decorrelated_noise,
+                f_L2_reg,
+                f_hat_L1_decorrelated_noise,
                 (m, q, sigma),
                 {"reg_param": 1.0},
                 {

@@ -3,8 +3,8 @@ from linear_regression.aux_functions.free_energy import (
     Psi_w_L2_reg,
     Psi_out_L2,
 )
-from linear_regression.fixed_point_equations.fpe_L2_loss import var_hat_func_L2_decorrelated_noise
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.fpe_L2_loss import f_hat_L2_decorrelated_noise
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 import numpy as np
 import matplotlib.pyplot as plt
@@ -108,13 +108,13 @@ for reg_param in reg_params:
     #     alpha, reg_param, delta_in, delta_out, percentage, beta
     # )
     m_true, q_true, sigma_true = fixed_point_finder(
-        var_func_L2,
-        var_hat_func_L2_decorrelated_noise,
+        f_L2_reg,
+        f_hat_L2_decorrelated_noise,
         (m,q,sigma),
         {"reg_param":reg_param},
         {"alpha" : alpha, "delta_in":delta_in, "delta_out":delta_out, "percentage":percentage, "beta":beta},
     )
-    m_hat_true, q_hat_true, sigma_hat_true = var_hat_func_L2_decorrelated_noise(m_true, q_true, sigma_true, alpha, delta_in, delta_out, percentage, beta)
+    m_hat_true, q_hat_true, sigma_hat_true = f_hat_L2_decorrelated_noise(m_true, q_true, sigma_true, alpha, delta_in, delta_out, percentage, beta)
 
     _, closest_true_idx = find_nearest(qs, q_true)
     print("true values ", m_true, q_true, sigma_true, m_hat_true, q_hat_true, sigma_hat_true)

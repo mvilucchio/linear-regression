@@ -5,9 +5,9 @@ from linear_regression.aux_functions.free_energy import (
     Psi_out_L2,
 )
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.fixed_point_equations.fpe_L1_loss import (
-    var_hat_func_L1_decorrelated_noise,
+    f_hat_L1_decorrelated_noise,
 )
 import numpy as np
 import matplotlib.pyplot as plt
@@ -56,15 +56,15 @@ for reg_param in reg_params:
         try:
             iter_nb = 0
             err = 100.0
-            m_hat, q_hat, sigma_hat = var_hat_func_L1_decorrelated_noise(
+            m_hat, q_hat, sigma_hat = f_hat_L1_decorrelated_noise(
                 m, q, sigma, alpha, delta_in, delta_out, percentage, beta
             )
             while err > abs_tol or iter_nb < min_iter:
-                new_m_hat, new_q_hat, new_sigma_hat = var_hat_func_L1_decorrelated_noise(
+                new_m_hat, new_q_hat, new_sigma_hat = f_hat_L1_decorrelated_noise(
                     m, q, sigma, alpha, delta_in, delta_out, percentage, beta
                 )
                 # print("hat    ", m_hat, q_hat, sigma_hat)
-                new_m, _, new_sigma = var_func_L2(new_m_hat, new_q_hat, new_sigma_hat, reg_param)
+                new_m, _, new_sigma = f_L2_reg(new_m_hat, new_q_hat, new_sigma_hat, reg_param)
                 # print("non hat ", m, q, sigma)
 
                 err = max(
@@ -86,10 +86,10 @@ for reg_param in reg_params:
                 iter_nb += 1
                 if iter_nb > max_iter:
                     print(new_m, new_sigma, new_m_hat, new_q_hat, new_sigma_hat)
-                    new_m_hat, new_q_hat, new_sigma_hat = var_hat_func_L1_decorrelated_noise(
+                    new_m_hat, new_q_hat, new_sigma_hat = f_hat_L1_decorrelated_noise(
                         m, q, sigma, alpha, delta_in, delta_out, percentage, beta
                     )
-                    new_m, _, new_sigma = var_func_L2(new_m_hat, new_q_hat, new_sigma_hat, reg_param)
+                    new_m, _, new_sigma = f_L2_reg(new_m_hat, new_q_hat, new_sigma_hat, reg_param)
                                                       
                     print(new_m, new_sigma, new_m_hat, new_q_hat, new_sigma_hat)
                     raise ConvergenceError("fixed_point_finder", iter_nb)
@@ -139,8 +139,8 @@ for reg_param in reg_params:
     min_idx = np.argmin(free_energies)
 
     m_true, q_true, sigma_true = fixed_point_finder(
-        var_func_L2,
-        var_hat_func_L1_decorrelated_noise,
+        f_L2_reg,
+        f_hat_L1_decorrelated_noise,
         (ms[min_idx], qs[min_idx], sigmas[min_idx]),
         {"reg_param": reg_param},
         {
@@ -152,7 +152,7 @@ for reg_param in reg_params:
         },
     )
 
-    m_hat_true, q_hat_true, sigma_hat_true = var_hat_func_L1_decorrelated_noise(
+    m_hat_true, q_hat_true, sigma_hat_true = f_hat_L1_decorrelated_noise(
         m_true, q_true, sigma_true, alpha, delta_in, delta_out, percentage, beta
     )
 

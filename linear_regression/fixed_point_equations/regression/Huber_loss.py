@@ -4,7 +4,7 @@ from math import erf, erfc, exp, log, sqrt
 
 
 @njit(error_model="numpy", fastmath=True)
-def var_hat_func_Huber_single_noise(m, q, sigma, alpha, delta, a):
+def f_hat_Huber_single_noise(m, q, sigma, alpha, delta, a):
     arg_sqrt = 1 + q + delta - 2 * m
     erf_arg = (a * (sigma + 1)) / sqrt(2 * arg_sqrt)
 
@@ -19,7 +19,7 @@ def var_hat_func_Huber_single_noise(m, q, sigma, alpha, delta, a):
 
 
 @njit(error_model="numpy", fastmath=True)
-def var_hat_func_Huber_double_noise(m, q, sigma, alpha, delta_in, delta_out, percentage, a):
+def f_hat_Huber_double_noise(m, q, sigma, alpha, delta_in, delta_out, percentage, a):
     small_sqrt = delta_in - 2 * m + q + 1
     large_sqrt = delta_out - 2 * m + q + 1
     small_erf = (a * (sigma + 1)) / sqrt(2 * small_sqrt)
@@ -48,7 +48,7 @@ def var_hat_func_Huber_double_noise(m, q, sigma, alpha, delta_in, delta_out, per
 
 
 # @njit(error_model="numpy", fastmath=True)
-def var_hat_func_Huber_decorrelated_noise(
+def f_hat_Huber_decorrelated_noise(
     m, q, sigma, alpha, delta_in, delta_out, percentage, beta, a
 ):
     # print(m,q,sigma,alpha,delta_in,delta_out,percentage,beta,a)

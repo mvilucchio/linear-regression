@@ -4,9 +4,9 @@ from linear_regression.sweeps.eps_delta_out_sweeps import (
     sweep_eps_delta_out_optimal_lambda_fixed_point,
     sweep_eps_delta_out_optimal_lambda_hub_param_fixed_point,
 )
-from linear_regression.fixed_point_equations.fpe_Huber_loss import var_hat_func_Huber_decorrelated_noise
-from linear_regression.fixed_point_equations.fpe_L2_loss import var_hat_func_L2_decorrelated_noise
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.fpe_Huber_loss import f_hat_Huber_decorrelated_noise
+from linear_regression.fixed_point_equations.fpe_L2_loss import f_hat_L2_decorrelated_noise
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.aux_functions.misc import estimation_error, excess_gen_error, gen_error_BO, angle_teacher_student
 
 alpha, delta_in, beta = 10.0, 1.0, 0.0
@@ -20,8 +20,8 @@ delta_out_min, delta_out_max, n_delta_out_pts = 1e0, 5e2, 100
     reg_params_opt_l2,
     _,
 ) = sweep_eps_delta_out_optimal_lambda_fixed_point(
-    var_func_L2,
-    var_hat_func_L2_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L2_decorrelated_noise,
     eps_min,
     eps_max,
     n_eps_pts,
@@ -50,8 +50,8 @@ print("L2 done")
     (reg_params_opt_hub, huber_params_opt),
     _,
 ) = sweep_eps_delta_out_optimal_lambda_hub_param_fixed_point(
-    var_func_L2,
-    var_hat_func_Huber_decorrelated_noise,
+    f_L2_reg,
+    f_hat_Huber_decorrelated_noise,
     eps_min,
     eps_max,
     n_eps_pts,

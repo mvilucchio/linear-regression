@@ -1,9 +1,9 @@
 import linear_regression.sweeps.alpha_sweeps as alsw
 import matplotlib.pyplot as plt
 from linear_regression.fixed_point_equations.fpe_L2_loss import (
-    var_hat_func_L2_decorrelated_noise,
+    f_hat_L2_decorrelated_noise,
 )
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.aux_functions.misc import estimation_error_rescaled, estimation_error, estimation_error_oracle_rescaling
 import numpy as np
 
@@ -29,8 +29,8 @@ reg_param = 5.0
 
 
 (alphas_rescaled, (f_min_vals_rescaled,)) = alsw.sweep_alpha_fixed_point(
-    var_func_L2,
-    var_hat_func_L2_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L2_decorrelated_noise,
     alpha_min,
     alpha_max,
     n_alpha_pts,
@@ -62,8 +62,8 @@ print("First sweep done")
     reg_param_opt_neg,
     (sigmas_neg, qs_neg, ms_neg),
 ) = alsw.sweep_alpha_optimal_lambda_fixed_point(
-    var_func_L2,
-    var_hat_func_L2_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L2_decorrelated_noise,
     alpha_min,
     alpha_max,
     n_alpha_pts,

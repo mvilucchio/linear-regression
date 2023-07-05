@@ -1,8 +1,8 @@
 from linear_regression.aux_functions.free_energy import free_energy, Psi_w_L2_reg, Psi_out_L1
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.fixed_point_equations.fpe_L1_loss import (
-    var_hat_func_L1_decorrelated_noise,
+    f_hat_L1_decorrelated_noise,
 )
 import numpy as np
 import matplotlib.pyplot as plt
@@ -45,10 +45,10 @@ for reg_param in reg_params:
             iter_nb = 0
             err = 100.0
             while err > abs_tol or iter_nb < min_iter:
-                m_hat, _, sigma_hat = var_hat_func_L1_decorrelated_noise(
+                m_hat, _, sigma_hat = f_hat_L1_decorrelated_noise(
                     m, q, sigma, alpha, delta_in, delta_out, percentage, beta
                 )
-                new_m, _, new_sigma = var_func_L2(m_hat, 0.0, sigma_hat, reg_param)
+                new_m, _, new_sigma = f_L2_reg(m_hat, 0.0, sigma_hat, reg_param)
 
                 err = max([abs(new_m - m), abs(new_sigma - sigma)])
 
@@ -97,8 +97,8 @@ for reg_param in reg_params:
             break
 
     m_true, q_true, sigma_true = fixed_point_finder(
-        var_func_L2,
-        var_hat_func_L1_decorrelated_noise,
+        f_L2_reg,
+        f_hat_L1_decorrelated_noise,
         (m, q, sigma),
         {"reg_param": reg_param},
         {
@@ -110,7 +110,7 @@ for reg_param in reg_params:
         },
     )
 
-    m_hat_true, q_hat_true, sigma_hat_true = var_hat_func_L1_decorrelated_noise(
+    m_hat_true, q_hat_true, sigma_hat_true = f_hat_L1_decorrelated_noise(
         m_true, q_true, sigma_true, alpha, delta_in, delta_out, percentage, beta
     )
 

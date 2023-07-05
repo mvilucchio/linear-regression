@@ -1,13 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import linear_regression.sweeps.alpha_sweeps as alsw
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.fixed_point_equations.fpe_L2_loss import (
-    var_hat_func_L2_decorrelated_noise,
+    f_hat_L2_decorrelated_noise,
 )
-from linear_regression.fixed_point_equations.fpe_L1_loss import var_hat_func_L1_decorrelated_noise
+from linear_regression.fixed_point_equations.fpe_L1_loss import f_hat_L1_decorrelated_noise
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
-    var_hat_func_Huber_decorrelated_noise,
+    f_hat_Huber_decorrelated_noise,
 )
 from linear_regression.aux_functions.training_errors import (
     training_error_l2_loss,
@@ -36,18 +36,18 @@ alpha = 2.0
 # numerical training errors
 n_features = 1000
 repetitions = 20
-alphas_num_ridge = np.logspace(-1, 2, 10)
-alphas_num_L1 = alphas_num_ridge.copy()
-alphas_num_Hub = alphas_num_ridge.copy()
+alphas_ridge = np.logspace(-1, 2, 10)
+alphas_L1 = alphas_ridge.copy()
+alphas_Hub = alphas_ridge.copy()
 
-E_train_mean_ridge = np.empty_like(alphas_num_ridge)
-E_train_std_ridge = np.empty_like(alphas_num_ridge)
-E_train_mean_L1 = np.empty_like(alphas_num_L1)
-E_train_std_L1 = np.empty_like(alphas_num_L1)
-E_train_mean_Hub = np.empty_like(alphas_num_Hub)
-E_train_std_Hub = np.empty_like(alphas_num_Hub)
+E_train_mean_ridge = np.empty_like(alphas_ridge)
+E_train_std_ridge = np.empty_like(alphas_ridge)
+E_train_mean_L1 = np.empty_like(alphas_L1)
+E_train_std_L1 = np.empty_like(alphas_L1)
+E_train_mean_Hub = np.empty_like(alphas_Hub)
+E_train_std_Hub = np.empty_like(alphas_Hub)
 
-# for idx, alpha in enumerate(alphas_num_ridge):
+# for idx, alpha in enumerate(alphas_ridge):
 
 [(m_mean, m_std), (q_mean, q_std)] = erm_weight_finding(
     alpha,
@@ -94,7 +94,7 @@ print("Numerical done.")
 #     "./simulations/data/sweep_numerical_training_errors.csv",
 #     np.array(
 #         [
-#             alphas_num_ridge,
+#             alphas_ridge,
 #             E_train_mean_ridge,
 #             E_train_std_ridge,
 #             E_train_mean_L1,
@@ -116,7 +116,7 @@ print("Numerical done.")
 # )
 
 # plt.errorbar(
-#     alphas_num_ridge,
+#     alphas_ridge,
 #     E_train_mean_ridge,
 #     yerr=E_train_std_ridge,
 #     label="Numerical Training error Ridge",
@@ -124,7 +124,7 @@ print("Numerical done.")
 #     linestyle="",
 # )
 # # plt.errorbar(
-# #     alphas_num_L1,
+# #     alphas_L1,
 # #     E_train_mean_L1,
 # #     yerr=E_train_std_L1,
 # #     label="Numerical Training error L1",
@@ -132,7 +132,7 @@ print("Numerical done.")
 # #     linestyle="",
 # # )
 # plt.errorbar(
-#     alphas_num_Hub,
+#     alphas_Hub,
 #     E_train_mean_Hub,
 #     yerr=E_train_std_Hub,
 #     label="Numerical Training error Huber",

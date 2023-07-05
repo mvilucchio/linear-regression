@@ -6,7 +6,7 @@ from numpy import exp, log, sqrt
 
 
 @njit(error_model="numpy", fastmath=False)
-def var_hat_func_L1_single_noise(m, q, sigma, alpha, delta):
+def f_hat_L1_single_noise(m, q, sigma, alpha, delta):
     sqrt_arg = 1 + q + delta - 2 * m
     erf_arg = sigma / sqrt(2 * sqrt_arg)
 
@@ -21,7 +21,7 @@ def var_hat_func_L1_single_noise(m, q, sigma, alpha, delta):
 
 
 @njit(error_model="numpy", fastmath=False)
-def var_hat_func_L1_double_noise(m, q, sigma, alpha, delta_in, delta_out, percentage):
+def f_hat_L1_double_noise(m, q, sigma, alpha, delta_in, delta_out, percentage):
     small_sqrt = delta_in - 2 * m + q + 1
     large_sqrt = delta_out - 2 * m + q + 1
 
@@ -48,7 +48,7 @@ def var_hat_func_L1_double_noise(m, q, sigma, alpha, delta_in, delta_out, percen
 
 
 # @njit(error_model="numpy", fastmath=False)
-def var_hat_func_L1_decorrelated_noise(m, q, sigma, alpha, delta_in, delta_out, percentage, beta):
+def f_hat_L1_decorrelated_noise(m, q, sigma, alpha, delta_in, delta_out, percentage, beta):
     small_sqrt = delta_in - 2 * m + q + 1
     large_sqrt = delta_out - 2 * m * beta + q + beta**2
     small_exp = -(sigma**2) / (2 * small_sqrt)

@@ -4,15 +4,15 @@ from tqdm.auto import tqdm
 import linear_regression.regression_numerics.data_generation as dg
 import linear_regression.regression_numerics.erm_solvers as erm
 from linear_regression.fixed_point_equations.fpe_L2_loss import (
-    var_hat_func_L2_decorrelated_noise,
+    f_hat_L2_decorrelated_noise,
 )
 from linear_regression.fixed_point_equations.fpe_L1_loss import (
-    var_hat_func_L1_decorrelated_noise,
+    f_hat_L1_decorrelated_noise,
 )
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
-    var_hat_func_Huber_decorrelated_noise,
+    f_hat_Huber_decorrelated_noise,
 )
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 import numpy as np
 from linear_regression.aux_functions.misc import excess_gen_error
 from linear_regression.aux_functions.stability_functions import (
@@ -46,8 +46,8 @@ delta_in, delta_out, percentage, beta = 1.0, 5.0, 0.1, 0.0
     (reg_param_opt, hub_params_opt),
     (sigmas, qs, ms),
 ) = alsw.sweep_alpha_optimal_lambda_hub_param_fixed_point(
-    var_func_L2,
-    var_hat_func_Huber_decorrelated_noise,
+    f_L2_reg,
+    f_hat_Huber_decorrelated_noise,
     0.01,
     10000,
     150,

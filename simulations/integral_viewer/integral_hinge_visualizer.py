@@ -1,47 +1,54 @@
-# write a script that swows plots 3d the function to be integrated on the plane
-
 import numpy as np
 from math import sqrt
+from scipy.integrate import dblquad
 import matplotlib.pyplot as plt
-from linear_regression.utils.integration_utils import find_integration_borders_square, domains_sep_hyperboles_inside, domains_sep_hyperboles_above
+from linear_regression.utils.integration_utils import (
+    find_integration_borders_square,
+    domains_sep_hyperboles_inside,
+    domains_sep_hyperboles_above,
+)
 from matplotlib import cm
-from linear_regression.fixed_point_equations.fpe_Hinge_loss import m_integral_Hinge_decorrelated_noise, q_integral_Hinge_decorrelated_noise, sigma_integral_Hinge_decorrelated_noise
+from linear_regression.fixed_point_equations.classification.Hinge_loss import (
+    m_int_Hinge_single_noise_classif,
+    q_int_Hinge_single_noise_classif,
+    Σ_int_Hinge_single_noise_classif,
+)
+
 
 def hyperbole(x, const):
     return const / x
 
-# m, q, sigma = 0.7, 0.7, 1.5
-m = 0.06907
-q = 0.29514
-sigma = 0.86263
-delta_in, delta_out, percentage, beta = 1.0, 2.0, 0.3, 0.0
 
-bound = 5
-PTS = 3000
+m = 0.21562244834593775
+q = 0.721271735064917
+sigma = 7.5354931610250615
+delta = 1.0
 
-# plot 3d the function to be integrated on the plane
-xi = np.linspace(-bound, bound, PTS)
-y = np.linspace(-bound, bound, PTS)
-X, Y = np.meshgrid(xi, y)
-
-Z_m = m_integral_Hinge_decorrelated_noise(X, Y, q, m, sigma, delta_in, delta_out, percentage, beta)
-Z_q = q_integral_Hinge_decorrelated_noise(X, Y, q, m, sigma, delta_in, delta_out, percentage, beta)
-Z_sigma = sigma_integral_Hinge_decorrelated_noise(X, Y, q, m, sigma, delta_in, delta_out, percentage, beta)
-
-borders = [[-bound, bound], [-bound, bound]]
-
+borders = find_integration_borders_square(
+    m_int_Hinge_single_noise_classif, sqrt(1 + delta), 1.0, args=(q, m, sigma, delta), mult=10
+)
 domain_xi_1, domain_y_1 = domains_sep_hyperboles_inside(
     borders, hyperbole, hyperbole, {"const": (1.0 - sigma) / sqrt(q)}, {"const": 1.0 / sqrt(q)}
 )
 domain_xi_2, domain_y_2 = domains_sep_hyperboles_above(borders, hyperbole, {"const": (1.0 - sigma) / sqrt(q)})
-# domain_xi, domain_y = domain_xi_1 + domain_xi_2, domain_y_1 + domain_y_2
-domain_xi, domain_y = domain_xi_2, domain_y_2
+domain_xi, domain_y = domain_xi_1 + domain_xi_2, domain_y_1 + domain_y_2
 
-print(domain_xi)
-plt.figure(figsize=(10,10))
+
+bound = borders[0][1]
+PTS = 3000
+xi = np.linspace(-bound, bound, PTS)
+y = np.linspace(-bound, bound, PTS)
+X, Y = np.meshgrid(xi, y)
+
+Z_m = m_int_Hinge_single_noise_classif(X, Y, q, m, sigma, delta)
+Z_q = q_int_Hinge_single_noise_classif(X, Y, q, m, sigma, delta)
+Z_sigma = Σ_int_Hinge_single_noise_classif(X, Y, q, m, sigma, delta)
+
+print(domain_xi_2)
+plt.figure(figsize=(10, 10))
 plt.title("Inside hyperboles")
 for jdx, (d_xi, d_y) in enumerate(zip(domain_xi, domain_y)):
-    xs = np.linspace(d_xi[0], d_xi[1], 100)
+    xs = np.linspace(d_xi[0], d_xi[1], 1000)
     ys0 = np.zeros_like(xs)
     ys1 = np.zeros_like(xs)
 
@@ -52,26 +59,42 @@ for jdx, (d_xi, d_y) in enumerate(zip(domain_xi, domain_y)):
     zs = np.ones_like(xs)
     ax = plt.gca()
     color = ax._get_lines.get_next_color()
-    plt.plot(xs, ys0, label="first {}".format(jdx), color=color)
-    plt.plot(xs, ys1, label="second {}".format(jdx), color=color)
+    
+    # fill the area between the two curves
+    plt.fill_between(xs, ys0, ys1, facecolor=color, alpha=0.7)
+    plt.plot(xs, ys0, label="first {}".format(jdx), color=color, linestyle="--")
+    plt.plot(xs, ys1, label="second {}".format(jdx), color=color, linestyle="-.")
 
-xis = np.linspace(0.05,5,100)
 
-# plt.plot(xis, hyperbole(xis, (1.0 - sigma) / sqrt(q)), label="hyperbole min", linestyle="--")
-# plt.plot(xis, hyperbole(xis, 1.0 / sqrt(q)), label="hyperbole max", linestyle="--")
-# plt.plot(-xis, hyperbole(-xis, (1.0 - sigma) / sqrt(q)), label="hyperbole 1", linestyle="--")
-# plt.plot(-xis, hyperbole(-xis, 1.0 / sqrt(q)), label="hyperbole 2", linestyle="--")
+domain_xi_sigma_hat, domain_y_sigma_hat = domain_xi_1, domain_y_1
+integral_value_sigma_hat = 0.0
+for xi_funs, y_funs in zip(domain_xi_sigma_hat, domain_y_sigma_hat):
+    integral_value_sigma_hat += dblquad(
+        Σ_int_Hinge_single_noise_classif,
+        xi_funs[0],
+        xi_funs[1],
+        y_funs[0],
+        y_funs[1],
+        args=(q, m, sigma, delta),
+        epsabs=1e-10,
+    )[0]
 
-plt.ylim(-bound-0.1, bound+0.1)
-plt.xlim(-bound-0.1, bound+0.1)
+print("integral_value_sigma_hat ", integral_value_sigma_hat)
+
+plt.ylim(-bound - 0.1, bound + 0.1)
+plt.xlim(-bound - 0.1, bound + 0.1)
+plt.xlabel(r"$\xi$")
+plt.ylabel(r"$y$")
 plt.legend()
+plt.show()
 
-# fig = plt.figure()
-# ax = fig.add_subplot(111, projection='3d')
-# ax.plot_surface(X, Y, Z_m, cmap=cm.coolwarm, linewidth=0, antialiased=True)
-# # ax.plot_surface(X, Y, Z_m)
-# ax.set_xlabel(r"$\xi$")
-# ax.set_ylabel(r"$y$")
-# ax.set_zlabel(r"$m$")
+
+fig = plt.figure(figsize=(10, 10))
+ax = fig.add_subplot(111, projection="3d")
+ax.plot_surface(X, Y, Z_q, cmap=cm.coolwarm, linewidth=0, antialiased=True)
+# ax.plot_surface(X, Y, Z_m)
+ax.set_xlabel(r"$\xi$")
+ax.set_ylabel(r"$y$")
+ax.set_zlabel("Integral")
 
 plt.show()

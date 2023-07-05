@@ -1,14 +1,14 @@
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
-from linear_regression.fixed_point_equations.fpe_projection_denoising import (
-    var_func_projection_denoising,
+from linear_regression.fixed_point_equations.regularisation.fpe_projection_denoising import (
+    f_projection_denoising,
 )
 from scipy.signal import find_peaks
 from linear_regression.aux_functions.stability_functions import (
     stability_huber,
     stability_ridge,
 )
-from linear_regression.fixed_point_equations.fpe_Huber_loss import var_hat_func_Huber_decorrelated_noise
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.fpe_Huber_loss import f_hat_Huber_decorrelated_noise
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.aux_functions.training_errors import (
     training_error_l2_loss,
     training_error_huber_loss
@@ -47,10 +47,10 @@ for idx, q in enumerate(qs):
         iter_nb = 0
         err = 100.0
         while err > abs_tol or iter_nb < min_iter:
-            m_hat, q_hat, sigma_hat = var_hat_func_Huber_decorrelated_noise(
+            m_hat, q_hat, sigma_hat = f_hat_Huber_decorrelated_noise(
                 m, q, sigma, alpha, delta_in, delta_out, percentage, beta, a
             )
-            new_m, new_q, new_sigma = var_func_projection_denoising(m_hat, q_hat, sigma_hat, q)
+            new_m, new_q, new_sigma = f_projection_denoising(m_hat, q_hat, sigma_hat, q)
 
             err = max([abs(new_m - m), abs(new_sigma - sigma)])
 

@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 from linear_regression.fixed_point_equations.fpe_L2_loss import (
-    var_hat_func_L2_decorrelated_noise,
+    f_hat_L2_decorrelated_noise,
     order_parameters_ridge,
 )
-from linear_regression.fixed_point_equations.fpe_L1_loss import var_hat_func_L1_decorrelated_noise
+from linear_regression.fixed_point_equations.fpe_L1_loss import f_hat_L1_decorrelated_noise
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
-    var_hat_func_Huber_decorrelated_noise,
+    f_hat_Huber_decorrelated_noise,
 )
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.aux_functions.stability_functions import stability_l1_l2
 
 
@@ -30,8 +30,8 @@ alpha = 2.0  # 10
 delta_in, delta_out, percentage, beta = 1.0, 5.0, 0.3, 0.0
 
 reg_params, (ms, qs, sigmas) = swreg.sweep_reg_param_fixed_point(
-    var_func_L2,
-    var_hat_func_L1_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L1_decorrelated_noise,
     -0.1,
     0.1,
     1000,

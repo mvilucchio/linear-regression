@@ -5,10 +5,10 @@ from linear_regression.aux_functions.prior_regularization_funcs import (
     f_w_projection_on_sphere,
     Df_w_projection_on_sphere,
 )
-from linear_regression.fixed_point_equations.fpe_L1_loss import var_hat_func_L1_decorrelated_noise
-from linear_regression.fixed_point_equations.fpe_Huber_loss import var_hat_func_Huber_decorrelated_noise
-from linear_regression.fixed_point_equations.fpe_projection_denoising import (
-    var_func_projection_denoising,
+from linear_regression.fixed_point_equations.fpe_L1_loss import f_hat_L1_decorrelated_noise
+from linear_regression.fixed_point_equations.fpe_Huber_loss import f_hat_Huber_decorrelated_noise
+from linear_regression.fixed_point_equations.regularisation.fpe_projection_denoising import (
+    f_projection_denoising,
 )
 from linear_regression.aux_functions.misc import damped_update
 from linear_regression.aux_functions.likelihood_channel_functions import f_out_L1, Df_out_L1, f_out_Huber, Df_out_Huber
@@ -81,10 +81,10 @@ for idx, q in enumerate(qs_amp_test):
         iter_nb = 0
         err = 100.0
         while err > abs_tol or iter_nb < min_iter:
-            m_hat, q_hat, sigma_hat = var_hat_func_L1_decorrelated_noise(
+            m_hat, q_hat, sigma_hat = f_hat_L1_decorrelated_noise(
                 m, q, sigma, alpha, delta_in, delta_out, percentage, beta
             )
-            new_m, _, new_sigma = var_func_projection_denoising(m_hat, q_hat, sigma_hat, q)
+            new_m, _, new_sigma = f_projection_denoising(m_hat, q_hat, sigma_hat, q)
 
             err = max([abs(new_m - m), abs(new_sigma - sigma)])
 
@@ -179,10 +179,10 @@ for idx, q in enumerate(qs):
         iter_nb = 0
         err = 100.0
         while err > abs_tol or iter_nb < min_iter:
-            m_hat, q_hat, sigma_hat = var_hat_func_Huber_decorrelated_noise(
+            m_hat, q_hat, sigma_hat = f_hat_Huber_decorrelated_noise(
                 m, q, sigma, alpha, delta_in, delta_out, percentage, beta, a
             )
-            new_m, _, new_sigma = var_func_projection_denoising(m_hat, q_hat, sigma_hat, q)
+            new_m, _, new_sigma = f_projection_denoising(m_hat, q_hat, sigma_hat, q)
 
             err = max([abs(new_m - m), abs(new_sigma - sigma)])
 

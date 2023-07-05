@@ -7,12 +7,12 @@ from ..fixed_point_equations.fpeqs import fixed_point_finder
 
 def sweep_reg_param_fixed_point(
     var_func,
-    var_hat_func,
+    f_hat_func,
     reg_param_min: float,
     reg_param_max: float,
     n_reg_param_pts: int,
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     initial_cond=(0.6, 0.01, 0.9),
     funs=[estimation_error],
     funs_args=[list()],
@@ -64,13 +64,13 @@ def sweep_reg_param_fixed_point(
         )
     out_list = [empty(n_reg_param_pts) for _ in range(n_observables)]
 
-    copy_var_func_kwargs = var_func_kwargs.copy()
+    copy_f_kwargs = f_kwargs.copy()
     copy_funs_args = funs_args.copy()
 
     not_converged_flag = False
     old_initial_cond = initial_cond
     for idx, reg_param in enumerate(reg_params):
-        copy_var_func_kwargs.update({"reg_param": reg_param})
+        copy_f_kwargs.update({"reg_param": reg_param})
         try:
             if not_converged_flag:
                 for jdx, (f, f_args) in enumerate(zip(funs, funs_args)):
@@ -78,10 +78,10 @@ def sweep_reg_param_fixed_point(
             else:
                 m, q, sigma = fixed_point_finder(
                     var_func,
-                    var_hat_func,
+                    f_hat_func,
                     old_initial_cond,
-                    copy_var_func_kwargs,
-                    var_hat_func_kwargs,
+                    copy_f_kwargs,
+                    f_hat_kwargs,
                 )
 
                 old_initial_cond = tuple([m, q, sigma])

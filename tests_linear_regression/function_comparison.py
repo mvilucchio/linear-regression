@@ -7,7 +7,7 @@ import statistics
 
 
 class TestFunctionGeneral(TestCase):
-    def get_num_args(self, func):
+    def get_args(self, func):
         if isinstance(func, numba.core.registry.CPUDispatcher):
             py_func = func.py_func
             return len(inspect.signature(py_func).parameters)
@@ -33,8 +33,8 @@ class TestFunctionComparison(TestFunctionGeneral):
     def compare_two_functions(
         self, func1, func2, num_points=100, tolerance=1e-4, arg_signatures=None
     ):
-        num_args_func1 = self.get_num_args(func1)
-        num_args_func2 = self.get_num_args(func2)
+        num_args_func1 = self.get_args(func1)
+        num_args_func2 = self.get_args(func2)
 
         if num_args_func1 != num_args_func2:
             raise ValueError("Functions have different number of arguments")
@@ -67,8 +67,8 @@ class TestComparisonTheoryExperiment(TestFunctionGeneral):
     def test_comparison_thoery_experiment(
         self, theory_func, exp_func, num_points=10, repetitions=10, arg_signatures=None
     ):
-        num_args_theory_func = self.get_num_args(theory_func)
-        num_args_exp_func = self.get_num_args(exp_func)
+        num_args_theory_func = self.get_args(theory_func)
+        num_args_exp_func = self.get_args(exp_func)
 
         if num_args_theory_func != num_args_exp_func:
             raise ValueError("Functions have different number of arguments")

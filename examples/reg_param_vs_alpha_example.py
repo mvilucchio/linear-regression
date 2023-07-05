@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import linear_regression.sweeps.alpha_sweeps as alsw
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.fixed_point_equations.fpe_L2_loss import (
-    var_hat_func_L2_decorrelated_noise,
+    f_hat_L2_decorrelated_noise,
 )
 
 
@@ -16,8 +16,8 @@ delta_in, delta_out, percentage, beta = 1.0, 5.0, 0.3, 0.0
 
 
 (alphas, reg_params), (eg,) = alsw.sweep_alpha_descend_lambda(
-    var_func_L2,
-    var_hat_func_L2_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L2_decorrelated_noise,
     alpha_min,
     alpha_max,
     100,
@@ -37,8 +37,8 @@ delta_in, delta_out, percentage, beta = 1.0, 5.0, 0.3, 0.0
 )
 
 alphas_ls, last_reg_param_stable = alsw.sweep_alpha_minimal_stable_reg_param(
-    var_func_L2,
-    var_hat_func_L2_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L2_decorrelated_noise,
     alpha_min,
     alpha_max,
     100,

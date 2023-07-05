@@ -5,8 +5,8 @@ from numba import vectorize, njit
 
 
 @vectorize("float64(float64, float64, float64)")
-def std_gaussian(x: float, mu: float, sigma_2: float) -> float:
-    return exp(-0.5 * pow(x - mu, 2.0) / sigma_2) / sqrt(2 * pi * sigma_2)
+def gaussian(x: float, mean: float, var: float) -> float:
+    return exp(-0.5 * pow(x - mean, 2.0) / var) / sqrt(2 * pi * var)
 
 
 @vectorize("float64(float64, float64, float64)")
@@ -56,7 +56,7 @@ def estimation_error_rescaled(m, q, sigma, delta_in, delta_out, percentage, beta
 
 
 def estimation_error_oracle_rescaling(m, q, sigma, delta_in, delta_out, percentage, beta):
-    oracle_norm = 1.0 # abs(1 - percentage + percentage * beta)
+    oracle_norm = 1.0  # abs(1 - percentage + percentage * beta)
     m_prime = oracle_norm * m / sqrt(q)
     q_prime = oracle_norm**2
 

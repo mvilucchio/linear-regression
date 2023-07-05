@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 import linear_regression.regression_numerics.data_generation as dg
 import linear_regression.regression_numerics.erm_solvers as erm
 from linear_regression.fixed_point_equations.fpe_L2_loss import (
-    var_hat_func_L2_decorrelated_noise,
+    f_hat_L2_decorrelated_noise,
 )
-from linear_regression.fixed_point_equations.fpe_BO import var_func_BO, var_hat_func_BO_num_decorrelated_noise
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
+from linear_regression.fixed_point_equations.fpe_BO import f_BO, f_hat_BO_decorrelated_noise
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.aux_functions.misc import estimation_error, excess_gen_error
 import numpy as np
 
@@ -37,8 +37,8 @@ delta_eff = (1 - percentage) * delta_in + percentage * delta_out
     reg_param_opt,
     (sigmas, qs, ms),
 ) = alsw.sweep_alpha_optimal_lambda_fixed_point(
-    var_func_L2,
-    var_hat_func_L2_decorrelated_noise,
+    f_L2_reg,
+    f_hat_L2_decorrelated_noise,
     0.01,
     10000,
     150,
@@ -59,8 +59,8 @@ delta_eff = (1 - percentage) * delta_in + percentage * delta_out
 
 # compute the same with BO
 # alphas_BO, (gen_error_BO_old, qs_BO) = alsw.sweep_alpha_fixed_point(
-#     var_func_BO,
-#     var_hat_func_BO_num_decorrelated_noise,
+#     f_BO,
+#     f_hat_BO_decorrelated_noise,
 #     0.01,
 #     10000,
 #     40,

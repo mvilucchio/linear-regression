@@ -1,6 +1,39 @@
 from numba import vectorize, njit
-from numpy import pi, sign
-from math import exp, sqrt, pow
+
+# from numpy import pi, sign
+from math import exp, sqrt, pow, erf, pi
+from ..aux_functions.misc import gaussian
+
+
+@vectorize("float64(float64, float64, float64, float64)")
+def Z_out_Bayes_single_noise_classif(y: float, omega: float, V: float, delta: float) -> float:
+    return 0.5 * (
+        gaussian(y, 1, delta) * (1 + erf(omega / sqrt(2 * V))) + gaussian(y, -1, delta) * (1 - erf(omega / sqrt(2 * V)))
+    )
+
+
+@vectorize("float64(float64, float64, float64, float64)")
+def Z_out_Bayes_f_out_Bayes_single_noise_classif(y: float, omega: float, V: float, delta: float) -> float:
+    return (exp(-0.5 * (1 + y) ** 2 / delta - omega**2 / (2.0 * V)) * (-1 + exp((2 * y) / delta))) / (
+        2.0 * pi * sqrt(V * delta)
+    )
+    # return (gaussian(y, 1, delta) - gaussian(y, -1, delta)) * gaussian(omega, 0.0, V)
+
+
+# -----------------------------------
+
+
+@vectorize("float64(float64, float64, float64, float64)")
+def Z_out_Bayes_single_noise(y: float, omega: float, V: float, delta: float) -> float:
+    return exp(-((y - omega) ** 2) / (2 * (V + delta))) / sqrt(2 * pi * (V + delta))
+
+
+@vectorize("float64(float64, float64, float64, float64)")
+def f_out_Bayes_single_noise(y: float, omega: float, V: float, delta: float) -> float:
+    return (y - omega) / (V + delta)
+
+
+# -----------------------------------
 
 
 @vectorize("float64(float64, float64, float64, float64, float64, float64, float64)")
@@ -146,7 +179,7 @@ def f_out_hinge(y: float, omega: float, V: float) -> float:
 
 @vectorize(["float64(float64, float64, float64)"])
 def Df_out_hinge(y: float, omega: float, V: float) -> float:
-    if y * omega < 1.0 and y * omega > 1.0 - V:
+    if (y * omega < 1.0) and (y * omega > 1.0 - V):
         return -1.0 / V
     else:
         return 0.0

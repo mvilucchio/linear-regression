@@ -7,10 +7,10 @@ from linear_regression.aux_functions.free_energy import (
 )
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.aux_functions.training_errors import training_error_l1_loss
-from linear_regression.fixed_point_equations.fpe_projection_denoising import var_func_projection_denoising
-from linear_regression.fixed_point_equations.fpe_L2_loss import var_hat_func_L2_decorrelated_noise
+from linear_regression.fixed_point_equations.regularisation.fpe_projection_denoising import f_projection_denoising
+from linear_regression.fixed_point_equations.fpe_L2_loss import f_hat_L2_decorrelated_noise
 from linear_regression.fixed_point_equations.fpe_L1_loss import (
-    var_hat_func_L1_decorrelated_noise,
+    f_hat_L1_decorrelated_noise,
 )
 import numpy as np
 import matplotlib.pyplot as plt
@@ -49,10 +49,10 @@ for idx, q in enumerate(qs):
         iter_nb = 0
         err = 100.0
         while err > abs_tol or iter_nb < min_iter:
-            m_hat, q_hat, sigma_hat = var_hat_func_L2_decorrelated_noise(
+            m_hat, q_hat, sigma_hat = f_hat_L2_decorrelated_noise(
                 m, q, sigma, alpha, delta_in, delta_out, percentage, beta
             )
-            new_m, new_q, new_sigma = var_func_projection_denoising(m_hat, q_hat, sigma_hat, q)
+            new_m, new_q, new_sigma = f_projection_denoising(m_hat, q_hat, sigma_hat, q)
 
             # print(new_q, q)
 
@@ -95,8 +95,8 @@ while True:
 print("---> ", qs[np.argmin(training_error)])
 
 m_true, q_true, sigma_true = fixed_point_finder(
-    var_func_projection_denoising,
-    var_hat_func_L2_decorrelated_noise,
+    f_projection_denoising,
+    f_hat_L2_decorrelated_noise,
     (m, q, sigma),
     {"q_fixed": q},
     {
@@ -108,7 +108,7 @@ m_true, q_true, sigma_true = fixed_point_finder(
     },
 )
 
-m_hat_true, q_hat_true, sigma_hat_true = var_hat_func_L2_decorrelated_noise(
+m_hat_true, q_hat_true, sigma_hat_true = f_hat_L2_decorrelated_noise(
     m_true, q_true, sigma_true, alpha, delta_in, delta_out, percentage, beta
 )
 

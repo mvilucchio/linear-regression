@@ -18,12 +18,12 @@ import numpy as np
 
 def sweep_alpha_fixed_point(
     var_func,
-    var_hat_func,
+    f_hat_func,
     alpha_min: float,
     alpha_max: float,
     n_alpha_pts: int,
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     initial_cond_fpe=(0.6, 0.01, 0.9),
     funs=[estimation_error],
     funs_args=[{}],
@@ -65,9 +65,9 @@ def sweep_alpha_fixed_point(
     old_initial_cond = initial_cond_fpe
     for idx, alpha in enumerate(alphas):
         print(f"\talpha = {alpha}")
-        var_hat_func_kwargs.update({"alpha": alpha})
+        f_hat_kwargs.update({"alpha": alpha})
         ms_qs_sigmas[idx] = fixed_point_finder(
-            var_func, var_hat_func, old_initial_cond, var_func_kwargs, var_hat_func_kwargs
+            var_func, f_hat_func, old_initial_cond, f_kwargs, f_hat_kwargs
         )
         old_initial_cond = tuple(ms_qs_sigmas[idx])
         m, q, sigma = ms_qs_sigmas[idx]
@@ -90,13 +90,13 @@ def sweep_alpha_fixed_point(
 
 def sweep_alpha_optimal_lambda_fixed_point(
     var_func,
-    var_hat_func,
+    f_hat_func,
     alpha_min: float,
     alpha_max: float,
     n_alpha_pts: int,
     inital_guess_lambda: float,
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     initial_cond_fpe=(0.6, 0.01, 0.9),
     funs=[estimation_error],
     funs_args=[{}],
@@ -139,16 +139,16 @@ def sweep_alpha_optimal_lambda_fixed_point(
     reg_params_opt = empty(n_alpha_pts)
     funs_values = [empty(n_alpha_pts) for _ in range(n_observables)]
 
-    copy_var_func_kwargs = var_func_kwargs.copy()
-    copy_var_hat_func_kwargs = var_hat_func_kwargs.copy()
+    copy_f_kwargs = f_kwargs.copy()
+    copy_f_hat_kwargs = f_hat_kwargs.copy()
     copy_funs_args = funs_args.copy()
 
     old_initial_cond_fpe = initial_cond_fpe
     old_reg_param_opt = inital_guess_lambda
     for idx, alpha in enumerate(alphas):
-        # print(f"\talpha = {alpha}")
-        copy_var_hat_func_kwargs.update({"alpha": float(alpha)})
-        copy_var_func_kwargs.update({"reg_param": np.random.rand(1) + 0.0001})
+        print(f"\talpha = {alpha}")
+        copy_f_hat_kwargs.update({"alpha": float(alpha)})
+        copy_f_kwargs.update({"reg_param": np.random.rand(1) + 0.0001})
 
         if update_f_min_args:
             f_min_args.update({"alpha": float(alpha)})
@@ -164,9 +164,9 @@ def sweep_alpha_optimal_lambda_fixed_point(
             out_values,
         ) = find_optimal_reg_param_function(
             var_func,
-            var_hat_func,
-            copy_var_func_kwargs,
-            copy_var_hat_func_kwargs,
+            f_hat_func,
+            copy_f_kwargs,
+            copy_f_hat_kwargs,
             old_reg_param_opt,
             old_initial_cond_fpe,
             funs=funs,
@@ -193,13 +193,13 @@ def sweep_alpha_optimal_lambda_fixed_point(
 
 def sweep_alpha_optimal_lambda_hub_param_fixed_point(
     var_func,
-    var_hat_func,
+    f_hat_func,
     alpha_min: float,
     alpha_max: float,
     n_alpha_pts: int,
     inital_guess_params: Tuple[float, float],
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     initial_cond_fpe=(0.6, 0.01, 0.9),
     funs=[estimation_error],
     funs_args=[list()],
@@ -244,8 +244,8 @@ def sweep_alpha_optimal_lambda_hub_param_fixed_point(
     hub_params_opt = empty(n_alpha_pts)
     funs_values = [empty(n_alpha_pts) for _ in range(n_observables)]
 
-    copy_var_func_kwargs = var_func_kwargs.copy()
-    copy_var_hat_func_kwargs = var_hat_func_kwargs.copy()
+    copy_f_kwargs = f_kwargs.copy()
+    copy_f_hat_kwargs = f_hat_kwargs.copy()
     copy_funs_args = funs_args.copy()
 
     old_initial_cond_fpe = initial_cond_fpe
@@ -253,8 +253,8 @@ def sweep_alpha_optimal_lambda_hub_param_fixed_point(
     old_hub_param_opt = inital_guess_params[1]
     for idx, alpha in enumerate(alphas):
         # print(f"\talpha = {alpha}")
-        copy_var_hat_func_kwargs.update({"alpha": alpha, "a": old_hub_param_opt})
-        copy_var_func_kwargs.update({"reg_param": old_reg_param_opt})
+        copy_f_hat_kwargs.update({"alpha": alpha, "a": old_hub_param_opt})
+        copy_f_kwargs.update({"reg_param": old_reg_param_opt})
 
         if update_f_min_args:
             f_min_args.update({"alpha": alpha})
@@ -270,9 +270,9 @@ def sweep_alpha_optimal_lambda_hub_param_fixed_point(
             out_values,
         ) = find_optimal_reg_and_huber_parameter_function(
             var_func,
-            var_hat_func,
-            copy_var_func_kwargs,
-            copy_var_hat_func_kwargs,
+            f_hat_func,
+            copy_f_kwargs,
+            copy_f_hat_kwargs,
             (old_reg_param_opt, old_hub_param_opt), # (float(np.random.rand(1) + 1), old_hub_param_opt),
             old_initial_cond_fpe,
             funs=funs,
@@ -391,15 +391,15 @@ def sweep_alpha_GAMP(
 
 def sweep_alpha_descend_lambda(
     var_func,
-    var_hat_func,
+    f_hat_func,
     alpha_min: float,
     alpha_max: float,
     n_alpha_pts: int,
     lambda_min: float,
     lambda_max: float,
     n_lambda_pts: int,
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     funs=[estimation_error],
     funs_args=[list()],
     initial_cond_fpe=(0.6, 0.01, 0.9),
@@ -430,17 +430,17 @@ def sweep_alpha_descend_lambda(
     reg_params = linspace(lambda_min, lambda_max, n_lambda_pts)
     funs_vals = [empty((n_lambda_pts, n_alpha_pts)) for _ in range(len(funs))]
 
-    copy_var_func_kwargs = var_func_kwargs.copy()
-    copy_var_hat_func_kwargs = var_hat_func_kwargs.copy()
+    copy_f_kwargs = f_kwargs.copy()
+    copy_f_hat_kwargs = f_hat_kwargs.copy()
     old_initial_cond = initial_cond_fpe
     first_inital_cond_column = initial_cond_fpe
     for idx, alpha in enumerate(alphas):
-        copy_var_hat_func_kwargs.update({"alpha": alpha})
+        copy_f_hat_kwargs.update({"alpha": alpha})
         old_initial_cond = first_inital_cond_column
 
         already_brokern = False
         for jdx, reg_param in enumerate(reg_params[::-1]):
-            copy_var_func_kwargs.update({"reg_param": reg_param})
+            copy_f_kwargs.update({"reg_param": reg_param})
 
             # if reg_param <= min(0,1-alpha):
             #     for kdx, (f, f_args) in enumerate(zip(funs, funs_args)):
@@ -455,10 +455,10 @@ def sweep_alpha_descend_lambda(
             try:
                 m, q, sigma = fixed_point_finder(
                     var_func,
-                    var_hat_func,
+                    f_hat_func,
                     old_initial_cond,
-                    copy_var_func_kwargs,
-                    copy_var_hat_func_kwargs,
+                    copy_f_kwargs,
+                    copy_f_hat_kwargs,
                 )
                 old_initial_cond = tuple([m, q, sigma])
 
@@ -486,13 +486,13 @@ def sweep_alpha_descend_lambda(
 
 def sweep_alpha_minimal_stable_reg_param(
     var_func,
-    var_hat_func,
+    f_hat_func,
     alpha_min: float,
     alpha_max: float,
     n_alpha_pts: int,
     condition_func,
-    var_func_kwargs: dict,
-    var_hat_func_kwargs: dict,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
     initial_cond_fpe=(0.6, 0.01, 0.9),
     decreasing=False,
     bounds_reg_param_search=(-10.0, 0.01),
@@ -527,29 +527,29 @@ def sweep_alpha_minimal_stable_reg_param(
     )
     last_reg_param_stable = empty(n_alpha_pts)
 
-    copy_var_func_kwargs = var_func_kwargs.copy()
-    copy_var_hat_func_kwargs = var_hat_func_kwargs.copy()
+    copy_f_kwargs = f_kwargs.copy()
+    copy_f_hat_kwargs = f_hat_kwargs.copy()
     old_initial_cond = initial_cond_fpe
     for idx, alpha in enumerate(alphas):
-        copy_var_hat_func_kwargs.update({"alpha": alpha})
+        copy_f_hat_kwargs.update({"alpha": alpha})
 
         not_converged_idx = 0
         reg_params_test = linspace(bounds_reg_param_search[0], bounds_reg_param_search[1], points_per_run)
 
         for jdx, reg_param in enumerate(reg_params_test[::-1]):
-            copy_var_func_kwargs.update({"reg_param": reg_param})
+            copy_f_kwargs.update({"reg_param": reg_param})
 
             try:
                 m, q, sigma = fixed_point_finder(
                     var_func,
-                    var_hat_func,
+                    f_hat_func,
                     old_initial_cond,
-                    copy_var_func_kwargs,
-                    copy_var_hat_func_kwargs,
+                    copy_f_kwargs,
+                    copy_f_hat_kwargs,
                 )
                 old_initial_cond = tuple([m, q, sigma])
 
-                if condition_func(m, q, sigma, **copy_var_func_kwargs, **copy_var_hat_func_kwargs) <= 0.0:
+                if condition_func(m, q, sigma, **copy_f_kwargs, **copy_f_hat_kwargs) <= 0.0:
                     not_converged_idx = points_per_run - 1 - jdx
                     break
 

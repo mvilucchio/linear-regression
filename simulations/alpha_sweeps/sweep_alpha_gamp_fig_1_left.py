@@ -12,11 +12,11 @@ from linear_regression.aux_functions.stability_functions import (
     stability_huber,
 )
 from linear_regression.sweeps.alpha_sweeps import sweep_alpha_fixed_point
-from linear_regression.fixed_point_equations.fpe_L2_regularization import var_func_L2
-from linear_regression.fixed_point_equations.fpe_L2_loss import var_hat_func_L2_decorrelated_noise
-from linear_regression.fixed_point_equations.fpe_L1_loss import var_hat_func_L1_decorrelated_noise
+from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
+from linear_regression.fixed_point_equations.fpe_L2_loss import f_hat_L2_decorrelated_noise
+from linear_regression.fixed_point_equations.fpe_L1_loss import f_hat_L1_decorrelated_noise
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
-    var_hat_func_Huber_decorrelated_noise,
+    f_hat_Huber_decorrelated_noise,
 )
 from linear_regression.aux_functions.misc import estimation_error
 from linear_regression.aux_functions.loss_functions import l2_loss, l1_loss, huber_loss

@@ -1,11 +1,11 @@
 from numba import njit
 import numpy as np
 from scipy.integrate import dblquad
-from ..utils.integration_utils import (
+from ...utils.integration_utils import (
     divide_integration_borders_multiple_grid,
     find_integration_borders_square,
 )
-from ..aux_functions.likelihood_channel_functions import (
+from ...aux_functions.likelihood_channel_functions import (
     Z_out_Bayes_decorrelated_noise,
     f_out_Bayes_decorrelated_noise,
 )
@@ -26,13 +26,13 @@ def order_parameters_BO_single_noise(alpha: float, delta_in: float):
 
 
 @njit(error_model="numpy", fastmath=True)
-def var_func_BO(m_hat, q_hat, sigma_hat, reg_param):
+def f_BO(m_hat, q_hat, sigma_hat, reg_param):
     q = q_hat / (1 + q_hat)
     return q, q, 1 - q
 
 
 @njit(error_model="numpy", fastmath=True)
-def var_hat_func_BO_single_noise(m, q, sigma, alpha, delta):
+def f_hat_BO_single_noise(m, q, sigma, alpha, delta):
     q_hat = alpha / (1 + delta - q)
     return q_hat, q_hat, 1 - q_hat
 
@@ -57,7 +57,7 @@ def q_integral_BO_decorrelated_noise(y, xi, q, m, sigma, delta_in, delta_out, pe
     )
 
 
-def var_hat_func_BO_num_double_noise(m, q, sigma, alpha, delta_in, delta_out, percentage):
+def f_hat_BO_double_noise(m, q, sigma, alpha, delta_in, delta_out, percentage):
     borders = find_integration_borders_square(
         q_integral_BO_decorrelated_noise,
         np.sqrt((1 + max(delta_in, delta_out))),
@@ -97,7 +97,7 @@ def var_hat_func_BO_num_double_noise(m, q, sigma, alpha, delta_in, delta_out, pe
 # --------------------------------
 
 
-def var_hat_func_BO_num_decorrelated_noise(
+def f_hat_BO_decorrelated_noise(
     m, q, sigma, alpha, delta_in, delta_out, percentage, beta
 ):
     borders = find_integration_borders_square(
