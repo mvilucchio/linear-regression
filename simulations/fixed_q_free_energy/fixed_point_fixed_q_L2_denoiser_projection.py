@@ -32,7 +32,7 @@ ms = np.empty_like(qs)
 sigmas = np.empty_like(qs)
 m_hats = np.empty_like(qs)
 q_hats = np.empty_like(qs)
-sigma_hats = np.empty_like(qs)
+Σ_hats = np.empty_like(qs)
 
 plt.figure(figsize=(10, 7.5))
 
@@ -48,10 +48,10 @@ for idx, q in enumerate(qs):
         iter_nb = 0
         err = 100.0
         while err > abs_tol or iter_nb < min_iter:
-            m_hat, q_hat, sigma_hat = f_hat_L2_decorrelated_noise(
+            m_hat, q_hat, Σ_hat = f_hat_L2_decorrelated_noise(
                 m, q, sigma, alpha, delta_in, delta_out, percentage, beta
             )
-            new_m, new_q, new_sigma = f_projection_denoising(m_hat, q_hat, sigma_hat, q)
+            new_m, new_q, new_sigma = f_projection_denoising(m_hat, q_hat, Σ_hat, q)
 
             # print(new_q, q)
 
@@ -67,10 +67,10 @@ for idx, q in enumerate(qs):
         ms[idx] = m
         sigmas[idx] = sigma
         m_hats[idx] = m_hat
-        sigma_hats[idx] = sigma_hat
+        Σ_hats[idx] = Σ_hat
         q_hats[idx] = q_hat
 
-        # print(m, q, sigma, m_hat, q_hat, sigma_hat)
+        # print(m, q, sigma, m_hat, q_hat, Σ_hat)
 
         free_energies[idx] = free_energy(
             Psi_w_projection_denoising,
@@ -81,7 +81,7 @@ for idx, q in enumerate(qs):
             sigma,
             m_hat,
             q_hat,
-            sigma_hat,
+            Σ_hat,
             (q,),
             (delta_in, delta_out, percentage, beta),
         )
@@ -91,7 +91,7 @@ for idx, q in enumerate(qs):
         ms[idx:] = np.nan
         sigmas[idx:] = np.nan
         m_hats[idx:] = np.nan
-        sigma_hats[idx:] = np.nan
+        Σ_hats[idx:] = np.nan
         q_hats[idx:] = np.nan
         free_energies[idx:] = np.nan
         break
@@ -119,7 +119,7 @@ m_true, q_true, sigma_true = fixed_point_finder(
     },
 )
 
-m_hat_true, q_hat_true, sigma_hat_true = f_hat_L2_decorrelated_noise(
+m_hat_true, q_hat_true, Σ_hat_true = f_hat_L2_decorrelated_noise(
     m_true, q_true, sigma_true, alpha, delta_in, delta_out, percentage, beta
 )
 
@@ -132,7 +132,7 @@ free_energy_true = free_energy(
     sigma_true,
     m_hat_true,
     q_hat_true,
-    sigma_hat_true,
+    Σ_hat_true,
     (q,),
     (delta_in, delta_out, percentage, beta),
 )

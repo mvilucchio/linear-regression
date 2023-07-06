@@ -12,7 +12,7 @@ class TestFixedPointFinder(TestCase):
         self.f_hat_kwargs = {}
         return super().setUp()
 
-    def _var_func(x1_hat, x2_hat, x3_hat, **kwargs):
+    def _f_func(x1_hat, x2_hat, x3_hat, **kwargs):
         x1 = 0.5 * x1_hat
         x2 = x2_hat
         x3 = 2.0 * x3_hat
@@ -29,7 +29,7 @@ class TestFixedPointFinder(TestCase):
 
     def test_fixed_point(self):
         m, q, sigma = fpe.fixed_point_finder(
-            self._var_func,
+            self._f_func,
             self._f_hat_func,
             self.inital_condition,
             self.f_kwargs,
@@ -54,7 +54,7 @@ class TestFixedPointFinder(TestCase):
 
         with self.assertRaises(ConvergenceError):
             fpe.fixed_point_finder(
-                self._var_func,
+                self._f_func,
                 self._f_hat_func,
                 self.inital_condition,
                 self.f_kwargs,
@@ -67,7 +67,7 @@ class TestFixedPointFinder(TestCase):
     def test_precision(self):
         for abs_tol, max_iter in zip([1e-2, 1e-5, 1e-8, 1e-11], [1_000, 1_000, 10_000, 100_000]):
             m, q, sigma = fpe.fixed_point_finder(
-                self._var_func,
+                self._f_func,
                 self._f_hat_func,
                 self.inital_condition,
                 self.f_kwargs,

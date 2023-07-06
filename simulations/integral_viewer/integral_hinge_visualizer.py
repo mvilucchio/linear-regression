@@ -66,10 +66,10 @@ for jdx, (d_xi, d_y) in enumerate(zip(domain_xi, domain_y)):
     plt.plot(xs, ys1, label="second {}".format(jdx), color=color, linestyle="-.")
 
 
-domain_xi_sigma_hat, domain_y_sigma_hat = domain_xi_1, domain_y_1
-integral_value_sigma_hat = 0.0
-for xi_funs, y_funs in zip(domain_xi_sigma_hat, domain_y_sigma_hat):
-    integral_value_sigma_hat += dblquad(
+domain_xi_Σ_hat, domain_y_Σ_hat = domain_xi_1, domain_y_1
+integral_value_Σ_hat = 0.0
+for xi_funs, y_funs in zip(domain_xi_Σ_hat, domain_y_Σ_hat):
+    integral_value_Σ_hat += dblquad(
         Σ_int_Hinge_single_noise_classif,
         xi_funs[0],
         xi_funs[1],
@@ -79,7 +79,7 @@ for xi_funs, y_funs in zip(domain_xi_sigma_hat, domain_y_sigma_hat):
         epsabs=1e-10,
     )[0]
 
-print("integral_value_sigma_hat ", integral_value_sigma_hat)
+print("integral_value_Σ_hat ", integral_value_Σ_hat)
 
 plt.ylim(-bound - 0.1, bound + 0.1)
 plt.xlim(-bound - 0.1, bound + 0.1)

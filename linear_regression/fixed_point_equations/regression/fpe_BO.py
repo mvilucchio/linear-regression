@@ -26,7 +26,7 @@ def order_parameters_BO_single_noise(alpha: float, delta_in: float):
 
 
 @njit(error_model="numpy", fastmath=True)
-def f_BO(m_hat, q_hat, sigma_hat, reg_param):
+def f_BO(m_hat, q_hat, Σ_hat, reg_param):
     q = q_hat / (1 + q_hat)
     return q, q, 1 - q
 

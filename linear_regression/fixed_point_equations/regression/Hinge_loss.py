@@ -139,10 +139,10 @@ def f_hat_Hinge_single_noise(m, q, sigma, alpha, delta):
     q_hat = alpha * integral_value_q_hat
 
     # --- Sigma hat integral ---
-    domain_xi_sigma_hat, domain_y_sigma_hat = domain_xi_1, domain_y_1
-    integral_value_sigma_hat = 0.0
-    for xi_funs, y_funs in zip(domain_xi_sigma_hat, domain_y_sigma_hat):
-        integral_value_sigma_hat += dblquad(
+    domain_xi_Σ_hat, domain_y_Σ_hat = domain_xi_1, domain_y_1
+    integral_value_Σ_hat = 0.0
+    for xi_funs, y_funs in zip(domain_xi_Σ_hat, domain_y_Σ_hat):
+        integral_value_Σ_hat += dblquad(
             sigma_integral_Hinge_single_noise,
             xi_funs[0],
             xi_funs[1],
@@ -150,9 +150,9 @@ def f_hat_Hinge_single_noise(m, q, sigma, alpha, delta):
             y_funs[1],
             args=(q, m, sigma, delta),
         )[0]
-    sigma_hat = -alpha * integral_value_sigma_hat
+    Σ_hat = -alpha * integral_value_Σ_hat
 
-    return m_hat, q_hat, sigma_hat
+    return m_hat, q_hat, Σ_hat
 
 
 def f_hat_Hinge_decorrelated_noise(m, q, sigma, alpha, delta_in, delta_out, percentage, beta):
@@ -197,10 +197,10 @@ def f_hat_Hinge_decorrelated_noise(m, q, sigma, alpha, delta_in, delta_out, perc
     q_hat = alpha * integral_value_q_hat
 
     # --- Sigma hat integral ---
-    domain_xi_sigma_hat, domain_y_sigma_hat = domain_xi_2, domain_y_2
-    integral_value_sigma_hat = 0.0
-    for xi_funs, y_funs in zip(domain_xi_sigma_hat, domain_y_sigma_hat):
-        integral_value_sigma_hat += dblquad(
+    domain_xi_Σ_hat, domain_y_Σ_hat = domain_xi_2, domain_y_2
+    integral_value_Σ_hat = 0.0
+    for xi_funs, y_funs in zip(domain_xi_Σ_hat, domain_y_Σ_hat):
+        integral_value_Σ_hat += dblquad(
             sigma_integral_Hinge_decorrelated_noise,
             xi_funs[0],
             xi_funs[1],
@@ -208,6 +208,6 @@ def f_hat_Hinge_decorrelated_noise(m, q, sigma, alpha, delta_in, delta_out, perc
             y_funs[1],
             args=(q, m, sigma, delta_in, delta_out, percentage, beta),
         )[0]
-    sigma_hat = -alpha * integral_value_sigma_hat
+    Σ_hat = -alpha * integral_value_Σ_hat
 
-    return m_hat, q_hat, sigma_hat
+    return m_hat, q_hat, Σ_hat

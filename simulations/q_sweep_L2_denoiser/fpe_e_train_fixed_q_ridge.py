@@ -32,7 +32,7 @@ ms = np.empty_like(qs)
 sigmas = np.empty_like(qs)
 m_hats = np.empty_like(qs)
 q_hats = np.empty_like(qs)
-sigma_hats = np.empty_like(qs)
+Σ_hats = np.empty_like(qs)
 
 delta_eff = (1 - percentage) * delta_in + percentage * delta_out
 intermediate_val = 1 + percentage * (beta - 1)
@@ -57,10 +57,10 @@ for reg_param in reg_params:
         err = 100.0
         while err > abs_tol or iter_nb < min_iter:
             m_hat = alpha * intermediate_val / (1 + sigma)
-            sigma_hat = alpha / (1 + sigma)
+            Σ_hat = alpha / (1 + sigma)
 
-            new_m = m_hat / (reg_param + sigma_hat)
-            new_sigma = 1 / (reg_param + sigma_hat)
+            new_m = m_hat / (reg_param + Σ_hat)
+            new_sigma = 1 / (reg_param + Σ_hat)
 
             err = max([abs(new_m - m), abs(new_sigma - sigma)])
 
@@ -71,12 +71,12 @@ for reg_param in reg_params:
             if iter_nb > max_iter:
                 raise ConvergenceError("fixed_point_finder", iter_nb)
 
-        q_hat = q * (reg_param + sigma_hat) ** 2 - m_hat**2
+        q_hat = q * (reg_param + Σ_hat) ** 2 - m_hat**2
 
         ms[idx] = m
         sigmas[idx] = sigma
         m_hats[idx] = m_hat
-        sigma_hats[idx] = sigma_hat
+        Σ_hats[idx] = Σ_hat
         q_hats[idx] = q_hat
 
         training_error[idx] = training_error_l2_loss(m, q, sigma, reg_param, alpha, delta_in, delta_out, percentage, beta)
@@ -88,16 +88,16 @@ for reg_param in reg_params:
         {"reg_param":reg_param},
         {"alpha" : alpha, "delta_in":delta_in, "delta_out":delta_out, "percentage":percentage, "beta":beta},
     )
-    m_hat_true, q_hat_true, sigma_hat_true = f_hat_L2_decorrelated_noise(m_true, q_true, sigma_true, alpha, delta_in, delta_out, percentage, beta)
+    m_hat_true, q_hat_true, Σ_hat_true = f_hat_L2_decorrelated_noise(m_true, q_true, sigma_true, alpha, delta_in, delta_out, percentage, beta)
 
     _, closest_true_idx = find_nearest(qs, q_true)
-    print("true values ", m_true, q_true, sigma_true, m_hat_true, q_hat_true, sigma_hat_true)
+    print("true values ", m_true, q_true, sigma_true, m_hat_true, q_hat_true, Σ_hat_true)
     print("difference ",  ms[closest_true_idx], m_true, abs(ms[closest_true_idx] - m_true))
 
     training_error_true = training_error_l2_loss(m, q, sigma, reg_param, alpha, delta_in, delta_out, percentage, beta)
 
     min_idx = np.argmin(training_error)
-    print("-- lambda {:.2f} --> ".format(reg_param), q_true, sigma_hat + reg_param, training_error_true)
+    print("-- lambda {:.2f} --> ".format(reg_param), q_true, Σ_hat + reg_param, training_error_true)
     print(abs(training_error[min_idx] - training_error_true), abs(qs[min_idx] - q_true))
 
     color = next(plt.gca()._get_lines.prop_cycler)["color"]
@@ -125,7 +125,7 @@ plt.title(
 # plt.plot(qs, sigmas, label="sigma")
 # plt.plot(qs, m_hats, label="m_hat")
 # plt.plot(qs, q_hats, label="q_hat")
-# plt.plot(qs, sigma_hats, label="sigma_hat")
+# plt.plot(qs, Σ_hats, label="Σ_hat")
 
 plt.ylabel("Training Error")
 plt.xlabel("q")

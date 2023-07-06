@@ -14,8 +14,8 @@ def f_hat_Huber_single_noise(m, q, sigma, alpha, delta, a):
         + a**2 * (1 + sigma) ** 2 * erfc(erf_arg)
         - a * (1 + sigma) * sqrt(2 / pi) * sqrt(arg_sqrt) * exp(-(erf_arg**2))
     )
-    sigma_hat = (alpha / (1 + sigma)) * erf(erf_arg)
-    return m_hat, q_hat, sigma_hat
+    Σ_hat = (alpha / (1 + sigma)) * erf(erf_arg)
+    return m_hat, q_hat, Σ_hat
 
 
 @njit(error_model="numpy", fastmath=True)
@@ -41,10 +41,10 @@ def f_hat_Huber_double_noise(m, q, sigma, alpha, delta_in, delta_out, percentage
             + percentage * (large_sqrt - (a * (1 + sigma)) ** 2) * erf(large_erf)
         )
     )
-    sigma_hat = (alpha / (1 + sigma)) * (
+    Σ_hat = (alpha / (1 + sigma)) * (
         (1 - percentage) * erf(small_erf) + percentage * erf(large_erf)
     )
-    return m_hat, q_hat, sigma_hat
+    return m_hat, q_hat, Σ_hat
 
 
 # @njit(error_model="numpy", fastmath=True)
@@ -73,10 +73,10 @@ def f_hat_Huber_decorrelated_noise(
             + percentage * (large_sqrt - (a * (1 + sigma)) ** 2) * erf(large_erf)
         )
     )
-    sigma_hat = (alpha / (1 + sigma)) * (
+    Σ_hat = (alpha / (1 + sigma)) * (
         (1 - percentage) * erf(small_erf) + percentage * erf(large_erf)
     )
-    return m_hat, q_hat, sigma_hat
+    return m_hat, q_hat, Σ_hat
 
 
 @njit

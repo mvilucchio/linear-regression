@@ -80,10 +80,10 @@ iters_nb_std_amp = list()
 #         iter_nb = 0
 #         err = 100.0
 #         while err > abs_tol or iter_nb < min_iter:
-#             m_hat, q_hat, sigma_hat = f_hat_L1_decorrelated_noise(
+#             m_hat, q_hat, Σ_hat = f_hat_L1_decorrelated_noise(
 #                 m, q, sigma, alpha, delta_in, delta_out, percentage, beta
 #             )
-#             new_m, _, new_sigma = f_projection_denoising(m_hat, q_hat, sigma_hat, q)
+#             new_m, _, new_sigma = f_projection_denoising(m_hat, q_hat, Σ_hat, q)
 
 #             err = max([abs(new_m - m), abs(new_sigma - sigma)])
 
@@ -217,7 +217,7 @@ ms = np.empty_like(qs)
 sigmas = np.empty_like(qs)
 m_hats = np.empty_like(qs)
 q_hats = np.empty_like(qs)
-sigma_hats = np.empty_like(qs)
+Σ_hats = np.empty_like(qs)
 training_error = np.empty_like(qs)
 
 q = qs[0]
@@ -231,10 +231,10 @@ for idx, q in enumerate(qs):
         iter_nb = 0
         err = 100.0
         while err > abs_tol or iter_nb < min_iter:
-            m_hat, q_hat, sigma_hat = f_hat_L1_decorrelated_noise(
+            m_hat, q_hat, Σ_hat = f_hat_L1_decorrelated_noise(
                 m, q, sigma, alpha, delta_in, delta_out, percentage, beta
             )
-            new_m, _, new_sigma = f_projection_denoising(m_hat, q_hat, sigma_hat, q)
+            new_m, _, new_sigma = f_projection_denoising(m_hat, q_hat, Σ_hat, q)
 
             err = max([abs(new_m - m), abs(new_sigma - sigma)])
 
@@ -248,7 +248,7 @@ for idx, q in enumerate(qs):
         ms[idx] = m
         sigmas[idx] = sigma
         m_hats[idx] = m_hat
-        sigma_hats[idx] = sigma_hat
+        Σ_hats[idx] = Σ_hat
         q_hats[idx] = q_hat
 
         training_error[idx] = training_error_l1_loss(
@@ -259,7 +259,7 @@ for idx, q in enumerate(qs):
         ms[idx:] = np.nan
         sigmas[idx:] = np.nan
         m_hats[idx:] = np.nan
-        sigma_hats[idx:] = np.nan
+        Σ_hats[idx:] = np.nan
         q_hats[idx:] = np.nan
         training_error[idx:] = np.nan
         break

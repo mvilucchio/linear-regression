@@ -55,7 +55,7 @@ class TestSweepAlphaFixedPoint(TestCase):
             )
 
     def test_alpha_min_negative(self):
-        var_func = lambda x: x
+        f_func = lambda x: x
         f_hat_func = lambda x: x
         alpha_min = -0.1
         alpha_max = 1.0
@@ -68,7 +68,7 @@ class TestSweepAlphaFixedPoint(TestCase):
         decreasing = False
         with self.assertRaises(ValueError):
             alsw.sweep_alpha_fixed_point(
-                var_func,
+                f_func,
                 f_hat_func,
                 alpha_min,
                 alpha_max,

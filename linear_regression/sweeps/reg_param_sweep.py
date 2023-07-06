@@ -6,7 +6,7 @@ from ..fixed_point_equations.fpeqs import fixed_point_finder
 
 
 def sweep_reg_param_fixed_point(
-    var_func,
+    f_func,
     f_hat_func,
     reg_param_min: float,
     reg_param_max: float,
@@ -77,7 +77,7 @@ def sweep_reg_param_fixed_point(
                     out_list[jdx][idx] = nan
             else:
                 m, q, sigma = fixed_point_finder(
-                    var_func,
+                    f_func,
                     f_hat_func,
                     old_initial_cond,
                     copy_f_kwargs,

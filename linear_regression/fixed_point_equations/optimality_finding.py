@@ -12,7 +12,7 @@ from ..aux_functions.misc import estimation_error
 
 
 def find_optimal_reg_param_function(
-    var_func,
+    f_func,
     f_hat_func,
     f_kwargs: dict,
     f_hat_kwargs: dict,
@@ -37,7 +37,7 @@ def find_optimal_reg_param_function(
         copy_f_kwargs.update({"reg_param": float(reg_param)})
         print("\t\tλ = {:.5f}".format(float(reg_param)))
         m, q, sigma = fixed_point_finder(
-            var_func,
+            f_func,
             f_hat_func,
             initial_condition=initial_cond_fpe,
             f_kwargs=copy_f_kwargs,
@@ -61,7 +61,7 @@ def find_optimal_reg_param_function(
         copy_f_kwargs.update({"reg_param": float(reg_param_opt)})
         out_values = empty(n_observables)
         m, q, sigma = fixed_point_finder(
-            var_func,
+            f_func,
             f_hat_func,
             initial_condition=initial_cond_fpe,
             f_kwargs=copy_f_kwargs,
@@ -77,7 +77,7 @@ def find_optimal_reg_param_function(
 
 
 def find_optimal_reg_and_huber_parameter_function(
-    var_func,
+    f_func,
     f_hat_func,
     f_kwargs: dict,
     f_hat_kwargs: dict,
@@ -105,7 +105,7 @@ def find_optimal_reg_and_huber_parameter_function(
         copy_f_hat_kwargs.update({"a": x[1]})
 
         m, q, sigma = fixed_point_finder(
-            var_func,
+            f_func,
             f_hat_func,
             initial_condition=initial_cond_fpe,
             f_kwargs=copy_f_kwargs,
@@ -133,7 +133,7 @@ def find_optimal_reg_and_huber_parameter_function(
         copy_f_hat_kwargs.update({"a": a_opt})
         out_values = empty(n_observables)
         m, q, sigma = fixed_point_finder(
-            var_func,
+            f_func,
             f_hat_func,
             initial_condition=initial_cond_fpe,
             f_kwargs=copy_f_kwargs,

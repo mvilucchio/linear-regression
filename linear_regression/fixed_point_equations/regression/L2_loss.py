@@ -11,7 +11,7 @@ def order_parameters_ridge(alpha, reg_param, delta_in, delta_out, percentage, be
     Lambda = 1 + delta_eff + percentage * (beta**2 - 1)
 
     sigma = (t - reg_param - alpha + 1) / (2 * reg_param)
-    sigma_hat = 2 * reg_param * alpha / (t + reg_param - alpha + 1)
+    Σ_hat = 2 * reg_param * alpha / (t + reg_param - alpha + 1)
 
     m = 2 * alpha * Gamma / (t + reg_param + alpha + 1)
     m_hat = 2 * alpha * Gamma * reg_param / (t + reg_param - alpha + 1)
@@ -38,15 +38,15 @@ def order_parameters_ridge(alpha, reg_param, delta_in, delta_out, percentage, be
         + 1
     )
 
-    return m, q, sigma, m_hat, q_hat, sigma_hat
+    return m, q, sigma, m_hat, q_hat, Σ_hat
 
 
 @njit(error_model="numpy", fastmath=True)
 def f_hat_L2_single_noise(m, q, sigma, alpha, delta):
     m_hat = alpha / (1 + sigma)
     q_hat = alpha * (1 + q + delta - 2 * abs(m)) / ((1 + sigma) ** 2)
-    sigma_hat = alpha / (1 + sigma)
-    return m_hat, q_hat, sigma_hat
+    Σ_hat = alpha / (1 + sigma)
+    return m_hat, q_hat, Σ_hat
 
 
 @njit(error_model="numpy", fastmath=True)
@@ -54,8 +54,8 @@ def f_hat_L2_double_noise(m, q, sigma, alpha, delta_in, delta_out, percentage):
     delta_eff = (1 - percentage) * delta_in + percentage * delta_out
     m_hat = alpha / (1 + sigma)
     q_hat = alpha * (1 + q + delta_eff - 2 * abs(m)) / ((1 + sigma) ** 2)
-    sigma_hat = alpha / (1 + sigma)
-    return m_hat, q_hat, sigma_hat
+    Σ_hat = alpha / (1 + sigma)
+    return m_hat, q_hat, Σ_hat
 
 
 # @njit(error_model="numpy", fastmath=True)
@@ -67,8 +67,8 @@ def f_hat_L2_decorrelated_noise(m, q, sigma, alpha, delta_in, delta_out, percent
     q_hat = (
         alpha * (1 + q + delta_eff + percentage * (beta**2 - 1) - 2 * abs(m) * intermediate_val) / ((1 + sigma) ** 2)
     )
-    sigma_hat = alpha / (1 + sigma)
-    return m_hat, q_hat, sigma_hat
+    Σ_hat = alpha / (1 + sigma)
+    return m_hat, q_hat, Σ_hat
 
 
 def f_hat_L2_decorrelated_noise_rescaled_data(m, q, sigma, alpha, delta_in, delta_out, percentage, beta):
@@ -82,7 +82,7 @@ def f_hat_L2_decorrelated_noise_rescaled_data(m, q, sigma, alpha, delta_in, delt
         * (1 + q + delta_eff + percentage * (beta**2 - 1) - 2 * abs(m) * intermediate_val)
         / ((1 + sigma) ** 2)
     )
-    sigma_hat = alpha / (1 + sigma)
-    return m_hat, q_hat, sigma_hat
+    Σ_hat = alpha / (1 + sigma)
+    return m_hat, q_hat, Σ_hat
 
 

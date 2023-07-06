@@ -16,8 +16,8 @@ def f_hat_L1_single_noise(m, q, sigma, alpha, delta):
         + sigma**2 * erfc(erf_arg)
         - sigma * sqrt(2 / pi) * sqrt(sqrt_arg) * exp(-(erf_arg**2))
     )
-    sigma_hat = (alpha / sigma) * erf(erf_arg)
-    return m_hat, q_hat, sigma_hat
+    Σ_hat = (alpha / sigma) * erf(erf_arg)
+    return m_hat, q_hat, Σ_hat
 
 
 @njit(error_model="numpy", fastmath=False)
@@ -43,8 +43,8 @@ def f_hat_L1_double_noise(m, q, sigma, alpha, delta_in, delta_out, percentage):
             + log((1 - percentage) * sqrt(small_sqrt / large_sqrt) * exp(small_exp) + percentage * exp(large_exp))
         )
     )
-    sigma_hat = (alpha / sigma) * ((1 - percentage) * erf(small_erf) + percentage * erf(large_erf))
-    return m_hat, q_hat, sigma_hat
+    Σ_hat = (alpha / sigma) * ((1 - percentage) * erf(small_erf) + percentage * erf(large_erf))
+    return m_hat, q_hat, Σ_hat
 
 
 # @njit(error_model="numpy", fastmath=False)
@@ -66,8 +66,8 @@ def f_hat_L1_decorrelated_noise(m, q, sigma, alpha, delta_in, delta_out, percent
             + log((1 - percentage) * sqrt(small_sqrt) * exp(small_exp) + percentage * sqrt(large_sqrt) * exp(large_exp))
         )
     )
-    sigma_hat = (alpha / sigma) * ((1 - percentage) * erf(small_erf) + percentage * erf(large_erf))
-    return m_hat, q_hat, sigma_hat
+    Σ_hat = (alpha / sigma) * ((1 - percentage) * erf(small_erf) + percentage * erf(large_erf))
+    return m_hat, q_hat, Σ_hat
 
 
 @njit

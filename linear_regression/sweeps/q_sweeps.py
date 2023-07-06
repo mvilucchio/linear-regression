@@ -1,3 +1,4 @@
+from ..fixed_point_equations.fpeqs import fixed_point_finder
 from typing import Tuple
 from ..regression_numerics import TOL_GAMP, BLEND_GAMP, MAX_ITER_GAMP
 from numpy import logspace, empty, mean, std, around
@@ -6,9 +7,80 @@ from ..regression_numerics.data_generation import data_generation
 from ..utils.errors import ConvergenceError
 from math import log10
 from ..aux_functions.misc import estimation_error
+from ..fixed_point_equations.regularisation.fpe_projection_denoising import f_projection_denoising
 
 
-# add function to sweep over q in the state evolution
+def sweep_q_fixed_point_proj_denoiser(
+    # f_func,
+    f_hat_func,
+    q_min: float,
+    q_max: float,
+    n_q_pts: int,
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
+    initial_cond_fpe=(0.6, 0.01, 0.9),
+    funs=[estimation_error],
+    funs_args=[{}],
+    update_funs_args=None,
+    decreasing: bool = False,
+):
+    if update_funs_args is None:
+        update_funs_args = [False] * len(funs)
+
+    n_funs = len(funs)
+    n_funs_args = len(funs_args)
+    n_update_funs_args = len(update_funs_args)
+
+    if not (n_funs == n_funs_args == n_update_funs_args):
+        raise ValueError(
+            "funs, funs_args and update_funs_args must have the same length, in this case: {}, {}, {}".format(
+                n_funs, n_funs_args, n_update_funs_args
+            )
+        )
+
+    if q_min <= 0.0 or q_max <= 0.0:
+        raise ValueError("q_min and q_max must be positive")
+
+    if q_min >= q_max:
+        raise ValueError("q_min must be smaller than q_max")
+
+    if n_q_pts <= 0:
+        raise ValueError("n_q_pts must be positive")
+
+    n_observables = len(funs)
+    qs = (
+        logspace(log10(q_min), log10(q_max), n_q_pts)
+        if not decreasing
+        else logspace(log10(q_max), log10(q_min), n_q_pts)
+    )
+
+    out_list = [empty(n_q_pts) for _ in range(n_observables)]
+    ms_qs_sigmas = empty((n_q_pts, 3))
+
+    old_initial_cond_fpe = initial_cond_fpe
+    for idx, q in enumerate(qs):
+        print(f"\tq = {q}")
+        f_kwargs.update({"q_fixed": q})
+        ms_qs_sigmas[idx] = fixed_point_finder(
+            f_projection_denoising, f_hat_func, old_initial_cond_fpe, f_kwargs, f_hat_kwargs
+        )
+        old_initial_cond_fpe = ms_qs_sigmas[idx]
+        m, q, sigma = ms_qs_sigmas[idx]
+
+        for jdx, (f, f_args, update_f_args) in enumerate(zip(funs, funs_args, update_funs_args)):
+            if update_f_args:
+                f_kwargs.update(f_args)
+                out_list[jdx][idx] = f(m, q, sigma, **f_kwargs)
+            else:
+                out_list[jdx][idx] = f(m, q, sigma, **f_args)
+
+    if decreasing:
+        qs = qs[::-1]
+        ms_qs_sigmas = ms_qs_sigmas[::-1]
+        for idx in range(n_observables):
+            out_list[idx] = out_list[idx][::-1]
+
+    return qs, out_list
 
 
 def sweep_fw_first_arg_GAMP(
@@ -17,7 +89,7 @@ def sweep_fw_first_arg_GAMP(
     f_out: callable,
     Df_out: callable,
     measure_fun: callable,
-    alpha : float,
+    alpha: float,
     fw_arg_min: float,
     fw_arg_max: float,
     n_fw_arg_pts: int,
@@ -65,7 +137,7 @@ def sweep_fw_first_arg_GAMP(
                     xs,
                     (fw_arg,),
                     f_out_args,
-                    ground_truth_theta ,
+                    ground_truth_theta,
                     abs_tol=abs_tol,
                     max_iter=max_iter,
                     blend=blend,

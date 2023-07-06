@@ -1,29 +1,25 @@
 from numba import njit
 import numpy as np
 from scipy.integrate import quad, dblquad
-from math import sqrt, exp, pi, erf
+from math import sqrt, exp, pi, erf, erfc
 from ...aux_functions.misc import gaussian
-from ...utils.integration_utils import (
-    divide_integration_borders_multiple_grid,
-    find_integration_borders_square,
-)
-from ...aux_functions.likelihood_channel_functions import (
-    Z_out_Bayes_decorrelated_noise,
-    f_out_Bayes_decorrelated_noise,
-)
 
-BIG_NUMBER = 50
+BIG_NUMBER = 3
 
 
 @njit(error_model="numpy", fastmath=True)
-def f_BO(m_hat, q_hat, sigma_hat):
+def f_BO(m_hat, q_hat, Σ_hat):
     q = q_hat / (1 + q_hat)
     return q, q, 1 - q
 
 
 def q_int_BO_no_noise_classif(ξ, y, q, m, Σ):
+    A = gaussian(ξ, 0, 1) / (pi * (1 - q))
+    B = exp(-q * ξ**2 / (1 - q))
+    C = (1 -erf(- y * sqrt(q) * ξ / sqrt(2 * (1 - q))))
+    C = erfc(- y * sqrt(q) * ξ / sqrt(2 * (1 - q))) + 1e-12
     return (
-        gaussian(ξ, 0, 1) / (pi * (1 - q)) * exp(-q * ξ**2 / (1 - q)) / (1 + y * erf(sqrt(q) * ξ / sqrt(2 * (1 - q))))
+        A  * B / C
     )
 
 

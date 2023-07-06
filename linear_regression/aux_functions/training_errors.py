@@ -1,6 +1,14 @@
 from numpy import pi
 from math import sqrt, exp, erfc, erf
 from numba import njit
+from scipy.integrate import quad
+from scipy.optimize import minimize_scalar
+from ..aux_functions.misc import gaussian
+from ..aux_functions.proximal_losses import proximal_hinge_loss
+from ..aux_functions.loss_functions import hinge_loss, logistic_loss
+
+
+BIG_NUMBER = 20
 
 
 @njit
@@ -12,9 +20,7 @@ def training_error_l2_loss(m, q, sigma, delta_in, delta_out, percentage, beta):
         - delta_in * percentage
         - 2 * m * (1 + (-1 + beta) * percentage)
         + percentage * (-1 + beta**2 + delta_out)
-    ) / (
-        2 * (1 + sigma) ** 2
-    )
+    ) / (2 * (1 + sigma) ** 2)
 
 
 @njit
@@ -30,9 +36,7 @@ def training_error_l1_loss(m, q, sigma, delta_in, delta_out, percentage, beta):
             / exp(sigma**2 / (2.0 * (q - 2 * m * beta + beta**2 + delta_out)))
         )
         + sigma * (-1 + percentage) * erfc(sigma / (sqrt(2) * sqrt(1.0 - 2.0 * m + q + delta_in)))
-        - sigma
-        * percentage
-        * erfc(sigma / (sqrt(2) * sqrt(q - 2 * m * beta + beta**2 + delta_out)))
+        - sigma * percentage * erfc(sigma / (sqrt(2) * sqrt(q - 2 * m * beta + beta**2 + delta_out)))
     )
 
 
@@ -50,10 +54,7 @@ def training_error_huber_loss(m, q, sigma, delta_in, delta_out, percentage, beta
                         (
                             a**2
                             * (1 + sigma) ** 2
-                            * (
-                                -(1 / (1 - 2 * m + q + delta_in))
-                                + 1 / (q - 2 * m * beta + beta**2 + delta_out)
-                            )
+                            * (-(1 / (1 - 2 * m + q + delta_in)) + 1 / (q - 2 * m * beta + beta**2 + delta_out))
                         )
                         / 2.0
                     )
@@ -79,6 +80,64 @@ def training_error_huber_loss(m, q, sigma, delta_in, delta_out, percentage, beta
         * (1 + sigma) ** 2
         * (1 + 2 * sigma)
         * erfc((a * (1 + sigma)) / (sqrt(2) * sqrt(1 - 2 * m + q + delta_in)))
-    ) / (
-        2.0 * (1 + sigma) ** 2
+    ) / (2.0 * (1 + sigma) ** 2)
+
+
+# -----------------------------------
+
+
+# @njit(error_model="numpy", fastmath=False)
+def integral_training_error_Hinge_no_noise(ξ, y, q, m, Σ):
+    η = m**2 / q
+    return (
+        0.5
+        * gaussian(ξ, 0, 1)
+        * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η))))
+        * hinge_loss(y, proximal_hinge_loss(y, sqrt(q) * ξ, Σ))
     )
+
+
+def training_error_Hinge_loss_no_noise(m, q, Σ):
+    # domains = [(1, [(1 - Σ) / sqrt(q), 1 / sqrt(q)]), (-1, [-1 / sqrt(q), -(1 - Σ) / sqrt(q)])]
+    domains = [(1, [-BIG_NUMBER, BIG_NUMBER]), (-1, [-BIG_NUMBER, BIG_NUMBER])]
+
+    int_value = 0.0
+    for y_val, domain in domains:
+        int_value += quad(integral_training_error_Hinge_no_noise, *domain, args=(y_val, q, m, Σ))[0]
+
+    return int_value
+
+
+# -----------------------------------
+
+
+def integral_training_error_Hinge_loss_single_noise(ξ, y, q, m, Σ, delta):
+    raise NotImplementedError
+
+
+def training_error_Hinge_loss_single_noise(m, q, sigma, delta):
+    raise NotImplementedError
+
+
+# -----------------------------------
+
+
+@njit(error_model="numpy", fastmath=False)
+def moreau_loss(x, y, omega, V):
+    return (x - omega) ** 2 / (2 * V) + logistic_loss(y, x)
+
+
+def integral_training_error_Logistic_no_noise(ξ, y, q, m, Σ):
+    η = m**2 / q
+    proximal = minimize_scalar(moreau_loss, args=(y, sqrt(q) * ξ, Σ))["x"]
+    return 0.5 * (gaussian(ξ, 0.0, 1.0) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η)))) * logistic_loss(y, proximal))
+
+
+def training_error_Logistic_loss_no_noise(m, q, Σ):
+    domains = [(1, [-BIG_NUMBER, BIG_NUMBER]), (-1, [-BIG_NUMBER, BIG_NUMBER])]
+
+    int_value = 0.0
+    for y_val, domain in domains:
+        int_value += quad(integral_training_error_Logistic_no_noise, *domain, args=(y_val, q, m, Σ))[0]
+
+    return int_value

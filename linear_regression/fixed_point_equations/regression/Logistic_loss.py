@@ -119,6 +119,6 @@ def f_hat_Logistic_decorrelated_noise(m, q, sigma, alpha, delta_in, delta_out, p
             y_funs[1],
             args=(q, m, sigma, delta_in, delta_out, percentage, beta),
         )[0]
-    sigma_hat = -alpha * integral_value
+    Σ_hat = -alpha * integral_value
 
-    return m_hat, q_hat, sigma_hat
+    return m_hat, q_hat, Σ_hat

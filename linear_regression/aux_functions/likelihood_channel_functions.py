@@ -17,7 +17,6 @@ def Z_out_Bayes_f_out_Bayes_single_noise_classif(y: float, omega: float, V: floa
     return (exp(-0.5 * (1 + y) ** 2 / delta - omega**2 / (2.0 * V)) * (-1 + exp((2 * y) / delta))) / (
         2.0 * pi * sqrt(V * delta)
     )
-    # return (gaussian(y, 1, delta) - gaussian(y, -1, delta)) * gaussian(omega, 0.0, V)
 
 
 # -----------------------------------

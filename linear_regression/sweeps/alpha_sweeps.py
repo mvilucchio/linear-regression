@@ -17,7 +17,7 @@ import numpy as np
 
 
 def sweep_alpha_fixed_point(
-    var_func,
+    f_func,
     f_hat_func,
     alpha_min: float,
     alpha_max: float,
@@ -32,7 +32,7 @@ def sweep_alpha_fixed_point(
 ):
     if update_funs_args is None:
         update_funs_args = [False] * len(funs)
-    
+
     n_funs = len(funs)
     n_funs_args = len(funs_args)
     n_update_funs_args = len(update_funs_args)
@@ -66,9 +66,7 @@ def sweep_alpha_fixed_point(
     for idx, alpha in enumerate(alphas):
         print(f"\talpha = {alpha}")
         f_hat_kwargs.update({"alpha": alpha})
-        ms_qs_sigmas[idx] = fixed_point_finder(
-            var_func, f_hat_func, old_initial_cond, f_kwargs, f_hat_kwargs
-        )
+        ms_qs_sigmas[idx] = fixed_point_finder(f_func, f_hat_func, old_initial_cond, f_kwargs, f_hat_kwargs)
         old_initial_cond = tuple(ms_qs_sigmas[idx])
         m, q, sigma = ms_qs_sigmas[idx]
 
@@ -89,7 +87,7 @@ def sweep_alpha_fixed_point(
 
 
 def sweep_alpha_optimal_lambda_fixed_point(
-    var_func,
+    f_func,
     f_hat_func,
     alpha_min: float,
     alpha_max: float,
@@ -163,7 +161,7 @@ def sweep_alpha_optimal_lambda_fixed_point(
             (m, q, sigma),
             out_values,
         ) = find_optimal_reg_param_function(
-            var_func,
+            f_func,
             f_hat_func,
             copy_f_kwargs,
             copy_f_hat_kwargs,
@@ -192,7 +190,7 @@ def sweep_alpha_optimal_lambda_fixed_point(
 
 
 def sweep_alpha_optimal_lambda_hub_param_fixed_point(
-    var_func,
+    f_func,
     f_hat_func,
     alpha_min: float,
     alpha_max: float,
@@ -269,11 +267,11 @@ def sweep_alpha_optimal_lambda_hub_param_fixed_point(
             (m, q, sigma),
             out_values,
         ) = find_optimal_reg_and_huber_parameter_function(
-            var_func,
+            f_func,
             f_hat_func,
             copy_f_kwargs,
             copy_f_hat_kwargs,
-            (old_reg_param_opt, old_hub_param_opt), # (float(np.random.rand(1) + 1), old_hub_param_opt),
+            (old_reg_param_opt, old_hub_param_opt),  # (float(np.random.rand(1) + 1), old_hub_param_opt),
             old_initial_cond_fpe,
             funs=funs,
             funs_args=copy_funs_args,
@@ -390,7 +388,7 @@ def sweep_alpha_GAMP(
 
 
 def sweep_alpha_descend_lambda(
-    var_func,
+    f_func,
     f_hat_func,
     alpha_min: float,
     alpha_max: float,
@@ -454,7 +452,7 @@ def sweep_alpha_descend_lambda(
 
             try:
                 m, q, sigma = fixed_point_finder(
-                    var_func,
+                    f_func,
                     f_hat_func,
                     old_initial_cond,
                     copy_f_kwargs,
@@ -485,7 +483,7 @@ def sweep_alpha_descend_lambda(
 
 
 def sweep_alpha_minimal_stable_reg_param(
-    var_func,
+    f_func,
     f_hat_func,
     alpha_min: float,
     alpha_max: float,
@@ -541,7 +539,7 @@ def sweep_alpha_minimal_stable_reg_param(
 
             try:
                 m, q, sigma = fixed_point_finder(
-                    var_func,
+                    f_func,
                     f_hat_func,
                     old_initial_cond,
                     copy_f_kwargs,

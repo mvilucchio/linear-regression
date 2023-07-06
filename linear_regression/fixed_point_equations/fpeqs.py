@@ -6,7 +6,7 @@ from ..aux_functions.misc import damped_update
 
 
 def fixed_point_finder(
-    var_func,
+    f_func,
     f_hat_func,
     initial_condition: Tuple[float, float, float],
     f_kwargs: dict,
@@ -19,8 +19,8 @@ def fixed_point_finder(
     err = 1.0
     iter_nb = 0
     while err > abs_tol or iter_nb < min_iter:
-        m_hat, q_hat, sigma_hat = f_hat_func(m, q, sigma, **f_hat_kwargs)
-        new_m, new_q, new_sigma = var_func(m_hat, q_hat, sigma_hat, **f_kwargs)
+        m_hat, q_hat, Σ_hat = f_hat_func(m, q, sigma, **f_hat_kwargs)
+        new_m, new_q, new_sigma = f_func(m_hat, q_hat, Σ_hat, **f_kwargs)
 
         err = max([abs(new_m - m), abs(new_q - q), abs(new_sigma - sigma)])
 
@@ -28,13 +28,14 @@ def fixed_point_finder(
         q = damped_update(new_q, q, BLEND_FPE)
         sigma = damped_update(new_sigma, sigma, BLEND_FPE)
 
-        # print("\t\t\tm = {:.5f} q = {:.5f} Σ = {:.5f}".format(m, q, sigma))
+        print("\t\t\tm = {:.5f} q = {:.5f} Σ = {:.5f}".format(m, q, sigma))
 
         iter_nb += 1
         if iter_nb > max_iter:
             raise ConvergenceError("fixed_point_finder", iter_nb)
 
     return m, q, sigma
+
 
 
 def plateau_fixed_point_finder(

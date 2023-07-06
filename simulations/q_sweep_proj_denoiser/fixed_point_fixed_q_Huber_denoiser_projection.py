@@ -41,7 +41,7 @@ ms = np.empty_like(qs)
 sigmas = np.empty_like(qs)
 m_hats = np.empty_like(qs)
 q_hats = np.empty_like(qs)
-sigma_hats = np.empty_like(qs)
+Σ_hats = np.empty_like(qs)
 
 plt.figure(figsize=(10, 7.5))
 
@@ -57,10 +57,10 @@ for idx, q in enumerate(qs):
         iter_nb = 0
         err = 100.0
         while err > abs_tol or iter_nb < min_iter:
-            m_hat, q_hat, sigma_hat = f_hat_Huber_decorrelated_noise(
+            m_hat, q_hat, Σ_hat = f_hat_Huber_decorrelated_noise(
                 m, q, sigma, alpha, delta_in, delta_out, percentage, beta, a
             )
-            new_m, new_q, new_sigma = f_projection_denoising(m_hat, q_hat, sigma_hat, q)
+            new_m, new_q, new_sigma = f_projection_denoising(m_hat, q_hat, Σ_hat, q)
 
             err = max([abs(new_m - m), abs(new_sigma - sigma)])
 
@@ -74,7 +74,7 @@ for idx, q in enumerate(qs):
         ms[idx] = m
         sigmas[idx] = sigma
         m_hats[idx] = m_hat
-        sigma_hats[idx] = sigma_hat
+        Σ_hats[idx] = Σ_hat
         q_hats[idx] = q_hat
 
         training_error[idx] = training_error_huber_loss(
@@ -86,7 +86,7 @@ for idx, q in enumerate(qs):
         ms[idx:] = np.nan
         sigmas[idx:] = np.nan
         m_hats[idx:] = np.nan
-        sigma_hats[idx:] = np.nan
+        Σ_hats[idx:] = np.nan
         q_hats[idx:] = np.nan
         training_error[idx:] = np.nan
         break
@@ -108,7 +108,7 @@ min_idx = np.argmin(training_error)
 #     },
 # )
 
-# m_hat_true, q_hat_true, sigma_hat_true = f_hat_Huber_decorrelated_noise(
+# m_hat_true, q_hat_true, Σ_hat_true = f_hat_Huber_decorrelated_noise(
 #     m_true, q_true, sigma_true, alpha, delta_in, delta_out, percentage, beta, a
 # )
 
@@ -142,9 +142,9 @@ np.savetxt(
     "./simulations/data/Huber_decorrelated_noise_alpha={:.2f}_delta_in={:.2f}_delta_out={:.2f}_percentage={:.2f}_beta={:.2f}_a={:.2f}_reg_param={:.2f}.csv".format(
         alpha, delta_in, delta_out, percentage, beta, a, reg_param
     ),
-    np.vstack([qs, training_error, generalization_error, ms, sigmas, m_hats, q_hats, sigma_hats]).T,
+    np.vstack([qs, training_error, generalization_error, ms, sigmas, m_hats, q_hats, Σ_hats]).T,
     delimiter=",",
-    header="q,training_error,generalization_error,m,sigma,m_hat,q_hat,sigma_hat",
+    header="q,training_error,generalization_error,m,sigma,m_hat,q_hat,Σ_hat",
 )
 
 # plt.plot(qs, training_error, color=color)

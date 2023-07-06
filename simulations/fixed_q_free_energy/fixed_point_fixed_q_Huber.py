@@ -32,7 +32,7 @@ ms = np.empty_like(qs_theoretical)
 sigmas = np.empty_like(qs_theoretical)
 m_hats = np.empty_like(qs_theoretical)
 q_hats = np.empty_like(qs_theoretical)
-sigma_hats = np.empty_like(qs_theoretical)
+Σ_hats = np.empty_like(qs_theoretical)
 
 plt.figure(figsize=(10, 7.5))
 
@@ -53,10 +53,10 @@ for reg_param in reg_params[::-1]:
             iter_nb = 0
             err = 100.0
             while err > abs_tol or iter_nb < min_iter:
-                m_hat, _, sigma_hat = f_hat_Huber_decorrelated_noise(
+                m_hat, _, Σ_hat = f_hat_Huber_decorrelated_noise(
                     m, q, sigma, alpha, delta_in, delta_out, percentage, beta, a
                 )
-                new_m, _, new_sigma = f_L2_reg(m_hat, 0.0, sigma_hat, reg_param)
+                new_m, _, new_sigma = f_L2_reg(m_hat, 0.0, Σ_hat, reg_param)
 
                 err = max([abs(new_m - m), abs(new_sigma - sigma)])
 
@@ -67,15 +67,15 @@ for reg_param in reg_params[::-1]:
                 if iter_nb > max_iter:
                     raise ConvergenceError("fixed_point_finder", iter_nb)
 
-            q_hat = q * (reg_param + sigma_hat) ** 2 - m_hat**2
+            q_hat = q * (reg_param + Σ_hat) ** 2 - m_hat**2
 
             ms[idx] = m
             sigmas[idx] = sigma
             m_hats[idx] = m_hat
-            sigma_hats[idx] = sigma_hat
+            Σ_hats[idx] = Σ_hat
             q_hats[idx] = q_hat
 
-            # print(m, q, sigma, m_hat, q_hat, sigma_hat)
+            # print(m, q, sigma, m_hat, q_hat, Σ_hat)
 
             free_energies[idx] = free_energy(
                 Psi_w_L2_reg,
@@ -86,7 +86,7 @@ for reg_param in reg_params[::-1]:
                 sigma,
                 m_hat,
                 q_hat,
-                sigma_hat,
+                Σ_hat,
                 (reg_param,),
                 (delta_in, delta_out, percentage, beta, a),
             )
@@ -96,7 +96,7 @@ for reg_param in reg_params[::-1]:
             ms[idx] = np.nan
             sigmas[idx] = np.nan
             m_hats[idx] = np.nan
-            sigma_hats[idx] = np.nan
+            Σ_hats[idx] = np.nan
             q_hats[idx] = np.nan
             free_energies[idx] = np.nan
             break
@@ -127,7 +127,7 @@ for reg_param in reg_params[::-1]:
             "a": a,
         },
     )
-    m_hat_true, q_hat_true, sigma_hat_true = f_hat_Huber_decorrelated_noise(
+    m_hat_true, q_hat_true, Σ_hat_true = f_hat_Huber_decorrelated_noise(
         m_true, q_true, sigma_true, alpha, delta_in, delta_out, percentage, beta, a
     )
 
@@ -140,7 +140,7 @@ for reg_param in reg_params[::-1]:
         sigma_true,
         m_hat_true,
         q_hat_true,
-        sigma_hat_true,
+        Σ_hat_true,
         (reg_param,),
         (delta_in, delta_out, percentage, beta, a),
     )

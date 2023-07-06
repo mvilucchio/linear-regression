@@ -21,7 +21,7 @@ def huber_loss(y: float, z: float, a: float) -> float:
         return a * abs(y - z) - 0.5 * a**2
 
 
-@vectorize("float64(float64, float64)")
+# @vectorize("float64(float64, float64)")
 def hinge_loss(y: float, z: float) -> float:
     return max(0, 1 - y * z)
 

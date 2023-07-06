@@ -14,33 +14,33 @@ def free_energy(
     sigma: float,
     m_hat: float,
     q_hat: float,
-    sigma_hat: float,
+    Σ_hat: float,
     Psi_w_args: Tuple = (),
     Psi_out_args: Tuple = (),
 ):
-    # Q_hat = sigma_hat - q_hat
+    # Q_hat = Σ_hat - q_hat
     # Q = sigma + q
     first_term = (
-        -0.5 * sigma * sigma_hat - 0.5 * (q * sigma_hat - q_hat * sigma) + m * m_hat
+        -0.5 * sigma * Σ_hat - 0.5 * (q * Σ_hat - q_hat * sigma) + m * m_hat
     )  # m * m_hat - 0.5 * q * q_hat - 0.5 * Q * Q_hat
     # first_term = (
-    #     -0.5 * (q * sigma_hat - q_hat * sigma) + m * m_hat
+    #     -0.5 * (q * Σ_hat - q_hat * sigma) + m * m_hat
     # )  # m * m_hat - 0.5 * q * q_hat - 0.5 * Q * Q_hat
-    second_term = -Psi_w(m_hat, q_hat, sigma_hat, *Psi_w_args)
+    second_term = -Psi_w(m_hat, q_hat, Σ_hat, *Psi_w_args)
     third_term = alpha * Psi_out(m, q, sigma, *Psi_out_args)
     # print("here", first_term, second_term, third_term)
     return first_term + second_term + third_term
 
 
 @njit
-def Psi_w_L2_reg(m_hat: float, q_hat: float, sigma_hat: float, reg_param: float) -> float:
-    reg_param_combination = sigma_hat + reg_param
+def Psi_w_L2_reg(m_hat: float, q_hat: float, Σ_hat: float, reg_param: float) -> float:
+    reg_param_combination = Σ_hat + reg_param
     # return 0.5 * (q_hat + m_hat**2) / reg_param_combination
     return 0.5 * ((q_hat + m_hat**2) / reg_param_combination - log(reg_param_combination))
 
 
 def Psi_w_projection_denoising(Q_hat: float, m_hat: float, q_hat: float, q_fixed: float) -> float:
-    # sigma_hat = Q_hat + q_hat
+    # Σ_hat = Q_hat + q_hat
     return 0.5 * sqrt(q_fixed * q_hat / (q_hat + m_hat**2))
 
 

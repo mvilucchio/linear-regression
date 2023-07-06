@@ -12,7 +12,7 @@ from ..fixed_point_equations.optimality_finding import (
 
 
 def sweep_delta_out_fixed_point(
-    var_func,
+    f_func,
     f_hat_func,
     delta_out_min: float,
     delta_out_max: float,
@@ -61,7 +61,7 @@ def sweep_delta_out_fixed_point(
         copy_f_hat_kwargs.update({"delta_out": delta})
 
         m, q, sigma = fixed_point_finder(
-            var_func, f_hat_func, old_initial_cond, f_kwargs, copy_f_hat_kwargs
+            f_func, f_hat_func, old_initial_cond, f_kwargs, copy_f_hat_kwargs
         )
 
         old_initial_cond = tuple([m, q, sigma])
@@ -82,7 +82,7 @@ def sweep_delta_out_fixed_point(
 
 
 def sweep_delta_out_optimal_lambda_fixed_point(
-    var_func,
+    f_func,
     f_hat_func,
     delta_out_min: float,
     delta_out_max: float,
@@ -155,7 +155,7 @@ def sweep_delta_out_optimal_lambda_fixed_point(
             (m, q, sigma),
             out_values,
         ) = find_optimal_reg_param_function(
-            var_func,
+            f_func,
             f_hat_func,
             copy_f_kwargs,
             copy_f_hat_kwargs,
@@ -185,7 +185,7 @@ def sweep_delta_out_optimal_lambda_fixed_point(
 
 
 def sweep_delta_out_optimal_lambda_hub_param_fixed_point(
-    var_func,
+    f_func,
     f_hat_func,
     delta_out_min: float,
     delta_out_max: float,
@@ -260,7 +260,7 @@ def sweep_delta_out_optimal_lambda_hub_param_fixed_point(
             (m, q, sigma),
             out_values,
         ) = find_optimal_reg_and_huber_parameter_function(
-            var_func,
+            f_func,
             f_hat_func,
             copy_f_kwargs,
             copy_f_hat_kwargs,

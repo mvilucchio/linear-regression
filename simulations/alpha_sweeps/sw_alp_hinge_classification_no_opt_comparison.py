@@ -24,8 +24,8 @@ def m_order_param(m, q, sigma):
     return m
 
 
-alpha_min, alpha_max, n_alpha_pts = 0.01, 100, 100
-reg_params = [0.1, 1.0, 10.0]
+alpha_min, alpha_max, n_alpha_pts = 0.1, 100, 100
+reg_params = [0.1, 1.0, 10.0, 100.0]
 
 fname = "./simulations/data/{}_classification_fixed_lambda_{:.2e}_delta_{:.2e}"
 
@@ -51,7 +51,7 @@ for reg_param in reg_params:
 
 
 d = 1000
-alphas_num = np.logspace(-2, 1.1, 10)
+alphas_num = np.logspace(-1, 1.1, 10)
 
 for reg_param in reg_params:
     e_gen_num = np.empty_like(alphas_num)

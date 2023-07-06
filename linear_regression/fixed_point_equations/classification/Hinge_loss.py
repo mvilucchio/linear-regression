@@ -16,7 +16,7 @@ from ...aux_functions.likelihood_channel_functions import (
 )
 
 N_GRID = 5
-BIG_NUMBER = 100
+BIG_NUMBER = 50
 
 
 @njit(error_model="numpy", fastmath=False)
@@ -55,23 +55,22 @@ def Σ_int_Hinge_single_noise_classif(y, ξ, q, m, Σ, delta):
 def m_int_Hinge_no_noise_classif(ξ, y, q, m, Σ):
     η = m**2 / q
     return y * (
-        gaussian(ξ, 0, 1)
-        * sqrt(2.0 / pi * (1 - η))
-        * exp(-0.5 * η * ξ**2 / (1 - η))
-        * f_out_hinge(y, sqrt(q) * ξ, Σ)
+        gaussian(ξ, 0, 1) / sqrt(2.0 * pi * (1 - η)) * exp(-0.5 * η * ξ**2 / (1 - η)) * f_out_hinge(y, sqrt(q) * ξ, Σ)
     )
 
 
 @njit(error_model="numpy", fastmath=False)
 def q_int_Hinge_no_noise_classif(ξ, y, q, m, Σ):
     η = m**2 / q
-    return gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η)))) * (f_out_hinge(y, sqrt(q) * ξ, Σ) ** 2)
+    return (
+        0.5 * gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η)))) * (f_out_hinge(y, sqrt(q) * ξ, Σ) ** 2)
+    )
 
 
 @njit(error_model="numpy", fastmath=False)
 def Σ_int_Hinge_no_noise_classif(ξ, y, q, m, Σ):
     η = m**2 / q
-    return gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η)))) * Df_out_hinge(y, sqrt(q) * ξ, Σ)
+    return 0.5 * gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η)))) * Df_out_hinge(y, sqrt(q) * ξ, Σ)
 
 
 # -----------------------------------
@@ -144,16 +143,16 @@ def f_hat_Hinge_no_noise_classif(m, q, Σ, alpha):
     integral_value_m_hat = 0.0
     for y_val, domain in domains_internal + domains_external:
         integral_value_m_hat += quad(m_int_Hinge_no_noise_classif, domain[0], domain[1], args=(y_val, q, m, Σ))[0]
-    m_hat = 0.5 * alpha * integral_value_m_hat
+    m_hat = alpha * integral_value_m_hat
 
     integral_value_q_hat = 0.0
     for y_val, domain in domains_internal + domains_external:
         integral_value_q_hat += quad(q_int_Hinge_no_noise_classif, domain[0], domain[1], args=(y_val, q, m, Σ))[0]
-    q_hat = 0.5 * alpha * integral_value_q_hat
+    q_hat = alpha * integral_value_q_hat
 
     integral_value_Σ_hat = 0.0
     for y_val, domain in domains_internal:
         integral_value_Σ_hat += quad(Σ_int_Hinge_no_noise_classif, domain[0], domain[1], args=(y_val, q, m, Σ))[0]
-    Σ_hat = -0.5 * alpha * integral_value_Σ_hat
+    Σ_hat = -alpha * integral_value_Σ_hat
 
     return m_hat, q_hat, Σ_hat
