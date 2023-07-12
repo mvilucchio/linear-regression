@@ -8,7 +8,7 @@ from linear_regression.regression_numerics.numerics import (
 )
 from scipy.signal import find_peaks
 from linear_regression.aux_functions.misc import huber_loss
-from linear_regression.aux_functions.stability_functions import stability_l1_l2, stability_huber, stability_ridge
+from linear_regression.aux_functions.stability_functions import stability_L1_decorrelated_regress, stability_Huber_decorrelated_regress, stability_L2_decorrelated_regress
 from linear_regression.regression_numerics.data_generation import measure_gen_decorrelated
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
     f_hat_Huber_decorrelated_noise,
@@ -124,7 +124,7 @@ print(peaks)
 for p in peaks[0]:
     plt.axvline(qs[p], linestyle="--", color=color, alpha=0.5)
 
-stab_cond = stability_huber(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta, a)
+stab_cond = stability_Huber_decorrelated_regress(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta, a)
 unstable_values = stab_cond <= 0.0
 
 plt.plot(qs[unstable_values], training_error[unstable_values], color=color, linestyle="--")
@@ -133,7 +133,7 @@ plt.plot(qs[~unstable_values], training_error[~unstable_values], color=color, li
 color = next(plt.gca()._get_lines.prop_cycler)["color"]
 plt.plot(qs, 1 + qs - 2.0 * ms, label="Generalization Error", color=color, linestyle="-")
 
-# plt.plot(qs, stability_huber(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta, a), label="stability")
+# plt.plot(qs, stability_Huber_decorrelated_regress(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta, a), label="stability")
 
 # plt.plot(qs, training_error, color=color)
 # plt.plot(qs, sigmas, label="sigma")

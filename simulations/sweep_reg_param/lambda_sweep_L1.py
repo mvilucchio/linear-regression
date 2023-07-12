@@ -11,7 +11,7 @@ from linear_regression.fixed_point_equations.fpe_Huber_loss import (
     f_hat_Huber_decorrelated_noise,
 )
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
-from linear_regression.aux_functions.stability_functions import stability_l1_l2
+from linear_regression.aux_functions.stability_functions import stability_L1_decorrelated_regress
 
 
 def sigma_order_param(m, q, sigma):
@@ -58,7 +58,7 @@ plt.title(
 
 plt.plot(
     reg_params,
-    stability_l1_l2(ms, qs, sigmas, alpha, reg_params, delta_in, delta_out, percentage, beta),
+    stability_L1_decorrelated_regress(ms, qs, sigmas, alpha, reg_params, delta_in, delta_out, percentage, beta),
     label="Stability",
 )
 
@@ -70,7 +70,7 @@ for idx, sigma in enumerate(sigmas):
         first_non_nan_idx = idx
         found_first_non_nan = True
     if (
-        stability_l1_l2(
+        stability_L1_decorrelated_regress(
             ms[idx],
             qs[idx],
             sigmas[idx],

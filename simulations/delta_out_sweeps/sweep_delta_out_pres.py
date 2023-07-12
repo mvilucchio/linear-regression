@@ -12,9 +12,9 @@ from linear_regression.fixed_point_equations.fpe_Huber_loss import (
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 import numpy as np
 from linear_regression.aux_functions.stability_functions import (
-    stability_ridge,
-    stability_l1_l2,
-    stability_huber,
+    stability_L2_decorrelated_regress,
+    stability_L1_decorrelated_regress,
+    stability_Huber_decorrelated_regress,
 )
 
 def sigma_order_param(m, q, sigma):
@@ -109,9 +109,9 @@ _, e_gen_hub, (reg_params_opt_hub, hub_params_opt), (ms_hub, qs_hub, sigmas_hub)
 
 print("Huber done")
 
-stabs_l2 = stability_ridge(ms_l2, qs_l2, sigmas_l2, alpha, reg_params_opt_l2, delta_in, delta_outs, epsilon, beta)
-stabs_l1 = stability_l1_l2(ms_l1, qs_l1, sigmas_l1, alpha, reg_params_opt_l1, delta_in, delta_outs, epsilon, beta)
-stabs_hub = stability_huber(ms_hub, qs_hub, sigmas_hub, alpha, reg_params_opt_hub, delta_in, delta_outs, epsilon, beta, hub_params_opt)
+stabs_l2 = stability_L2_decorrelated_regress(ms_l2, qs_l2, sigmas_l2, alpha, reg_params_opt_l2, delta_in, delta_outs, epsilon, beta)
+stabs_l1 = stability_L1_decorrelated_regress(ms_l1, qs_l1, sigmas_l1, alpha, reg_params_opt_l1, delta_in, delta_outs, epsilon, beta)
+stabs_hub = stability_Huber_decorrelated_regress(ms_hub, qs_hub, sigmas_hub, alpha, reg_params_opt_hub, delta_in, delta_outs, epsilon, beta, hub_params_opt)
 
 # ----------------------------
 

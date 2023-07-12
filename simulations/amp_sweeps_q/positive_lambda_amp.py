@@ -7,9 +7,9 @@ import linear_regression.aux_functions.likelihood_channel_functions as like
 import numpy as np
 import matplotlib.pyplot as plt
 from linear_regression.aux_functions.stability_functions import (
-    stability_ridge,
-    stability_l1_l2,
-    stability_huber,
+    stability_L2_decorrelated_regress,
+    stability_L1_decorrelated_regress,
+    stability_Huber_decorrelated_regress,
 )
 from linear_regression.sweeps.alpha_sweeps import sweep_alpha_fixed_point
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
@@ -345,7 +345,7 @@ for idx in range(len(reg_params)):
     color = next(plt.gca()._get_lines.prop_cycler)["color"]
     plt.plot(
         alphas_l2[idx],
-        stability_ridge(
+        stability_L2_decorrelated_regress(
             ms_l2[idx],
             qs_l2[idx],
             sigmas_l2[idx],
@@ -363,7 +363,7 @@ for idx in range(len(reg_params)):
     color = next(plt.gca()._get_lines.prop_cycler)["color"]
     plt.plot(
         alphas_l1[idx],
-        stability_l1_l2(
+        stability_L1_decorrelated_regress(
             ms_l1[idx],
             qs_l1[idx],
             sigmas_l1[idx],
@@ -381,7 +381,7 @@ for idx in range(len(reg_params)):
     # color = next(plt.gca()._get_lines.prop_cycler)["color"]
     # plt.plot(
     #     alphas_l1[idx],
-    #     stability_huber(
+    #     stability_Huber_decorrelated_regress(
     #         ms_l1[idx], qs_l1[idx], sigmas_l1[idx], alphas_l1[idx], reg_param, delta_in, delta_out, percentage, beta, a_hub
     #     ),
     #     color=color,

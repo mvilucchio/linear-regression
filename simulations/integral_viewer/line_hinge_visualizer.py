@@ -14,12 +14,12 @@ from linear_regression.fixed_point_equations.classification.Hinge_loss import (
     Σ_int_Hinge_no_noise_classif,
 )
 
-BIG_NUMBER = 10
+BIG_NUMBER = 5
 
 
-m = 0.41562244834593775
-q = 8
-sigma = 40.5354931610250615
+m = 2.0
+q = 4.8
+sigma = 5000
 
 
 domains_internal = [(1, [(1 - sigma) / sqrt(q), 1 / sqrt(q)]), (-1, [-1 / sqrt(q), -(1 - sigma) / sqrt(q)])]
@@ -31,7 +31,7 @@ domains = domains_internal + domains_external
 plt.figure(figsize=(10, 10))
 for y, d in domains:
     print(y, d)
-    xs = np.linspace(d[0], d[1], 1000)
+    xs = np.linspace(d[0], d[1], 100000)
 
     if y == 1:
         plt.axvline(d[0], color="k", linestyle="--")
@@ -49,5 +49,6 @@ for y, d in domains:
 plt.xlabel(r"$\xi$")
 plt.legend()
 plt.grid()
+# plt.xlim([-3.5, 0.5])
 
 plt.show()

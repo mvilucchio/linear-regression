@@ -5,7 +5,7 @@ from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_r
 from linear_regression.fixed_point_equations.fpe_L2_loss import (
     f_hat_L2_decorrelated_noise,
 )
-from linear_regression.aux_functions.stability_functions import stability_ridge
+from linear_regression.aux_functions.stability_functions import stability_L2_decorrelated_regress
 
 
 def condition_MP(alphas):
@@ -80,7 +80,7 @@ plt.grid()
 plt.subplot(313)
 plt.plot(
     alphas,
-    stability_ridge(
+    stability_L2_decorrelated_regress(
         ms, qs, sigmas, alphas, reg_param_opt, delta_in, delta_out, percentage, beta, 1.0
     ),
     label=r"Stability cond.",

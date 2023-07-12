@@ -13,9 +13,9 @@ from linear_regression.aux_functions.misc import damped_update
 from linear_regression.aux_functions.likelihood_channel_functions import f_out_L1, Df_out_L1
 from linear_regression.aux_functions.loss_functions import l1_loss
 from linear_regression.aux_functions.stability_functions import (
-    stability_l1_l2,
-    stability_huber,
-    stability_ridge,
+    stability_L1_decorrelated_regress,
+    stability_Huber_decorrelated_regress,
+    stability_L2_decorrelated_regress,
 )
 from linear_regression.aux_functions.training_errors import training_error_l1_loss
 from linear_regression.regression_numerics.amp_funcs import (
@@ -278,7 +278,7 @@ plt.title(
 # plt.plot(qs, training_error, label="Theoretical Training Error", color=color, linestyle="-")
 
 color = next(plt.gca()._get_lines.prop_cycler)["color"]
-stab_vals = stability_l1_l2(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta)
+stab_vals = stability_L1_decorrelated_regress(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta)
 plt.plot(
     qs,
     stab_vals,

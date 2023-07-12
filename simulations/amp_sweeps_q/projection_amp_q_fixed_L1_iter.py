@@ -13,9 +13,9 @@ from linear_regression.aux_functions.misc import damped_update
 from linear_regression.aux_functions.likelihood_channel_functions import f_out_L1, Df_out_L1
 from linear_regression.aux_functions.loss_functions import l1_loss
 from linear_regression.aux_functions.stability_functions import (
-    stability_l1_l2,
-    stability_huber,
-    stability_ridge,
+    stability_L1_decorrelated_regress,
+    stability_Huber_decorrelated_regress,
+    stability_L2_decorrelated_regress,
 )
 from linear_regression.aux_functions.training_errors import training_error_l1_loss
 from linear_regression.regression_numerics.amp_funcs import (

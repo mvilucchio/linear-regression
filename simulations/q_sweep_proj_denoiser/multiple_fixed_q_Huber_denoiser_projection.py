@@ -4,8 +4,8 @@ from linear_regression.fixed_point_equations.regularisation.fpe_projection_denoi
 )
 from scipy.signal import find_peaks
 from linear_regression.aux_functions.stability_functions import (
-    stability_huber,
-    stability_ridge,
+    stability_Huber_decorrelated_regress,
+    stability_L2_decorrelated_regress,
 )
 from linear_regression.fixed_point_equations.fpe_Huber_loss import f_hat_Huber_decorrelated_noise
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
@@ -103,7 +103,7 @@ for reg_param in reg_parmas:
 
 # plt.plot(
 #     qs,
-#     stability_huber(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta, a),
+#     stability_Huber_decorrelated_regress(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta, a),
 #     label="stability",
 #     color="black",
 #     linestyle="--",

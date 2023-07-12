@@ -14,9 +14,9 @@ from linear_regression.fixed_point_equations.fpe_Huber_loss import (
 )
 import numpy as np
 from linear_regression.aux_functions.stability_functions import (
-    stability_ridge,
-    stability_l1_l2,
-    stability_huber,
+    stability_L2_decorrelated_regress,
+    stability_L1_decorrelated_regress,
+    stability_Huber_decorrelated_regress,
 )
 
 
@@ -87,7 +87,7 @@ ax.set_xscale("log")
 stab = np.empty_like(sigmas)
 for idx in range(sigmas.shape[0]):
     for jdx in range(sigmas.shape[1]):
-        stab[idx, jdx] = stability_huber(
+        stab[idx, jdx] = stability_Huber_decorrelated_regress(
             ms[idx, jdx],
             qs[idx, jdx],
             sigmas[idx, jdx],

@@ -8,7 +8,7 @@ from linear_regression.regression_numerics.numerics import (
 )
 from scipy.signal import find_peaks
 from linear_regression.aux_functions.loss_functions import huber_loss
-from linear_regression.aux_functions.stability_functions import stability_l1_l2, stability_huber, stability_ridge
+from linear_regression.aux_functions.stability_functions import stability_L1_decorrelated_regress, stability_Huber_decorrelated_regress, stability_L2_decorrelated_regress
 from linear_regression.regression_numerics.data_generation import measure_gen_decorrelated
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
     f_hat_Huber_decorrelated_noise,
@@ -136,7 +136,7 @@ for p in peaks[0]:
 # plt.plot(qs, training_error + reg_param / (2 * alpha) * qs, color=color, label="training error lambda = {:.2f}".format(reg_param))
 plt.plot(qs, training_error, color=color, label="training error lambda = {:.2f}".format(reg_param))
 
-plt.plot(qs, stability_huber(ms, qs, sigmas, alpha, reg_param, delta_in, delta_out, percentage, beta, a), label="stability")
+plt.plot(qs, stability_Huber_decorrelated_regress(ms, qs, sigmas, alpha, reg_param, delta_in, delta_out, percentage, beta, a), label="stability")
 
 np.savetxt(
     "./simulations/data/Huber_decorrelated_noise_alpha={:.2f}_delta_in={:.2f}_delta_out={:.2f}_percentage={:.2f}_beta={:.2f}_a={:.2f}_reg_param={:.2f}.csv".format(

@@ -16,9 +16,9 @@ from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_r
 import numpy as np
 from linear_regression.aux_functions.misc import excess_gen_error, estimation_error_rescaled, estimation_error_oracle_rescaling
 from linear_regression.aux_functions.stability_functions import (
-    stability_ridge,
-    stability_l1_l2,
-    stability_huber,
+    stability_L2_decorrelated_regress,
+    stability_L1_decorrelated_regress,
+    stability_Huber_decorrelated_regress,
 )
 
 

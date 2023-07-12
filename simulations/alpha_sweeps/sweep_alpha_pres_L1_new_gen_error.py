@@ -13,9 +13,9 @@ from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_r
 import numpy as np
 from linear_regression.aux_functions.misc import excess_gen_error
 from linear_regression.aux_functions.stability_functions import (
-    stability_ridge,
-    stability_l1_l2,
-    stability_huber,
+    stability_L2_decorrelated_regress,
+    stability_L1_decorrelated_regress,
+    stability_Huber_decorrelated_regress,
 )
 
 
@@ -135,7 +135,7 @@ plt.grid()
 plt.subplot(313)
 # plt.plot(alphas, sigmas, label=r"$\Sigma$")
 # plt.plot(alphas, 1 - alphas * (sigmas / (sigmas + 1))**2, label=r"$1 - \alpha \Sigma^2 / (\Sigma + 1)^2$")
-plt.plot(alphas, stability_l1_l2(ms, qs, sigmas, alphas, reg_param_opt, delta_in, delta_out, percentage, beta), label=r"Stability")
+plt.plot(alphas, stability_L1_decorrelated_regress(ms, qs, sigmas, alphas, reg_param_opt, delta_in, delta_out, percentage, beta), label=r"Stability")
 plt.legend()
 plt.axvline(alphas[first_idx], color="red")
 plt.xscale("log")

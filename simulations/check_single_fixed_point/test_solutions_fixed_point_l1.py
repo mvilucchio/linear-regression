@@ -5,9 +5,9 @@ from linear_regression.fixed_point_equations.fpe_L1_loss import (
     f_hat_L1_decorrelated_noise,
 )
 from linear_regression.aux_functions.stability_functions import (
-    stability_ridge,
-    stability_l1_l2,
-    stability_huber,
+    stability_L2_decorrelated_regress,
+    stability_L1_decorrelated_regress,
+    stability_Huber_decorrelated_regress,
 )
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 

@@ -1,48 +1,41 @@
-import linear_regression.regression_numerics.amp_funcs as amp
-from linear_regression.sweeps.q_sweeps import sweep_fw_first_arg_GAMP
 import linear_regression.regression_numerics.data_generation as dg
 from linear_regression.aux_functions.prior_regularization_funcs import (
     f_w_projection_on_sphere,
     Df_w_projection_on_sphere,
 )
-from linear_regression.fixed_point_equations.fpe_L1_loss import f_hat_L1_decorrelated_noise
+from linear_regression.fixed_point_equations.classification.Hinge_loss import f_hat_Hinge_probit_classif
 from linear_regression.fixed_point_equations.regularisation.fpe_projection_denoising import (
     f_projection_denoising,
 )
-from linear_regression.aux_functions.misc import damped_update
-from linear_regression.aux_functions.likelihood_channel_functions import f_out_L1, Df_out_L1
-from linear_regression.aux_functions.loss_functions import l1_loss
-from linear_regression.aux_functions.stability_functions import (
-    stability_L1_decorrelated_regress,
-    stability_Huber_decorrelated_regress,
-    stability_L2_decorrelated_regress,
-)
-from linear_regression.aux_functions.training_errors import training_error_l1_loss
-from linear_regression.regression_numerics.amp_funcs import (
-    GAMP_algorithm_unsimplified,
-    GAMP_algorithm_unsimplified_mod,
-    GAMP_algorithm_unsimplified_mod_2,
-    GAMP_algorithm_unsimplified_mod_3,
-)
+from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder, fixed_point_finder_loser
+from linear_regression.aux_functions.misc import damped_update, sample_vector
+from linear_regression.aux_functions.stability_functions import stability_Hinge_probit_classif
+from linear_regression.aux_functions.likelihood_channel_functions import f_out_Hinge, Df_out_Hinge
+from linear_regression.aux_functions.training_errors import training_error_Hinge_loss_no_noise
+from linear_regression.aux_functions.loss_functions import hinge_loss
+from linear_regression.regression_numerics.amp_funcs import GAMP_algorithm_unsimplified_mod_3
+from linear_regression.utils.errors import ConvergenceError
+from linear_regression.regression_numerics.numerics import gen_error_data, train_error_data, angle_teacher_student
+
 import numpy as np
 import matplotlib.pyplot as plt
-import linear_regression.fixed_point_equations as fpe
-from linear_regression.utils.errors import ConvergenceError
-from linear_regression.regression_numerics.numerics import gen_error_data, train_error_data
+from tqdm.auto import tqdm
 
 print("here")
 
-abs_tol = 1e-8
+abs_tol = 1e-5
 min_iter = 100
-max_iter = 10000
+max_iter = 1000
 blend = 0.85
 
-n_features = 2000
+n_features = 1500
 d = n_features
-repetitions = 3
+repetitions = 5
+max_iters_amp = 1000
 
-alpha, delta_in, delta_out, percentage, beta = 2.0, 1.0, 5.0, 0.3, 0.0
+alpha, delta_noise = 2.0, 0.1
 n_samples = max(int(np.around(n_features * alpha)), 1)
+q_min, q_max, n_q_pts_amp, n_q_pts_se = 1.0, 4.82, 10, 500
 
 qs_amp = list()
 gen_err_mean_amp = list()
@@ -52,7 +45,7 @@ train_err_std_amp = list()
 iters_nb_mean_amp = list()
 iters_nb_std_amp = list()
 
-qs_amp_test = np.logspace(-1, 0.0, 5)
+qs_amp_test = np.logspace(np.log10(q_min), np.log10(q_max), n_q_pts_amp)
 
 for idx, q in enumerate(qs_amp_test):
     print(f"--- q = {q}")
@@ -61,74 +54,72 @@ for idx, q in enumerate(qs_amp_test):
     all_iters_nb = list()
 
     for _ in range(repetitions):
-        xs, ys, _, _, ground_truth_theta = dg.data_generation(
-            dg.measure_gen_decorrelated,
+        xs, ys, xs_test, ys_test, ground_truth_theta = dg.data_generation(
+            dg.measure_gen_probit_clasif,
             n_features=n_features,
-            n_samples=max(int(np.around(n_features * alpha)), 1),
-            n_generalization=1,
-            measure_fun_args=(delta_in, delta_out, percentage, beta),
+            n_samples=n_samples,
+            n_generalization=n_samples,
+            measure_fun_args=list(delta_noise),
         )
 
         while True:
-            m = 10 * np.random.random() + 0.01
-            sigma = 10 * np.random.random() + 0.01
-            if np.square(m) < q + delta_in * q and np.square(m) < q + delta_out * q:
+            m_init = 10 * np.random.random() + 0.01
+            sigma_init = 10 * np.random.random() + 0.01
+            if np.square(m_init) < q:
                 break
 
-        iter_nb = 0
-        err = 100.0
-        while err > abs_tol or iter_nb < min_iter:
-            m_hat, q_hat, Σ_hat = f_hat_L1_decorrelated_noise(
-                m, q, sigma, alpha, delta_in, delta_out, percentage, beta
+        m, q, sigma = fixed_point_finder(
+            f_projection_denoising,
+            f_hat_Hinge_probit_classif,
+            (m_init, q, sigma_init),
+            {"q_fixed": q},
+            {"alpha": alpha, "delta": delta_noise},
+            abs_tol=abs_tol,
+            min_iter=min_iter,
+            max_iter=max_iter,
+        )
+
+        init_w = sample_vector(ground_truth_theta, m, q)
+        print(
+            "\tm = {:.2f} true m = {:.2f} Δm = {:.2e} q = {:.2f} true q = {:.2f} Δq = {:.2e}".format(
+                m,
+                np.mean(init_w * ground_truth_theta),
+                abs(m - np.mean(init_w * ground_truth_theta)),
+                q,
+                np.mean(init_w**2),
+                abs(q - np.mean(init_w**2)),
             )
-            new_m, _, new_sigma = f_projection_denoising(m_hat, q_hat, Σ_hat, q)
+        )
 
-            err = max([abs(new_m - m), abs(new_sigma - sigma)])
-
-            m = damped_update(new_m, m, blend)
-            sigma = damped_update(new_sigma, sigma, blend)
-
-            iter_nb += 1
-            if iter_nb > max_iter:
-                raise ConvergenceError("fixed_point_finder", iter_nb)
-
-        print(f"q = {q}, m = {m}")
-        init_w = m * ground_truth_theta + np.sqrt(q - m**2) * np.random.normal(size=n_features)
-
-        while not np.isclose([np.mean(init_w **2), np.mean(init_w * ground_truth_theta)], [q, m], rtol=1e-4, atol=1e-4).all():
-            init_w = m * ground_truth_theta + np.sqrt(q - m**2) * np.random.normal(size=n_features)
-
-        print("found ")
-        # we want to initialize them at the fixed point so:
         estimated_theta, iters_nb = GAMP_algorithm_unsimplified_mod_3(
             sigma,
             f_w_projection_on_sphere,
             Df_w_projection_on_sphere,
-            f_out_L1,
-            Df_out_L1,
+            f_out_Hinge,
+            Df_out_Hinge,
             ys,
             xs,
             (q,),
             list(),
-            init_w, # m * ground_truth_theta + np.sqrt(q - m**2) * np.random.normal(size=n_features), # np.sqrt(q - m**2) *
+            init_w,
             ground_truth_theta,
             abs_tol=1e-2,
-            max_iter=500,
+            max_iter=max_iters_amp,
             blend=1.0,
         )
 
-        print("iter_nb", iters_nb)
+        print("\titer_nb", iters_nb)
 
-        all_gen_err.append(gen_error_data(ys, xs, estimated_theta, ground_truth_theta))
-
+        all_gen_err.append(angle_teacher_student(ys_test, xs_test, estimated_theta, ground_truth_theta))
         all_train_err.append(
-            train_error_data(ys, xs, estimated_theta, ground_truth_theta, l1_loss, list())
+            train_error_data(ys_test, xs_test, estimated_theta, ground_truth_theta, hinge_loss, list())
         )
-
         all_iters_nb.append(iters_nb)
 
         del xs
         del ys
+        del xs_test
+        del ys_test
         del ground_truth_theta
 
     qs_amp.append(q)
@@ -139,7 +130,6 @@ for idx, q in enumerate(qs_amp_test):
     iters_nb_mean_amp.append(np.mean(all_iters_nb))
     iters_nb_std_amp.append(np.std(all_iters_nb))
 
-# save the results of AMP in a file with the delta_in, delta_out, percentage, beta, alpha,n_features, repetitions parameters
 # np.savetxt(
 #     f"./results/AMP_results_decorrelated_noise_{delta_in}_{delta_out}_{percentage}_{beta}_{alpha}_{n_features}_{repetitions}.csv",
 #     np.array(
@@ -157,7 +147,9 @@ for idx, q in enumerate(qs_amp_test):
 #     header="q,gen_err_mean,gen_err_std,train_err_mean,train_err_std,iters_nb_mean,iters_nb_std",
 # )
 
-qs = np.logspace(-1, 1, 500)
+print("--- finished AMP")
+
+qs = np.logspace(np.log10(q_min), np.log10(5), n_q_pts_se)
 ms = np.empty_like(qs)
 sigmas = np.empty_like(qs)
 m_hats = np.empty_like(qs)
@@ -169,19 +161,19 @@ q = qs[0]
 while True:
     m = 10 * np.random.random() + 0.01
     sigma = 10 * np.random.random() + 0.01
-    if np.square(m) < q + delta_in * q and np.square(m) < q + delta_out * q:
+    if np.square(m) < q:
         break
-for idx, q in enumerate(qs):
+for idx, q in enumerate(tqdm(qs)):
+    # print(f"--- q SE = {q}")
     try:
         iter_nb = 0
         err = 100.0
         while err > abs_tol or iter_nb < min_iter:
-            m_hat, q_hat, Σ_hat = f_hat_L1_decorrelated_noise(
-                m, q, sigma, alpha, delta_in, delta_out, percentage, beta
-            )
+            m_hat, q_hat, Σ_hat = f_hat_Hinge_probit_classif(m, q, sigma, alpha, delta_noise)
             new_m, _, new_sigma = f_projection_denoising(m_hat, q_hat, Σ_hat, q)
 
-            err = max([abs(new_m - m), abs(new_sigma - sigma)])
+            # err = max([abs(new_m - m), abs(new_sigma - sigma)])
+            err = abs(new_m - m)
 
             m = damped_update(new_m, m, blend)
             sigma = damped_update(new_sigma, sigma, blend)
@@ -196,9 +188,7 @@ for idx, q in enumerate(qs):
         Σ_hats[idx] = Σ_hat
         q_hats[idx] = q_hat
 
-        training_error[idx] = training_error_l1_loss(
-            m, q, sigma, delta_in, delta_out, percentage, beta
-        )
+        training_error[idx] = training_error_Hinge_loss_no_noise(m, q, sigma)
     except (ConvergenceError, ValueError) as e:
         print(e)
         ms[idx:] = np.nan
@@ -218,36 +208,21 @@ for idx, q in enumerate(qs):
 # )
 
 
-plt.figure(figsize=(10, 10))
+plt.figure(figsize=(7.5, 7.5))
 plt.subplot(211)
-plt.title(
-    "L1 loss Projective Denoiser"
-    + " d = {:d}".format(n_features)
-    + r" $\alpha$ = "
-    + "{:.2f}".format(alpha)
-    + r" $\Delta_{in}$ = "
-    + "{:.2f}".format(delta_in)
-    + r" $\Delta_{out}$ ="
-    + "{:.2f}".format(delta_out)
-    + r" $\epsilon$ = "
-    + "{:.2f}".format(percentage)
-    + r" $\beta$ = "
-    + "{:.2f}".format(beta)
-    + r" $\alpha$ = "
-    + "{:.2f}".format(alpha)
-)
+plt.title("Hinge loss Proj. No Noise" + " d = {:d}".format(n_features) + r" $\alpha$ = " + "{:.2f}".format(alpha))
 
 color = next(plt.gca()._get_lines.prop_cycler)["color"]
 plt.errorbar(
     qs_amp,
     gen_err_mean_amp,
     yerr=gen_err_std_amp,
-    label="AMP Generalization Error reps={:d}".format(repetitions),
+    label="AMP Angle reps={:d}".format(repetitions),
     color=color,
     linestyle="",
     marker=".",
 )
-plt.plot(qs, 1 + qs - 2 * ms, label="Theoretical Generalization Error", color=color, linestyle="-")
+plt.plot(qs, np.arccos(ms / np.sqrt(qs)) / np.pi, label="Theoretical Angle", color=color, linestyle="-")
 
 color = next(plt.gca()._get_lines.prop_cycler)["color"]
 plt.errorbar(
@@ -260,19 +235,19 @@ plt.errorbar(
     marker=".",
 )
 plt.plot(qs, training_error, label="Theoretical Training Error", color=color, linestyle="-")
-stab_vals = stability_L1_decorrelated_regress(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta)
+stab_vals = stability_Hinge_probit_classif(ms, qs, sigmas, alpha, delta_noise)
 plt.plot(
     qs,
     stab_vals,
-    label="stability",
+    label="Stability",
 )
 idx = np.amin(np.arange(len(stab_vals))[stab_vals < 0])
-plt.axvline(qs[idx], color="black", linestyle="--", label="stability threshold")
+plt.axvline(qs[idx], color="black", linestyle="--", label="Stab. threshold")
 
 plt.xlabel("q")
 # plt.yscale("log")
 plt.xscale("log")
-plt.ylim(-0.5, 7.5)
+# plt.ylim(-0.5, 7.5)
 plt.legend()
 plt.grid()
 
@@ -286,7 +261,7 @@ plt.errorbar(
     linestyle="",
     marker=".",
 )
-
+plt.axvline(qs[idx], color="black", linestyle="--", label="stability threshold")
 plt.xlabel("q")
 plt.ylabel("iterations")
 plt.yscale("log")

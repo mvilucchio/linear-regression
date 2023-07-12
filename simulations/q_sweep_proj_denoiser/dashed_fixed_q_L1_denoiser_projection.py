@@ -3,7 +3,7 @@ from linear_regression.fixed_point_equations.regularisation.fpe_projection_denoi
     f_projection_denoising,
 )
 from scipy.signal import find_peaks
-from linear_regression.aux_functions.stability_functions import stability_l1_l2, stability_huber, stability_ridge
+from linear_regression.aux_functions.stability_functions import stability_L1_decorrelated_regress, stability_Huber_decorrelated_regress, stability_L2_decorrelated_regress
 from linear_regression.fixed_point_equations.fpe_L2_loss import f_hat_L2_decorrelated_noise
 from linear_regression.fixed_point_equations.fpe_L1_loss import f_hat_L1_decorrelated_noise
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
@@ -107,7 +107,7 @@ color = next(plt.gca()._get_lines.prop_cycler)["color"]
 # for p in peaks[0]:
 #     plt.axvline(qs[p], linestyle="--", color=color, alpha=0.5)
 
-stab_cond = stability_l1_l2(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta)
+stab_cond = stability_L1_decorrelated_regress(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta)
 unstable_values = stab_cond <= 0.0
 
 plt.plot(qs[unstable_values], training_error[unstable_values], color=color, linestyle="--")

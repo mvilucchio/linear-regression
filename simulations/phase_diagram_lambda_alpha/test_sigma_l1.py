@@ -14,9 +14,9 @@ from linear_regression.fixed_point_equations.fpe_Huber_loss import (
 )
 import numpy as np
 from linear_regression.aux_functions.stability_functions import (
-    stability_ridge,
-    stability_l1_l2,
-    stability_huber,
+    stability_L2_decorrelated_regress,
+    stability_L1_decorrelated_regress,
+    stability_Huber_decorrelated_regress,
 )
 
 
@@ -63,7 +63,7 @@ print("first_done")
 #     0.01,
 #     1000,
 #     1000,
-#     stability_l1_l2,
+#     stability_L1_decorrelated_regress,
 #     {"reg_param": 3.0},
 #     {
 #         "delta_in": delta_in,
@@ -93,7 +93,7 @@ for jdx in range(sigmas.shape[1]):
     found_first_unstable = False
     for idx in range(sigmas.shape[0]):
         try:
-            stab[idx, jdx] = stability_l1_l2(
+            stab[idx, jdx] = stability_L1_decorrelated_regress(
                 ms[idx, jdx],
                 qs[idx, jdx],
                 sigmas[idx, jdx],

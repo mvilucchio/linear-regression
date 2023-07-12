@@ -2,7 +2,7 @@ from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.fpe_projection_denoising import (
     f_projection_denoising,
 )
-from linear_regression.aux_functions.stability_functions import stability_l1_l2, stability_huber, stability_ridge
+from linear_regression.aux_functions.stability_functions import stability_L1_decorrelated_regress, stability_Huber_decorrelated_regress, stability_L2_decorrelated_regress
 from linear_regression.fixed_point_equations.fpe_L2_loss import f_hat_L2_decorrelated_noise
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.aux_functions.training_errors import training_error_l2_loss
@@ -122,7 +122,7 @@ plt.plot(qss, 0.5 / alpha * (1-np.sqrt(alpha))**2 * qss, color="black", linestyl
 
 plt.plot(qs, training_error , color=color, label="training error")
 
-plt.plot(qs, stability_ridge(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta), label="stability")
+plt.plot(qs, stability_L2_decorrelated_regress(ms, qs, sigmas, alpha, 1.0, delta_in, delta_out, percentage, beta), label="stability")
 
 plt.title(
     "L2 loss Projection Denoising "

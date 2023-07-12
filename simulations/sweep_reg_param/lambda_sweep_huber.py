@@ -5,7 +5,7 @@ from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_r
 from linear_regression.fixed_point_equations.fpe_Huber_loss import (
     f_hat_Huber_decorrelated_noise,
 )
-from linear_regression.aux_functions.stability_functions import stability_huber
+from linear_regression.aux_functions.stability_functions import stability_Huber_decorrelated_regress
 
 
 def sigma_order_param(m, q, sigma):
@@ -52,7 +52,7 @@ color = next(plt.gca()._get_lines.prop_cycler)["color"]
 
 plt.plot(
     reg_params,
-    stability_huber(
+    stability_Huber_decorrelated_regress(
         ms, qs, sigmas, alpha, reg_params, delta_in, delta_out, percentage, beta, a_hub
     ),
     label="AT stability",
@@ -72,7 +72,7 @@ for idx, sigma in enumerate(sigmas):
         first_non_nan_idx = idx
         found_first_non_nan = True
     if (
-        stability_huber(
+        stability_Huber_decorrelated_regress(
             ms[idx],
             qs[idx],
             sigmas[idx],
