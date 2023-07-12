@@ -1,7 +1,25 @@
 from math import exp, sqrt, acos
-from numpy import pi, arccos
+from numpy import pi, arccos, dot
+from numpy.linalg import norm
+from numpy.random import normal
 import numpy as np
 from numba import vectorize, njit
+
+
+def sample_vector(ground_truth_theta, m, q):
+    random_vector = normal(size=ground_truth_theta.shape)
+
+    projection = (
+        dot(random_vector, ground_truth_theta) / dot(ground_truth_theta, ground_truth_theta) * ground_truth_theta
+    )
+
+    orthogonal = random_vector - projection
+    scaled_projection = m * ground_truth_theta
+    scaled_orthogonal = sqrt(q - m**2) / norm(orthogonal) * orthogonal
+
+    init_w = scaled_projection + scaled_orthogonal
+
+    return init_w
 
 
 @vectorize("float64(float64, float64, float64)")
@@ -29,6 +47,11 @@ def angle_teacher_student(m, q, sigma, **args):
     return np.arccos(m / np.sqrt(q)) / pi
 
 
+def margin_probit_classif(m, q, sigma, delta):
+    return (4 * m * sqrt(2 * pi**3)) / sqrt(delta + 1)
+
+
+# errors
 def gen_error(m, q, sigma, delta_in, delta_out, percentage, beta):
     return q - 2 * m * (1 + (-1 + beta) * percentage) + 1 + percentage * (-1 + beta**2)
 

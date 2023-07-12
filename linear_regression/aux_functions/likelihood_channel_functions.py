@@ -167,7 +167,7 @@ def Df_out_Huber(y: float, omega: float, V: float, a: float) -> float:
 
 # -----------------------------------
 @vectorize("float64(float64, float64, float64)")
-def f_out_hinge(y: float, omega: float, V: float) -> float:
+def f_out_Hinge(y: float, omega: float, V: float) -> float:
     if y * omega < 1.0 - V:
         return y
     elif y * omega < 1.0:
@@ -177,7 +177,7 @@ def f_out_hinge(y: float, omega: float, V: float) -> float:
 
 
 @vectorize(["float64(float64, float64, float64)"])
-def Df_out_hinge(y: float, omega: float, V: float) -> float:
+def Df_out_Hinge(y: float, omega: float, V: float) -> float:
     if (y * omega < 1.0) and (y * omega > 1.0 - V):
         return -1.0 / V
     else:
