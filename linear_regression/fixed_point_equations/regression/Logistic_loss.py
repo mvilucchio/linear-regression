@@ -10,44 +10,45 @@ from ...aux_functions.likelihood_channel_functions import (
     f_out_Bayes_decorrelated_noise,
     Z_out_Bayes_single_noise,
     f_out_Bayes_single_noise,
-    f_out_hinge,
-    Df_out_hinge,
 )
 
 N_GRID = 5
 
 
-@njit(error_model="numpy", fastmath=True)
+# @njit(error_model="numpy", fastmath=True)
 def m_integral_Logistic_single_noise(y, xi, q, m, sigma, delta):
+    raise NotImplementedError
     eta = m**2 / q
     return (
         np.exp(-(xi**2) / 2)
         / np.sqrt(2 * np.pi)
         * Z_out_Bayes_single_noise(y, np.sqrt(eta) * xi, 1 - eta, delta)
         * f_out_Bayes_single_noise(y, np.sqrt(eta) * xi, 1 - eta, delta)
-        * f_out_hinge(y, np.sqrt(q) * xi, sigma)
+        * f_out_Hinge(y, np.sqrt(q) * xi, sigma)
     )
 
 
-@njit(error_model="numpy", fastmath=True)
+# @njit(error_model="numpy", fastmath=True)
 def q_integral_Logistic_single_noise(y, xi, q, m, sigma, delta):
+    raise NotImplementedError
     eta = m**2 / q
     return (
         np.exp(-(xi**2) / 2)
         / np.sqrt(2 * np.pi)
         * Z_out_Bayes_single_noise(y, np.sqrt(eta) * xi, 1 - eta, delta)
-        * (f_out_hinge(y, np.sqrt(q) * xi, sigma) ** 2)
+        * (f_out_Hinge(y, np.sqrt(q) * xi, sigma) ** 2)
     )
 
 
-@njit(error_model="numpy", fastmath=True)
+# @njit(error_model="numpy", fastmath=True)
 def sigma_integral_Logistic_single_noise(y, xi, q, m, sigma, delta):
+    raise NotImplementedError
     eta = m**2 / q
     return (
         np.exp(-(xi**2) / 2)
         / np.sqrt(2 * np.pi)
         * Z_out_Bayes_single_noise(y, np.sqrt(eta) * xi, 1 - eta, delta)
-        * Df_out_hinge(y, np.sqrt(q) * xi, sigma)
+        * Df_out_Hinge(y, np.sqrt(q) * xi, sigma)
     )
 
 
@@ -55,6 +56,7 @@ def sigma_integral_Logistic_single_noise(y, xi, q, m, sigma, delta):
 
 
 def f_hat_Logistic_decorrelated_noise(m, q, sigma, alpha, delta_in, delta_out, percentage, beta):
+    raise NotImplementedError
     borders = find_integration_borders_square(
         m_integral_Logistic_single_noise,
         3 * np.sqrt((1 + max(delta_in, delta_out))),

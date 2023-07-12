@@ -14,8 +14,8 @@ from ...aux_functions.likelihood_channel_functions import (
     f_out_Bayes_decorrelated_noise,
     Z_out_Bayes_single_noise,
     f_out_Bayes_single_noise,
-    f_out_hinge,
-    Df_out_hinge,
+    f_out_Hinge,
+    Df_out_Hinge,
 )
 
 N_GRID = 5
@@ -29,7 +29,7 @@ def m_integral_Hinge_single_noise(y, xi, q, m, sigma, delta):
         / np.sqrt(2 * np.pi)
         * Z_out_Bayes_single_noise(y, np.sqrt(eta) * xi, 1 - eta, delta)
         * f_out_Bayes_single_noise(y, np.sqrt(eta) * xi, 1 - eta, delta)
-        * f_out_hinge(y, np.sqrt(q) * xi, sigma)
+        * f_out_Hinge(y, np.sqrt(q) * xi, sigma)
     )
 
 
@@ -40,7 +40,7 @@ def q_integral_Hinge_single_noise(y, xi, q, m, sigma, delta):
         np.exp(-(xi**2) / 2)
         / np.sqrt(2 * np.pi)
         * Z_out_Bayes_single_noise(y, np.sqrt(eta) * xi, 1 - eta, delta)
-        * (f_out_hinge(y, np.sqrt(q) * xi, sigma) ** 2)
+        * (f_out_Hinge(y, np.sqrt(q) * xi, sigma) ** 2)
     )
 
 
@@ -51,7 +51,7 @@ def sigma_integral_Hinge_single_noise(y, xi, q, m, sigma, delta):
         np.exp(-(xi**2) / 2)
         / np.sqrt(2 * np.pi)
         * Z_out_Bayes_single_noise(y, np.sqrt(eta) * xi, 1 - eta, delta)
-        * Df_out_hinge(y, np.sqrt(q) * xi, sigma)
+        * Df_out_Hinge(y, np.sqrt(q) * xi, sigma)
     )
 
 
@@ -66,7 +66,7 @@ def m_integral_Hinge_decorrelated_noise(y, xi, q, m, sigma, delta_in, delta_out,
         / np.sqrt(2 * np.pi)
         * Z_out_Bayes_decorrelated_noise(y, np.sqrt(eta) * xi, 1 - eta, delta_in, delta_out, percentage, beta)
         * f_out_Bayes_decorrelated_noise(y, np.sqrt(eta) * xi, 1 - eta, delta_in, delta_out, percentage, beta)
-        * f_out_hinge(y, np.sqrt(q) * xi, sigma)
+        * f_out_Hinge(y, np.sqrt(q) * xi, sigma)
     )
 
 
@@ -77,7 +77,7 @@ def q_integral_Hinge_decorrelated_noise(y, xi, q, m, sigma, delta_in, delta_out,
         np.exp(-(xi**2) / 2)
         / np.sqrt(2 * np.pi)
         * Z_out_Bayes_decorrelated_noise(y, np.sqrt(eta) * xi, 1 - eta, delta_in, delta_out, percentage, beta)
-        * (f_out_hinge(y, np.sqrt(q) * xi, sigma) ** 2)
+        * (f_out_Hinge(y, np.sqrt(q) * xi, sigma) ** 2)
     )
 
 
@@ -88,7 +88,7 @@ def sigma_integral_Hinge_decorrelated_noise(y, xi, q, m, sigma, delta_in, delta_
         np.exp(-(xi**2) / 2)
         / np.sqrt(2 * np.pi)
         * Z_out_Bayes_decorrelated_noise(y, np.sqrt(eta) * xi, 1 - eta, delta_in, delta_out, percentage, beta)
-        * Df_out_hinge(y, np.sqrt(q) * xi, sigma)
+        * Df_out_Hinge(y, np.sqrt(q) * xi, sigma)
     )
 
 
