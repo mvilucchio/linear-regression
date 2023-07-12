@@ -8,6 +8,81 @@ from ..utils.errors import ConvergenceError
 from ..aux_functions.misc import damped_update
 
 
+@njit
+def GAMP_step(F2, F, ys, c_w_t, w_hat_t, f_out_t_1, f_out, Df_out, f_out_args, f_w, Df_w, f_w_args):
+    V_t = F2 @ c_w_t
+    omega_t = (F @ w_hat_t) - (V_t * f_out_t_1)
+
+    f_out_t = f_out(ys, omega_t, V_t, *f_out_args)
+    Df_out_t = Df_out(ys, omega_t, V_t, *f_out_args)
+
+    Lambda_t = -Df_out_t @ F2
+    gamma_t = (f_out_t @ F) + (Lambda_t * w_hat_t)
+
+    new_w_hat_t = f_w(gamma_t, Lambda_t, *f_w_args)
+    new_c_w_t = Df_w(gamma_t, Lambda_t, *f_w_args)
+
+    return new_w_hat_t, new_c_w_t, f_out_t
+
+
+def GAMP_algorithm_unsimplified_final(
+    f_w: callable,
+    Df_w: callable,
+    f_out: callable,
+    Df_out: callable,
+    ys: ndarray,
+    xs: ndarray,
+    f_w_args: tuple,
+    f_out_args: tuple,
+    init_w_hat: ndarray,
+    multiplier_c_w: float,
+    abs_tol: float = TOL_GAMP,
+    max_iter: int = MAX_ITER_GAMP,
+    blend: float = BLEND_GAMP,
+    return_iters: bool = False,
+):
+    n, d = xs.shape
+
+    F = xs / sqrt(d)
+    F2 = F**2
+
+    w_hat_t = init_w_hat
+    c_w_t = multiplier_c_w * ones(d)
+    f_out_t_1 = zeros(n)
+
+    V_t = F2 @ c_w_t
+    omega_t = F @ w_hat_t
+
+    f_out_t_1 = f_out(ys, omega_t, V_t, *f_out_args)
+
+    err = 100.0
+    iter_nb = 0
+    while err > abs_tol:
+        new_w_hat_t, new_c_w_t, f_out_t = GAMP_step(
+            F2, F, ys, c_w_t, w_hat_t, f_out_t_1, f_out, Df_out, f_out_args, f_w, Df_w, f_w_args
+        )
+
+        err = mean(abs(new_w_hat_t - w_hat_t))
+
+        w_hat_t = damped_update(new_w_hat_t, w_hat_t, blend)
+        c_w_t = damped_update(new_c_w_t, c_w_t, blend)
+        f_out_t_1 = f_out_t
+
+        iter_nb += 1
+        if iter_nb > max_iter:
+            if return_iters:
+                return w_hat_t, iter_nb
+            else:
+                return w_hat_t
+
+    if return_iters:
+        return w_hat_t, iter_nb
+    else:
+        return w_hat_t
+
+
+# all the different tests
+
 # @njit
 def GAMP_algorithm_unsimplified(
     f_w: callable,
@@ -82,7 +157,7 @@ def GAMP_unsimplified_iters(
     F = xs / sqrt(d)
     F2 = F**2
 
-    # start from the init 
+    # start from the init
     w_hat_t = init_w_hat
     c_w_t = multiplier_c_w * ones(d)
 
@@ -150,9 +225,7 @@ def GAMP_algorithm_unsimplified_mod(
 
     f_out_t_1 = f_out(ys, omega_t, V_t, *f_out_args)
 
-    print(
-        f"q_init = {mean(w_hat_t**2)}, m_init = {mean(w_hat_t * ground_truth)}, q_fixed = {f_w_args[0]}"
-    )
+    print(f"q_init = {mean(w_hat_t**2)}, m_init = {mean(w_hat_t * ground_truth)}, q_fixed = {f_w_args[0]}")
 
     err = 1.0
     iter_nb = 0
@@ -173,9 +246,7 @@ def GAMP_algorithm_unsimplified_mod(
 
         # there is somehting strange here since the error is lower than tolerance
         if iter_nb % 10 == 0:
-            print(
-                f"err = {err}, q = {mean(new_w_hat_t**2)}, m = {mean(new_w_hat_t * ground_truth)}"
-            )
+            print(f"err = {err}, q = {mean(new_w_hat_t**2)}, m = {mean(new_w_hat_t * ground_truth)}")
 
         w_hat_t = damped_update(new_w_hat_t, w_hat_t, blend)
         c_w_t = damped_update(new_c_w_t, c_w_t, blend)
@@ -228,9 +299,7 @@ def GAMP_algorithm_unsimplified_mod_2(
     # m_list.append()
     # previous_dot_list.append(1.0)
 
-    print(
-        f"q_init = {mean(w_hat_t**2)}, m_init = {mean(w_hat_t * ground_truth)}, q_fixed = {f_w_args[0]}"
-    )
+    print(f"q_init = {mean(w_hat_t**2)}, m_init = {mean(w_hat_t * ground_truth)}, q_fixed = {f_w_args[0]}")
 
     err = 1.0
     iter_nb = 0
@@ -299,9 +368,9 @@ def GAMP_algorithm_unsimplified_mod_3(
 
     f_out_t_1 = f_out(ys, omega_t, V_t, *f_out_args)
 
-    print(
-        f"q_init = {mean(w_hat_t**2)}, m_init = {mean(w_hat_t * ground_truth)}, q_fixed = {f_w_args[0]}"
-    )
+    # print(
+    #     f"q_init = {mean(w_hat_t**2)}, m_init = {mean(w_hat_t * ground_truth)}, q_fixed = {f_w_args[0]}"
+    # )
 
     err = 1.0
     iter_nb = 0
@@ -320,10 +389,10 @@ def GAMP_algorithm_unsimplified_mod_3(
 
         err = mean(abs(new_w_hat_t - w_hat_t))
 
-        if iter_nb % 500 == 0:
-            print(
-                f"err = {err}, q = {mean(new_w_hat_t**2)}, m = {mean(new_w_hat_t * ground_truth)}"
-            )
+        # if iter_nb % 500 == 0:
+        #     print(
+        #         f"err = {err}, q = {mean(new_w_hat_t**2)}, m = {mean(new_w_hat_t * ground_truth)}"
+        #     )
 
         w_hat_t = damped_update(new_w_hat_t, w_hat_t, blend)
         c_w_t = damped_update(new_c_w_t, c_w_t, blend)
@@ -352,7 +421,7 @@ def GAMP_algorithm_unsimplified_mod_4(
     abs_tol=TOL_GAMP,
     max_iter=MAX_ITER_GAMP,
     blend=BLEND_GAMP,
-    each_how_many=10
+    each_how_many=10,
 ):
     n, d = xs.shape
 
@@ -370,9 +439,7 @@ def GAMP_algorithm_unsimplified_mod_4(
     f_out_t_1 = f_out(ys, omega_t, V_t, *f_out_args)
     previous_ones = list()
 
-    print(
-        f"q_init = {mean(w_hat_t**2)}, m_init = {mean(w_hat_t * ground_truth)}, q_fixed = {f_w_args[0]}"
-    )
+    print(f"q_init = {mean(w_hat_t**2)}, m_init = {mean(w_hat_t * ground_truth)}, q_fixed = {f_w_args[0]}")
 
     err = 1.0
     iter_nb = 0
@@ -393,9 +460,7 @@ def GAMP_algorithm_unsimplified_mod_4(
 
         if iter_nb % each_how_many == 0 or iter_nb % each_how_many == 1:
             previous_ones.append(new_w_hat_t)
-            print(
-                f"err = {err}, q = {mean(new_w_hat_t**2)}, m = {mean(new_w_hat_t * ground_truth)}"
-            )
+            print(f"err = {err}, q = {mean(new_w_hat_t**2)}, m = {mean(new_w_hat_t * ground_truth)}")
 
         w_hat_t = damped_update(new_w_hat_t, w_hat_t, blend)
         c_w_t = damped_update(new_c_w_t, c_w_t, blend)

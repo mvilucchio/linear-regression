@@ -1,4 +1,5 @@
 from numpy import around, empty, sum, mean, std, square, divide, sqrt, dot
+from math import acos, pi
 from .data_generation import data_generation
 
 
@@ -8,13 +9,17 @@ def gen_error_data(ys, xs, estimated_theta, ground_truth_theta):
     return estimation_error
 
 
-def train_error_data(
-    ys, xs, estimated_theta, ground_truth_theta, loss_function, loss_function_args
-):
+def train_error_data(ys, xs, estimated_theta, ground_truth_theta, loss_function, loss_function_args):
     n, d = xs.shape
     xs_norm = xs / sqrt(d)
-    train_error = sum(loss_function(ys, xs_norm @ estimated_theta, *loss_function_args)) / n
-    return train_error
+    return sum(loss_function(ys, xs_norm @ estimated_theta, *loss_function_args)) / n
+
+
+def angle_teacher_student(ys, xs, estimated_theta, ground_truth_theta):
+    tmp = dot(estimated_theta, ground_truth_theta) / sqrt(
+        dot(estimated_theta, estimated_theta) * dot(ground_truth_theta, ground_truth_theta)
+    )
+    return acos(tmp) / pi
 
 
 def m_real_overlaps(ys, xs, estimated_theta, ground_truth_theta):

@@ -1,10 +1,13 @@
 import numpy as np
 from scipy.integrate import romb
+from math import sqrt
 from numba import njit
 from sklearn.metrics import max_error
 
 MULT_INTEGRAL = 10
 TOL_INT = 1e-6
+
+BIG_NUMBER = 100
 
 N_TEST_POINTS = 200
 
@@ -435,3 +438,36 @@ def domains_sep_hyperboles_above(square_borders, hyp, arg_hyp):
             ]
 
     return domain_x, domain_y
+
+
+def line_borders_hinge_inside(m, q, Σ):
+    test_value_1 = (1 - Σ) / sqrt(q)
+
+    if test_value_1 > -BIG_NUMBER:
+        return [(1, [test_value_1, 1 / sqrt(q)]), (-1, [-1 / sqrt(q), -test_value_1])]
+    else:
+        return [(1, [-BIG_NUMBER, 1 / sqrt(q)]), (-1, [-1 / sqrt(q), BIG_NUMBER])]
+
+
+def line_borders_hinge_above(m, q, Σ):
+    test_value_1 = (1 - Σ) / sqrt(q)
+
+    if test_value_1 > -BIG_NUMBER:
+        return [(1, [-BIG_NUMBER, test_value_1]), (-1, [-test_value_1, BIG_NUMBER])]
+    else:
+        return [(1, [-BIG_NUMBER, -BIG_NUMBER]), (-1, [BIG_NUMBER, BIG_NUMBER])]
+
+
+def stability_integration_domains():
+    domains_z = [[-BIG_NUMBER, 0.0], [0.0, BIG_NUMBER]]
+    domains_ω = [[lambda z: -BIG_NUMBER, lambda z: BIG_NUMBER], [lambda z: -BIG_NUMBER, lambda z: BIG_NUMBER]]
+
+    return domains_z, domains_ω
+
+
+def stability_integration_domains_triple():
+    domains_z = [[-BIG_NUMBER, BIG_NUMBER], [-BIG_NUMBER, BIG_NUMBER]]
+    domains_ω = [[lambda z: -BIG_NUMBER, lambda z: BIG_NUMBER], [lambda z: -BIG_NUMBER, lambda z: BIG_NUMBER]]
+    domains_w = [[lambda z, ω: -BIG_NUMBER, lambda z, ω: -z], [lambda z, ω: -z, lambda z, ω: BIG_NUMBER]]
+
+    return domains_z, domains_ω, domains_w

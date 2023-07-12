@@ -1,4 +1,4 @@
-from ..fixed_point_equations.fpeqs import fixed_point_finder
+from ..fixed_point_equations.fpeqs import fixed_point_finder, fixed_point_finder_loser
 from typing import Tuple
 from ..regression_numerics import TOL_GAMP, BLEND_GAMP, MAX_ITER_GAMP
 from numpy import logspace, empty, mean, std, around
@@ -61,11 +61,12 @@ def sweep_q_fixed_point_proj_denoiser(
     for idx, q in enumerate(qs):
         print(f"\tq = {q}")
         f_kwargs.update({"q_fixed": q})
-        ms_qs_sigmas[idx] = fixed_point_finder(
-            f_projection_denoising, f_hat_func, old_initial_cond_fpe, f_kwargs, f_hat_kwargs
+        ms_qs_sigmas[idx] = fixed_point_finder_loser(
+            f_projection_denoising, f_hat_func, old_initial_cond_fpe, f_kwargs, f_hat_kwargs, control_variate=(True, True, False)
         )
         old_initial_cond_fpe = ms_qs_sigmas[idx]
         m, q, sigma = ms_qs_sigmas[idx]
+        print(f"\tm = {m}, q = {q}, sigma = {sigma}")
 
         for jdx, (f, f_args, update_f_args) in enumerate(zip(funs, funs_args, update_funs_args)):
             if update_f_args:

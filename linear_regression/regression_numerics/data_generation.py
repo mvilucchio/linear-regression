@@ -11,6 +11,16 @@ def measure_gen_no_noise_clasif(generalization: bool, teacher_vector, xs):
         ys = where(w_xs > 0.0, 1.0, -1.0)
     return ys
 
+def measure_gen_probit_clasif(generalization: bool, teacher_vector, xs, delta):
+    n_samples, n_features = xs.shape
+    w_xs = divide(xs @ teacher_vector, sqrt(n_features))
+    noise = normal(loc=0.0, scale=sqrt(delta), size=(n_samples,))
+    if generalization:
+        ys = w_xs
+    else:
+        ys = where(w_xs + noise > 0.0, 1.0, -1.0)
+    return ys
+
 
 def measure_gen_single_noise_clasif(generalization: bool, teacher_vector, xs, delta: float):
     n_samples, n_features = xs.shape
