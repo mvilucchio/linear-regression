@@ -11,7 +11,6 @@ from ..fixed_point_equations.regularisation.fpe_projection_denoising import f_pr
 
 
 def sweep_q_fixed_point_proj_denoiser(
-    # f_func,
     f_hat_func,
     q_min: float,
     q_max: float,
@@ -62,7 +61,12 @@ def sweep_q_fixed_point_proj_denoiser(
         print(f"\tq = {q}")
         f_kwargs.update({"q_fixed": q})
         ms_qs_sigmas[idx] = fixed_point_finder_loser(
-            f_projection_denoising, f_hat_func, old_initial_cond_fpe, f_kwargs, f_hat_kwargs, control_variate=(True, True, False)
+            f_projection_denoising,
+            f_hat_func,
+            old_initial_cond_fpe,
+            f_kwargs,
+            f_hat_kwargs,
+            control_variate=(True, True, False),
         )
         old_initial_cond_fpe = ms_qs_sigmas[idx]
         m, q, sigma = ms_qs_sigmas[idx]

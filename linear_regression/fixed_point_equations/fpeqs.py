@@ -12,7 +12,7 @@ def fixed_point_finder(
     f_kwargs: dict,
     f_hat_kwargs: dict,
     abs_tol: float = TOL_FPE,
-    rel_tol: float = REL_TOL_FPE,
+    # rel_tol: float = REL_TOL_FPE,
     min_iter: int = MIN_ITER_FPE,
     max_iter: int = MAX_ITER_FPE,
 ):

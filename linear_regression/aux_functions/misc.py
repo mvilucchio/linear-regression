@@ -1,12 +1,12 @@
 from math import exp, sqrt, acos
-from numpy import pi, arccos, dot
-from numpy.linalg import norm
+from numpy import pi, arccos, dot, ndarray
+from numpy.linalg import norm, det, inv
 from numpy.random import normal
 import numpy as np
 from numba import vectorize, njit
 
 
-def sample_vector(ground_truth_theta, m, q):
+def sample_vector_informed(ground_truth_theta, m, q):
     random_vector = normal(size=ground_truth_theta.shape)
 
     projection = (
@@ -22,9 +22,20 @@ def sample_vector(ground_truth_theta, m, q):
     return init_w
 
 
+def sample_vector_random(n_features, squared_radius):
+    random_vector = normal(size=n_features)
+    random_vector = sqrt(squared_radius) * random_vector / norm(random_vector)
+
+    return random_vector
+
+
 @vectorize("float64(float64, float64, float64)")
 def gaussian(x: float, mean: float, var: float) -> float:
     return exp(-0.5 * pow(x - mean, 2.0) / var) / sqrt(2 * pi * var)
+
+
+def multivariate_gaussian(x: ndarray, mean: ndarray, cov: ndarray) -> float:
+    return exp(-0.5 * dot(x - mean, dot(inv(cov), x - mean))) / sqrt((2 * pi) ** len(x) * det(cov))
 
 
 @vectorize("float64(float64, float64, float64)")

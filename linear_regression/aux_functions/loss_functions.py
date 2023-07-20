@@ -28,7 +28,7 @@ def huber_loss(y: float, z: float, a: float) -> float:
 
 @vectorize("float64(float64, float64)")
 def hinge_loss(y: float, z: float) -> float:
-    return max(0.0, 1 - y * z)
+    return max(0.0, 1.0 - y * z)
 
 
 # ----

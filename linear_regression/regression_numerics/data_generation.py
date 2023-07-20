@@ -1,8 +1,13 @@
 from numpy.random import normal, choice
-from numpy import empty, sqrt, where, divide
+from numpy import empty, sqrt, where, divide, ndarray
 
 
-def measure_gen_no_noise_clasif(generalization: bool, teacher_vector, xs):
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Classification                                          #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+def measure_gen_no_noise_clasif(generalization: bool, teacher_vector: ndarray, xs: ndarray):
     _, n_features = xs.shape
     w_xs = divide(xs @ teacher_vector, sqrt(n_features))
     if generalization:
@@ -11,9 +16,10 @@ def measure_gen_no_noise_clasif(generalization: bool, teacher_vector, xs):
         ys = where(w_xs > 0.0, 1.0, -1.0)
     return ys
 
+
 def measure_gen_probit_clasif(generalization: bool, teacher_vector, xs, delta):
     n_samples, n_features = xs.shape
-    w_xs = divide(xs @ teacher_vector, sqrt(n_features))
+    w_xs = xs @ teacher_vector  # divide(xs @ teacher_vector, sqrt(n_features))
     noise = normal(loc=0.0, scale=sqrt(delta), size=(n_samples,))
     if generalization:
         ys = w_xs
@@ -31,6 +37,11 @@ def measure_gen_single_noise_clasif(generalization: bool, teacher_vector, xs, de
         error_sample = sqrt(delta) * normal(loc=0.0, scale=1.0, size=(n_samples,))
         ys = where(w_xs > 0.0, 1.0, -1.0) + error_sample
     return ys
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Regression                                              #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
 def measure_gen_single(generalization: bool, teacher_vector, xs, delta: float):
@@ -81,6 +92,11 @@ def measure_gen_decorrelated(
         factor_in_front = where(c, beta, 1.0)
         ys = factor_in_front * w_xs + total_error
     return ys
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# General                                                 #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
 def data_generation(measure_fun, n_features: int, n_samples: int, n_generalization: int, measure_fun_args):

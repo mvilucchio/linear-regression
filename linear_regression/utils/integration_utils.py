@@ -7,7 +7,7 @@ from sklearn.metrics import max_error
 MULT_INTEGRAL = 10
 TOL_INT = 1e-6
 
-BIG_NUMBER = 100
+BIG_NUMBER = 10
 
 N_TEST_POINTS = 200
 

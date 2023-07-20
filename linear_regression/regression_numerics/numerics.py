@@ -3,7 +3,7 @@ from math import acos, pi
 from .data_generation import data_generation
 
 
-def gen_error_data(ys, xs, estimated_theta, ground_truth_theta):
+def estimation_error_data(ys, xs, estimated_theta, ground_truth_theta):
     _, d = xs.shape
     estimation_error = sum((ground_truth_theta - estimated_theta) ** 2) / d
     return estimation_error
@@ -12,7 +12,8 @@ def gen_error_data(ys, xs, estimated_theta, ground_truth_theta):
 def train_error_data(ys, xs, estimated_theta, ground_truth_theta, loss_function, loss_function_args):
     n, d = xs.shape
     xs_norm = xs / sqrt(d)
-    return sum(loss_function(ys, xs_norm @ estimated_theta, *loss_function_args)) / n
+    tmp = loss_function(ys, xs_norm @ estimated_theta, *loss_function_args)
+    return sum(tmp) / n
 
 
 def angle_teacher_student(ys, xs, estimated_theta, ground_truth_theta):

@@ -18,29 +18,58 @@ from ...aux_functions.likelihood_channel_functions import (
 )
 
 
+# ------------------------------------
+# Probit Noise
+# ------------------------------------
+
+
 @njit(error_model="numpy", fastmath=False)
-def m_int_Hinge_probit_classif(ξ, y, q, m, Σ, delta):
+def m_int_Hinge_probit_classif(ξ, y, m, q, Σ, delta):
     η = m**2 / q
     return y * gaussian(ξ, 0, 1) * gaussian(sqrt(η) * ξ, 0, 1 - η + delta) * f_out_Hinge(y, sqrt(q) * ξ, Σ)
 
 
 @njit(error_model="numpy", fastmath=False)
-def q_int_Hinge_probit_classif(ξ, y, q, m, Σ, delta):
+def q_int_Hinge_probit_classif(ξ, y, m, q, Σ, delta):
     η = m**2 / q
     return 0.5 * (1 + erf(y * sqrt(0.5 * η / (1 - η + delta)) * ξ)) * (f_out_Hinge(y, sqrt(q) * ξ, Σ)) ** 2
 
 
 @njit(error_model="numpy", fastmath=False)
-def Σ_int_Hinge_probit_classif(ξ, y, q, m, Σ, delta):
+def Σ_int_Hinge_probit_classif(ξ, y, m, q, Σ, delta):
     η = m**2 / q
     return 0.5 * (1 + erf(y * sqrt(0.5 * η / (1 - η + delta)) * ξ)) * Df_out_Hinge(y, sqrt(q) * ξ, Σ)
 
 
+def f_hat_Hinge_probit_classif(m, q, Σ, alpha, delta):
+    domains_internal = line_borders_hinge_inside(m, q, Σ)
+    domains_external = line_borders_hinge_above(m, q, Σ)
+
+    integral_value_m_hat = 0.0
+    for y_val, domain in domains_internal + domains_external:
+        integral_value_m_hat += quad(m_int_Hinge_probit_classif, domain[0], domain[1], args=(y_val, m, q, Σ, delta))[0]
+    m_hat = alpha * integral_value_m_hat
+
+    integral_value_q_hat = 0.0
+    for y_val, domain in domains_internal + domains_external:
+        integral_value_q_hat += quad(q_int_Hinge_probit_classif, domain[0], domain[1], args=(y_val, m, q, Σ, delta))[0]
+    q_hat = alpha * integral_value_q_hat
+
+    integral_value_Σ_hat = 0.0
+    for y_val, domain in domains_internal:
+        integral_value_Σ_hat += quad(Σ_int_Hinge_probit_classif, domain[0], domain[1], args=(y_val, m, q, Σ, delta))[0]
+    Σ_hat = -alpha * integral_value_Σ_hat
+
+    return m_hat, q_hat, Σ_hat
+
+
+# ------------------------------------
+# No noise
 # ------------------------------------
 
 
 @njit(error_model="numpy", fastmath=False)
-def m_int_Hinge_no_noise_classif(ξ, y, q, m, Σ):
+def m_int_Hinge_no_noise_classif(ξ, y, m, q, Σ):
     η = m**2 / q
     return y * (
         gaussian(ξ, 0, 1) / sqrt(2.0 * pi * (1 - η)) * exp(-0.5 * η * ξ**2 / (1 - η)) * f_out_Hinge(y, sqrt(q) * ξ, Σ)
@@ -48,24 +77,46 @@ def m_int_Hinge_no_noise_classif(ξ, y, q, m, Σ):
 
 
 @njit(error_model="numpy", fastmath=False)
-def q_int_Hinge_no_noise_classif(ξ, y, q, m, Σ):
+def q_int_Hinge_no_noise_classif(ξ, y, m, q, Σ):
     η = m**2 / q
-    return (
-        0.5 * gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η)))) * (f_out_Hinge(y, sqrt(q) * ξ, Σ) ** 2)
-    )
+    return 0.5 * gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(0.5 * η / (1 - η)) * ξ)) * (f_out_Hinge(y, sqrt(q) * ξ, Σ) ** 2)
 
 
 @njit(error_model="numpy", fastmath=False)
-def Σ_int_Hinge_no_noise_classif(ξ, y, q, m, Σ):
+def Σ_int_Hinge_no_noise_classif(ξ, y, m, q, Σ):
     η = m**2 / q
-    return 0.5 * gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η)))) * Df_out_Hinge(y, sqrt(q) * ξ, Σ)
+    return 0.5 * gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(0.5 * η / (1 - η)) * ξ)) * Df_out_Hinge(y, sqrt(q) * ξ, Σ)
 
 
+def f_hat_Hinge_no_noise_classif(m, q, Σ, alpha):
+    domains_internal = line_borders_hinge_inside(m, q, Σ)
+    domains_external = line_borders_hinge_above(m, q, Σ)
+
+    integral_value_m_hat = 0.0
+    for y_val, domain in domains_internal + domains_external:
+        integral_value_m_hat += quad(m_int_Hinge_no_noise_classif, domain[0], domain[1], args=(y_val, m, q, Σ))[0]
+    m_hat = alpha * integral_value_m_hat
+
+    integral_value_q_hat = 0.0
+    for y_val, domain in domains_internal + domains_external:
+        integral_value_q_hat += quad(q_int_Hinge_no_noise_classif, domain[0], domain[1], args=(y_val, m, q, Σ))[0]
+    q_hat = alpha * integral_value_q_hat
+
+    integral_value_Σ_hat = 0.0
+    for y_val, domain in domains_internal:
+        integral_value_Σ_hat += quad(Σ_int_Hinge_no_noise_classif, domain[0], domain[1], args=(y_val, m, q, Σ))[0]
+    Σ_hat = -alpha * integral_value_Σ_hat
+
+    return m_hat, q_hat, Σ_hat
+
+
+# ------------------------------------
+# Single noise
 # ------------------------------------
 
 
 @njit(error_model="numpy", fastmath=False)
-def m_int_Hinge_single_noise_classif(y, ξ, q, m, Σ, delta):
+def m_int_Hinge_single_noise_classif(y, ξ, m, q, Σ, delta):
     η = m**2 / q
     return (
         gaussian(ξ, 0, 1)
@@ -75,7 +126,7 @@ def m_int_Hinge_single_noise_classif(y, ξ, q, m, Σ, delta):
 
 
 @njit(error_model="numpy", fastmath=False)
-def q_int_Hinge_single_noise_classif(y, ξ, q, m, Σ, delta):
+def q_int_Hinge_single_noise_classif(y, ξ, m, q, Σ, delta):
     η = m**2 / q
     return (
         gaussian(ξ, 0, 1)
@@ -85,60 +136,13 @@ def q_int_Hinge_single_noise_classif(y, ξ, q, m, Σ, delta):
 
 
 @njit(error_model="numpy", fastmath=False)
-def Σ_int_Hinge_single_noise_classif(y, ξ, q, m, Σ, delta):
+def Σ_int_Hinge_single_noise_classif(y, ξ, m, q, Σ, delta):
     η = m**2 / q
     return (
         gaussian(ξ, 0, 1)
         * Z_out_Bayes_single_noise_classif(y, sqrt(η) * ξ, 1 - η, delta)
         * Df_out_Hinge(y, sqrt(q) * ξ, Σ)
     )
-
-
-# ------------------------------------
-
-
-def f_hat_Hinge_probit_classif(m, q, Σ, alpha, delta):
-    domains_internal = line_borders_hinge_inside(m, q, Σ)
-    domains_external = line_borders_hinge_above(m, q, Σ)
-
-    integral_value_m_hat = 0.0
-    for y_val, domain in domains_internal + domains_external:
-        integral_value_m_hat += quad(m_int_Hinge_probit_classif, domain[0], domain[1], args=(y_val, q, m, Σ, delta))[0]
-    m_hat = alpha * integral_value_m_hat
-
-    integral_value_q_hat = 0.0
-    for y_val, domain in domains_internal + domains_external:
-        integral_value_q_hat += quad(q_int_Hinge_probit_classif, domain[0], domain[1], args=(y_val, q, m, Σ, delta))[0]
-    q_hat = alpha * integral_value_q_hat
-
-    integral_value_Σ_hat = 0.0
-    for y_val, domain in domains_internal:
-        integral_value_Σ_hat += quad(Σ_int_Hinge_probit_classif, domain[0], domain[1], args=(y_val, q, m, Σ, delta))[0]
-    Σ_hat = -alpha * integral_value_Σ_hat
-
-    return m_hat, q_hat, Σ_hat
-
-
-def f_hat_Hinge_no_noise_classif(m, q, Σ, alpha):
-    domains_internal = line_borders_hinge_inside(m, q, Σ)
-    domains_external = line_borders_hinge_above(m, q, Σ)
-
-    integral_value_m_hat = 0.0
-    for y_val, domain in domains_internal + domains_external:
-        integral_value_m_hat += quad(m_int_Hinge_no_noise_classif, domain[0], domain[1], args=(y_val, q, m, Σ))[0]
-    m_hat = alpha * integral_value_m_hat
-
-    integral_value_q_hat = 0.0
-    for y_val, domain in domains_internal + domains_external:
-        integral_value_q_hat += quad(q_int_Hinge_no_noise_classif, domain[0], domain[1], args=(y_val, q, m, Σ))[0]
-    q_hat = alpha * integral_value_q_hat
-
-    integral_value_Σ_hat = 0.0
-    for y_val, domain in domains_internal:
-        integral_value_Σ_hat += quad(Σ_int_Hinge_no_noise_classif, domain[0], domain[1], args=(y_val, q, m, Σ))[0]
-    Σ_hat = -alpha * integral_value_Σ_hat
-
-    return m_hat, q_hat, Σ_hat
 
 
 @njit(error_model="numpy")
@@ -148,7 +152,7 @@ def hyperbole(x, const):
 
 def f_hat_Hinge_single_noise_classif(m, q, Σ, alpha, delta):
     borders = find_integration_borders_square(
-        m_int_Hinge_single_noise_classif, sqrt(1 + delta), 1, args=(q, m, Σ, delta), mult=10
+        m_int_Hinge_single_noise_classif, sqrt(1 + delta), 1, args=(m, q, Σ, delta), mult=10
     )
 
     domain_xi_1, domain_y_1 = domains_sep_hyperboles_inside(
@@ -166,7 +170,7 @@ def f_hat_Hinge_single_noise_classif(m, q, Σ, alpha, delta):
             xi_funs[1],
             y_funs[0],
             y_funs[1],
-            args=(q, m, Σ, delta),
+            args=(m, q, Σ, delta),
         )[0]
     m_hat = alpha * integral_value_m_hat
 
@@ -180,7 +184,7 @@ def f_hat_Hinge_single_noise_classif(m, q, Σ, alpha, delta):
             xi_funs[1],
             y_funs[0],
             y_funs[1],
-            args=(q, m, Σ, delta),
+            args=(m, q, Σ, delta),
         )[0]
     q_hat = alpha * integral_value_q_hat
 
@@ -194,7 +198,7 @@ def f_hat_Hinge_single_noise_classif(m, q, Σ, alpha, delta):
             xi_funs[1],
             y_funs[0],
             y_funs[1],
-            args=(q, m, Σ, delta),
+            args=(m, q, Σ, delta),
         )[0]
     Σ_hat = -alpha * integral_value_Σ_hat
 
