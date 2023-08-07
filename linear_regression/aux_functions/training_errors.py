@@ -101,7 +101,7 @@ def training_error_huber_loss(m, q, sigma, delta_in, delta_out, percentage, beta
 @njit(error_model="numpy", fastmath=False)
 def integral_training_error_Hinge_probit(ξ, y, m, q, Σ, delta):
     η = m**2 / q
-    return 0.5 * (1 + erf(y * sqrt(0.5 * η / (1 - η + delta)) * ξ)) * (1 - y * sqrt(q) * ξ - Σ)
+    return 0.5 * gaussian(ξ, 0, 1) * (1 + erf(y * sqrt(0.5 * η / (1 - η + delta)) * ξ)) * (1 - y * sqrt(q) * ξ - Σ)
 
 
 def training_error_Hinge_loss_probit(m: float, q: float, Σ: float, delta: float) -> float:
@@ -118,12 +118,7 @@ def training_error_Hinge_loss_probit(m: float, q: float, Σ: float, delta: float
 def integral_training_error_Logistic_probit(ξ, y, m, q, Σ, delta):
     η = m**2 / q
     proximal = minimize_scalar(moreau_loss_Logistic, args=(y, sqrt(q) * ξ, Σ))["x"]
-    return (
-        0.5
-        * gaussian(ξ, 0.0, 1.0)
-        * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η + delta))))
-        * logistic_loss(y, proximal)
-    )
+    return 0.5 * gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η + delta)))) * logistic_loss(y, proximal)
 
 
 def training_error_Logistic_loss_probit(m, q, Σ, delta):
@@ -143,7 +138,7 @@ def integral_training_error_Exponential_probit(ξ, y, m, q, Σ, delta):
     η = m**2 / q
     proximal = minimize_scalar(moreau_loss_Exponential, args=(y, sqrt(q) * ξ, Σ))["x"]
     return 0.5 * (
-        gaussian(ξ, 0.0, 1.0) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η + delta)))) * exponential_loss(y, proximal)
+        gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η + delta)))) * exponential_loss(y, proximal)
     )
 
 
@@ -163,7 +158,7 @@ def training_error_Exponential_loss_probit(m, q, Σ, delta):
 @njit(error_model="numpy", fastmath=False)
 def integral_training_error_Hinge_no_noise(ξ, y, m, q, Σ):
     η = m**2 / q
-    return 0.5 * (gaussian(ξ, 0, 1) * (1 + erf(y * sqrt(0.5 * η / (1 - η)) * ξ)) * (1 - y * sqrt(q) * ξ - Σ))
+    return 0.5 * gaussian(ξ, 0, 1) * (1 + erf(y * sqrt(0.5 * η / (1 - η)) * ξ)) * (1 - y * sqrt(q) * ξ - Σ)
 
 
 def training_error_Hinge_loss_no_noise(m, q, Σ):
@@ -198,7 +193,7 @@ def integral_training_error_Exponential_no_noise(ξ, y, m, q, Σ):
     η = m**2 / q
     proximal = minimize_scalar(moreau_loss_Exponential, args=(y, sqrt(q) * ξ, Σ))["x"]
     return 0.5 * (
-        gaussian(ξ, 0.0, 1.0) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η)))) * exponential_loss(y, proximal)
+        gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η)))) * exponential_loss(y, proximal)
     )
 
 

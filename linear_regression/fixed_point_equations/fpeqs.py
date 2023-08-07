@@ -3,7 +3,7 @@ from numba import njit
 from ..fixed_point_equations import BLEND_FPE, TOL_FPE, REL_TOL_FPE, MIN_ITER_FPE, MAX_ITER_FPE
 from ..utils.errors import ConvergenceError
 from ..aux_functions.misc import damped_update
-
+import numpy as np
 
 def fixed_point_finder(
     f_func,
@@ -132,3 +132,10 @@ def plateau_fixed_point_finder(
         if iter_nb > max_iter:
             raise ConvergenceError("plateau_fixed_point_finder", iter_nb)
     return x
+
+
+# def gradient_at_fp(jacobian_at_point : callable, fp : Tuple[float, float, float]):
+#     # the output gradient is an array of size 6 for each of the order parameters
+#     g = np.empty(6)
+
+#     J = jacobian_at_point()

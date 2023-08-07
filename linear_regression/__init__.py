@@ -6,4 +6,4 @@ __summary__ = 'Tools for simulating performances of linear models'
 __url__ = 'https://github.com/superporchetta/linear_regression'
 
 
-ENAMBEL_FASTMATH = False
+ENABLE_FASTMATH = False

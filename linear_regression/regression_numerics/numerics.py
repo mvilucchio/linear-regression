@@ -16,7 +16,7 @@ def train_error_data(ys, xs, estimated_theta, ground_truth_theta, loss_function,
     return sum(tmp) / n
 
 
-def angle_teacher_student(ys, xs, estimated_theta, ground_truth_theta):
+def angle_teacher_student_data(ys, xs, estimated_theta, ground_truth_theta):
     tmp = dot(estimated_theta, ground_truth_theta) / sqrt(
         dot(estimated_theta, estimated_theta) * dot(ground_truth_theta, ground_truth_theta)
     )
@@ -39,20 +39,21 @@ def erm_weight_finding(
     alpha: float,
     measure_fun: callable,
     find_coefficients_fun: callable,
-    funs,
-    funs_args,
+    funs_train_data,
+    funs_args_train_data,
     n_features: int,
     repetitions: int,
     measure_fun_args,
     find_coefficients_fun_args,
+    verbose: bool = False,
 ):
     if alpha <= 0:
         raise ValueError("alpha should be positive, in this case is {:f}".format(alpha))
 
-    if len(funs) != len(funs_args):
+    if len(funs_train_data) != len(funs_args_train_data):
         raise ValueError(
             "The length of funs and funs_args should be the same, in this case is {:d} and {:d}".format(
-                len(funs), len(funs_args)
+                len(funs_train_data), len(funs_args_train_data)
             )
         )
 
@@ -62,11 +63,16 @@ def erm_weight_finding(
     if repetitions <= 0:
         raise ValueError("repetitions should be positive, in this case is {:d}".format(repetitions))
 
-    out_list = [empty(repetitions) for _ in range(len(funs))]
-    out_list_mean = empty(len(funs))
-    out_list_std = empty(len(funs))
+    out_list = [empty(repetitions) for _ in range(len(funs_train_data))]
+    out_list_mean = empty(len(funs_train_data))
+    out_list_std = empty(len(funs_train_data))
+
+    if verbose:
+        print("alpha = {:f} rep : ".format(alpha), end="")
 
     for idx in range(repetitions):
+        if verbose:
+            print("{:d}".format(idx), end=",")
         xs, ys, _, _, ground_truth_theta = data_generation(
             measure_fun,
             n_features=n_features,
@@ -77,7 +83,7 @@ def erm_weight_finding(
 
         estimated_theta = find_coefficients_fun(ys, xs, *find_coefficients_fun_args)
 
-        for jdx, (f, f_args) in enumerate(zip(funs, funs_args)):
+        for jdx, (f, f_args) in enumerate(zip(funs_train_data, funs_args_train_data)):
             out_list[jdx][idx] = f(ys, xs, estimated_theta, ground_truth_theta, *f_args)
 
         del xs
@@ -87,7 +93,8 @@ def erm_weight_finding(
     for idx, out_vals in enumerate(out_list):
         out_list_mean[idx], out_list_std[idx] = mean(out_vals), std(out_vals)
 
-    print(alpha, " Done.")
+    if verbose:
+        print(" Done.")
 
     del out_vals
 

@@ -19,7 +19,7 @@ def measure_gen_no_noise_clasif(generalization: bool, teacher_vector: ndarray, x
 
 def measure_gen_probit_clasif(generalization: bool, teacher_vector, xs, delta):
     n_samples, n_features = xs.shape
-    w_xs = xs @ teacher_vector  # divide(xs @ teacher_vector, sqrt(n_features))
+    w_xs = divide(xs @ teacher_vector, sqrt(n_features))
     noise = normal(loc=0.0, scale=sqrt(delta), size=(n_samples,))
     if generalization:
         ys = w_xs

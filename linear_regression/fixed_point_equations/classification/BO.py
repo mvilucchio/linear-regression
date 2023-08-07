@@ -30,13 +30,19 @@ def q_int_BO_no_noise_classif(ξ, y, q, m, Σ):
     return A * B / C
 
 
+def q_int_BO_flip_sign_classif(ξ, y, q, m, Σ, eps):
+    raise NotImplementedError
+
+
 # -----------------------------------
 def f_hat_BO_probit_classif(m, q, Σ, alpha, delta):
     domains = [(1, [-BIG_NUMBER, BIG_NUMBER]), (-1, [-BIG_NUMBER, BIG_NUMBER])]
 
     integral_value_q_hat = 0.0
     for y_val, domain in domains:
-        integral_value_q_hat += quad(q_int_BO_probit_classif, domain[0], domain[1], args=(y_val, q, m, Σ, delta))[0]
+        integral_value_q_hat += quad(
+            q_int_BO_probit_classif, domain[0], domain[1], args=(y_val, q, m, Σ, delta)
+        )[0]
     q_hat = alpha * integral_value_q_hat
 
     return q_hat, q_hat, 1 - q_hat
@@ -47,7 +53,9 @@ def f_hat_BO_no_noise_classif(m, q, Σ, alpha):
 
     integral_value_q_hat = 0.0
     for y_val, domain in domains:
-        integral_value_q_hat += quad(q_int_BO_no_noise_classif, domain[0], domain[1], args=(y_val, q, m, Σ))[0]
+        integral_value_q_hat += quad(q_int_BO_no_noise_classif, domain[0], domain[1], args=(y_val, q, m, Σ))[
+            0
+        ]
     q_hat = alpha * integral_value_q_hat
 
     return q_hat, q_hat, 1 - q_hat
