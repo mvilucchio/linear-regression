@@ -17,6 +17,44 @@ from ...aux_functions.likelihood_channel_functions import (
     Df_out_Hinge,
 )
 
+# ------------------------------------
+# Sign Flip Noise
+# ------------------------------------
+
+
+def m_int_Hinge_sign_flip(ξ, y, m, q, Σ, eps):
+    raise NotImplementedError
+
+
+def q_int_Hinge_sign_flip(ξ, y, m, q, Σ, eps):
+    raise NotImplementedError
+
+
+def Σ_int_Hinge_sign_flip(ξ, y, m, q, Σ, eps):
+    raise NotImplementedError
+
+
+def f_hat_Hinge_sign_flip(m, q, Σ, alpha, eps):
+    domains_internal = line_borders_hinge_inside(m, q, Σ)
+    domains_external = line_borders_hinge_above(m, q, Σ)
+
+    integral_value_m_hat = 0.0
+    for y_val, domain in domains_internal + domains_external:
+        integral_value_m_hat += quad(m_int_Hinge_sign_flip, domain[0], domain[1], args=(y_val, m, q, Σ, eps))[0]
+    m_hat = alpha * integral_value_m_hat
+
+    integral_value_q_hat = 0.0
+    for y_val, domain in domains_internal + domains_external:
+        integral_value_q_hat += quad(q_int_Hinge_sign_flip, domain[0], domain[1], args=(y_val, m, q, Σ, eps))[0]
+    q_hat = alpha * integral_value_q_hat
+
+    integral_value_Σ_hat = 0.0
+    for y_val, domain in domains_internal:
+        integral_value_Σ_hat += quad(Σ_int_Hinge_sign_flip, domain[0], domain[1], args=(y_val, m, q, Σ, eps))[0]
+    Σ_hat = -alpha * integral_value_Σ_hat
+
+    return m_hat, q_hat, Σ_hat
+
 
 # ------------------------------------
 # Probit Noise
@@ -32,13 +70,20 @@ def m_int_Hinge_probit_classif(ξ, y, m, q, Σ, delta):
 @njit(error_model="numpy", fastmath=False)
 def q_int_Hinge_probit_classif(ξ, y, m, q, Σ, delta):
     η = m**2 / q
-    return 0.5 * (1 + erf(y * sqrt(0.5 * η / (1 - η + delta)) * ξ)) * (f_out_Hinge(y, sqrt(q) * ξ, Σ)) ** 2
+    return (
+        0.5
+        * gaussian(ξ, 0, 1)
+        * (1 + y * erf(sqrt(0.5 * η / (1 - η + delta)) * ξ))
+        * (f_out_Hinge(y, sqrt(q) * ξ, Σ)) ** 2
+    )
 
 
 @njit(error_model="numpy", fastmath=False)
 def Σ_int_Hinge_probit_classif(ξ, y, m, q, Σ, delta):
     η = m**2 / q
-    return 0.5 * (1 + erf(y * sqrt(0.5 * η / (1 - η + delta)) * ξ)) * Df_out_Hinge(y, sqrt(q) * ξ, Σ)
+    return (
+        0.5 * gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(0.5 * η / (1 - η + delta)) * ξ)) * Df_out_Hinge(y, sqrt(q) * ξ, Σ)
+    )
 
 
 def f_hat_Hinge_probit_classif(m, q, Σ, alpha, delta):
