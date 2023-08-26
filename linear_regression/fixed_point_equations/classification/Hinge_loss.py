@@ -15,6 +15,8 @@ from ...aux_functions.likelihood_channel_functions import (
     Z_out_Bayes_f_out_Bayes_single_noise_classif,
     f_out_Hinge,
     Df_out_Hinge,
+    Z_out_Bayes_sign_flip_classif,
+    f_out_Bayes_sign_flip_classif,
 )
 
 # ------------------------------------
@@ -23,15 +25,31 @@ from ...aux_functions.likelihood_channel_functions import (
 
 
 def m_int_Hinge_sign_flip(ξ, y, m, q, Σ, eps):
-    raise NotImplementedError
+    η = m**2 / q
+    return (
+        gaussian(ξ, 0, 1)
+        * Z_out_Bayes_sign_flip_classif(y, sqrt(η) * ξ, 1 - η, eps)
+        * f_out_Bayes_sign_flip_classif(y, sqrt(η) * ξ, 1 - η, eps)
+        * f_out_Hinge(y, sqrt(q) * ξ, Σ)
+    )
 
 
 def q_int_Hinge_sign_flip(ξ, y, m, q, Σ, eps):
-    raise NotImplementedError
+    η = m**2 / q
+    return (
+        gaussian(ξ, 0, 1)
+        * Z_out_Bayes_sign_flip_classif(y, sqrt(η) * ξ, 1 - η, eps)
+        * (f_out_Hinge(y, sqrt(q) * ξ, Σ, eps)) ** 2
+    )
 
 
 def Σ_int_Hinge_sign_flip(ξ, y, m, q, Σ, eps):
-    raise NotImplementedError
+    η = m**2 / q
+    return (
+        gaussian(ξ, 0, 1)
+        * Z_out_Bayes_sign_flip_classif(y, sqrt(η) * ξ, 1 - η, eps)
+        * Df_out_Hinge(y, sqrt(q) * ξ, Σ, eps)
+    )
 
 
 def f_hat_Hinge_sign_flip(m, q, Σ, alpha, eps):
