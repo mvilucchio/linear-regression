@@ -6,7 +6,7 @@ from .loss_functions import logistic_loss, exponential_loss
 def proximal_Hinge_loss(y: float, omega: float, V: float) -> float:
     if y * omega <= 1 - V:
         return omega + V * y
-    elif y * omega <= 1 and y * omega > 1 - V:
+    elif 1 - V < y * omega <= 1:
         return y
     else:
         return omega

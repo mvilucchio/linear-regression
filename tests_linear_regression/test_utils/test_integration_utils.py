@@ -1,46 +1,51 @@
-import unittest
+from unittest import TestCase, main
+from numba import njit
 import linear_regression.utils.integration_utils as iu
 import numpy as np
 
 
-class TestIntegrationUtils(unittest.TestCase):
+@njit
+def constant_fun(x: float) -> float:
+    return 1.0
+
+
+@njit
+def linear_fun(x: float) -> float:
+    return x
+
+
+@njit
+def quadratic_fun(x: float) -> float:
+    return x**2
+
+
+class TestGaussHermiteQuadrature(TestCase):
+    def test_constant_function(self):
+        mean = 0.0
+        std = 1.0
+        result = iu.gauss_hermite_quadrature(constant_fun, mean, std)
+        self.assertAlmostEqual(result, 5.0 * (mean + std) - 5.0 * (mean - std), places=5)
+
+    def test_linear_function(self):
+        mean = 0.0
+        std = 1.0
+        result = iu.gauss_hermite_quadrature(linear_fun, mean, std)
+        self.assertAlmostEqual(result, 0.5 * (mean + std) ** 2 - 0.5 * (mean - std) ** 2, places=5)
+
+    def test_quadratic_function(self):
+        mean = 0.0
+        std = 1.0
+        result = iu.gauss_hermite_quadrature(quadratic_fun, mean, std)
+        expected = (1 / 3) * (mean + std) ** 3 - (1 / 3) * (mean - std) ** 3
+        self.assertAlmostEqual(result, expected, places=5)
+
+
+class TestFindIntegrationBordersSquare(TestCase):
     def test1(self):
         self.assertAlmostEqual(0.0, 0.0)
 
-    # def test_output(self):
-    #     # Test that the output of the function is correct
-    #     def f(x):
-    #         return x**2
 
-    #     mean = 1.0
-    #     std = 2.0
-    #     expected_output = np.exp(mean**2) * np.sum(iu.w_ge * f(np.sqrt(2) * std * iu.x_ge + mean))
-
-    #     # Note: we cannot use @njit-ed function in assertAlmostEqual,
-    #     # thus, we test np.isclose for the expected output and the function output
-    #     self.assertTrue(np.isclose(iu.gauss_hermite_quadrature(f, mean, std), expected_output))
-
-    # def test_error_raised(self):
-    #     # Test that an error is raised if the input function does not return a scalar
-    #     def f(x):
-    #         return np.array([x**2, x**3])
-
-    #     mean = 1.0
-    #     std = 2.0
-    #     with self.assertRaises(ValueError):
-    #         iu.gauss_hermite_quadrature(f, mean, std)
-
-    # def test_valid_input(self):
-    #     # Test that the function executes without errors for valid input values
-    #     def f(x):
-    #         return np.exp(-x**2)
-
-    #     mean = 0.0
-    #     std = 1.0
-    #     iu.gauss_hermite_quadrature(f, mean, std)  # Should not raise an error
-
-
-class TestDivideIntegrationBordersMultipleGrid(unittest.TestCase):
+class TestDivideIntegrationBordersMultipleGrid(TestCase):
     def test_N_equals_0(self):
         square_borders = [(-1, 1), (-1, 1)]
         N = 0
@@ -147,4 +152,4 @@ class TestDivideIntegrationBordersMultipleGrid(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    main()

@@ -3,6 +3,7 @@ from scipy.integrate import romb
 from math import sqrt
 from numba import njit
 from sklearn.metrics import max_error
+from typing import Callable, Optional, Iterable, List
 
 MULT_INTEGRAL = 10
 TOL_INT = 1e-6
@@ -16,9 +17,8 @@ N_GAUSS_HERMITE = 95
 
 x_ge, w_ge = np.polynomial.hermite.hermgauss(N_GAUSS_HERMITE)
 
-
 @njit(error_model="numpy", fastmath=True)
-def gauss_hermite_quadrature(fun, mean, std):
+def gauss_hermite_quadrature(fun: Callable[[float], float], mean: float, std: float) -> float:
     # x, w = np.polynomial.hermite.hermgauss(N_GAUSS_HERMITE)
     y = np.sqrt(2.0) * std * x_ge + mean
     jacobian = np.sqrt(2.0) * std
@@ -34,56 +34,88 @@ def _check_nested_list(nested_list):
 
 
 def find_integration_borders_square(
-    fun, scale1, scale2, mult=MULT_INTEGRAL, tol=TOL_INT, n_points=N_TEST_POINTS, args=[]
-):
-    borders = [[-mult * scale1, mult * scale1], [-mult * scale2, mult * scale2]]
+    fun: Callable[[float, float], float],
+    scale1: float,
+    scale2: float,
+    mult: float = MULT_INTEGRAL,
+    tol: float = TOL_INT,
+    n_points: int = N_TEST_POINTS,
+    args: Optional[Iterable[float]] = None,
+) -> List[List[float]]:
+    if args is None:
+        args = tuple()
 
-    for idx, ax in enumerate(borders):
-        for jdx, border in enumerate(ax):
-            while True:
-                if idx == 0:
-                    max_val = np.max(
-                        [
-                            fun(borders[idx][jdx], pt, *args)
-                            for pt in np.linspace(
-                                borders[1 if idx == 0 else 0][0],
-                                borders[1 if idx == 0 else 0][1],
-                                n_points,
-                            )
-                        ]
-                    )
-                else:
-                    max_val = np.max(
-                        [
-                            fun(pt, borders[idx][jdx], *args)
-                            for pt in np.linspace(
-                                borders[1 if idx == 0 else 0][0],
-                                borders[1 if idx == 0 else 0][1],
-                                n_points,
-                            )
-                        ]
-                    )
-                if max_val > tol:
-                    borders[idx][jdx] = borders[idx][jdx] + (-1.0 if jdx == 0 else 1.0) * (
-                        scale1 if idx == 0 else scale2
-                    )
-                else:
-                    break
+    test_pts = np.empty(n_points)
+    max_vals = np.empty(4)
 
-    for ax in borders:
-        ax[0] = -np.max(np.abs(ax))
-        ax[1] = np.max(np.abs(ax))
+    n_test = 0
+    while True:
+        test_pts = np.linspace(-mult * scale1, mult * scale1, n_points)
+        max_vals[0] = np.max(fun(test_pts, mult * scale2, *args))
+        max_vals[2] = np.max(fun(test_pts, -mult * scale2, *args))
 
-    max_val = np.max([borders[0][1], borders[1][1]])
+        test_pts = np.linspace(-mult * scale2, mult * scale2, n_points)
+        max_vals[1] = np.max(fun(mult * scale1, test_pts, *args))
+        max_vals[3] = np.max(fun(-mult * scale1, test_pts, *args))
 
-    borders = [[-max_val, max_val], [-max_val, max_val]]
+        if np.max(max_vals) < tol:
+            max_scale = max(scale1, scale2)
+            return [[-mult * max_scale, mult * max_scale], [-mult * max_scale, mult * max_scale]]
+        else:
+            n_test += 1
+            mult += 1
 
-    return borders
+        if n_test > 10:
+            raise ValueError("Cannot find the integration borders. The function is probably not bounded.")
+
+    # borders = [[-mult * scale1, mult * scale1], [-mult * scale2, mult * scale2]]
+
+    # for idx, ax in enumerate(borders):
+    #     for jdx, border in enumerate(ax):
+    #         while True:
+    #             if idx == 0:
+    #                 max_val = np.max(
+    #                     [
+    #                         fun(borders[idx][jdx], pt, *args)
+    #                         for pt in np.linspace(
+    #                             borders[1 if idx == 0 else 0][0],
+    #                             borders[1 if idx == 0 else 0][1],
+    #                             n_points,
+    #                         )
+    #                     ]
+    #                 )
+    #             else:
+    #                 max_val = np.max(
+    #                     [
+    #                         fun(pt, borders[idx][jdx], *args)
+    #                         for pt in np.linspace(
+    #                             borders[1 if idx == 0 else 0][0],
+    #                             borders[1 if idx == 0 else 0][1],
+    #                             n_points,
+    #                         )
+    #                     ]
+    #                 )
+    #             if max_val > tol:
+    #                 borders[idx][jdx] = borders[idx][jdx] + (-1.0 if jdx == 0 else 1.0) * (
+    #                     scale1 if idx == 0 else scale2
+    #                 )
+    #             else:
+    #                 break
+
+    # for ax in borders:
+    #     ax[0] = -np.max(np.abs(ax))
+    #     ax[1] = np.max(np.abs(ax))
+
+    # max_val = np.max([borders[0][1], borders[1][1]])
+
+    # return [[-max_val, max_val], [-max_val, max_val]]
 
 
 def divide_integration_borders_multiple_grid(square_borders, N=10):
     if N < 1:
         raise ValueError("N must be greater than 1")
+    if N == 1:
+        return square_borders[0], square_borders[1]
 
     max_range = square_borders[0][1]
     step = 2 * max_range / N

@@ -11,11 +11,11 @@ class TestProximalHingeLoss(TestFunctionComparison):
     def test_values(self):
         def true_proximal_hinge_loss(y, omega, V):
             return minimize_scalar(
-                lambda z: lf.hinge_loss(y, z) + 0.5 * (z - omega) ** 2 / V, bounds=(-1e2, 1e2)
+                lambda z: lf.hinge_loss(y, z ) + 0.5 * (z - omega) ** 2 / V, bounds=(-1e2, 1e2)
             )["x"]
 
         self.compare_two_functions(
-            mpl.proximal_Hinge_loss, true_proximal_hinge_loss, arg_signatures=("0-1", "n", "0-1")
+            mpl.proximal_Hinge_loss, true_proximal_hinge_loss, arg_signatures=("b", "n", "0-1")
         )
 
 
