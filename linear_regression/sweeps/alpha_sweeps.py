@@ -4,11 +4,11 @@ from math import log10
 from typing import Tuple
 from ..utils.errors import ConvergenceError
 from ..fixed_point_equations.fpeqs import fixed_point_finder
-from ..regression_numerics.data_generation import data_generation
-from ..regression_numerics.amp_funcs import GAMP_algorithm_unsimplified
+from ..data.generation import data_generation
+from ..amp.amp_funcs import GAMP_algorithm_unsimplified
 from ..aux_functions.misc import estimation_error
 from ..fixed_point_equations import SMALLEST_REG_PARAM, SMALLEST_HUBER_PARAM
-from ..regression_numerics import TOL_GAMP, MAX_ITER_GAMP, BLEND_GAMP
+from ..erm import TOL_GAMP, MAX_ITER_GAMP, BLEND_GAMP
 from ..fixed_point_equations.optimality_finding import (
     find_optimal_reg_param_function,
     find_optimal_reg_and_huber_parameter_function,

@@ -19,12 +19,13 @@ import numpy.linalg as LA
 from numpy.random import normal
 from numba import njit
 from sklearn.svm import LinearSVC
+from sklearn.linear_model import LogisticRegression
 from sklearn.utils import axis0_safe_slice
 from sklearn.utils.extmath import safe_sparse_dot
 from scipy.optimize import minimize, line_search
 from cvxpy import Variable, Minimize, Problem, norm, sum_squares
 from ..utils.matrix_utils import axis0_pos_neg_mask, safe_sparse_dot
-from ..regression_numerics import GTOL_MINIMIZE, MAX_ITER_MINIMIZE
+from ..erm import GTOL_MINIMIZE, MAX_ITER_MINIMIZE
 
 
 @njit(error_model="numpy", fastmath=True)
@@ -49,7 +50,7 @@ def find_coefficients_L1(ys, xs, reg_param):
 # @njit(error_model="numpy")
 # def _loss_and_gradient_Huber(w, xs_norm, ys, reg_param, a):
 #     linear_loss = ys - xs_norm @ w
-#     abs_linear_loss = abs(linear_loss)
+#     abs_linear_loss = np.abs(linear_loss)
 #     outliers_mask = abs_linear_loss > a
 
 #     outliers = abs_linear_loss[outliers_mask]
@@ -107,6 +108,7 @@ def _loss_and_gradient_Huber(w, xs_norm, ys, reg_param, a):
     return loss, gradient
 
 
+# the reason why we don't use the one of sklearn is because it has strange bounds on a
 def find_coefficients_Huber(ys, xs, reg_param, a, scale_init=1.0):
     _, d = xs.shape
     w = normal(loc=0.0, scale=scale_init, size=(d,))
@@ -126,9 +128,38 @@ def find_coefficients_Huber(ys, xs, reg_param, a, scale_init=1.0):
     )
 
     if opt_res.status == 2:
-        raise ValueError("HuberRegressor convergence failed: l-BFGS-b solver terminated with %s" % opt_res.message)
+        raise ValueError(
+            "HuberRegressor convergence failed: l-BFGS-b solver terminated with %s"
+            % opt_res.message
+        )
 
     return opt_res.x
+
+
+def find_coefficients_Hinge(ys, xs, reg_param):
+    clf = LinearSVC(
+        penalty="l2",
+        loss="hinge",
+        fit_intercept=False,
+        C=1 / reg_param,
+        max_iter=MAX_ITER_MINIMIZE,
+        tol=GTOL_MINIMIZE,
+        dual=True,
+    )
+    clf.fit(xs, ys)
+    return clf.coef_[0]
+
+
+def find_coefficients_Logistic(ys, xs, reg_param):
+    clf = LogisticRegression(
+        penalty="l2" if reg_param > 0 else "none",
+        C=1 / reg_param,
+        fit_intercept=False,
+        max_iter=MAX_ITER_MINIMIZE,
+        tol=GTOL_MINIMIZE,
+    )
+    clf.fit(xs, ys)
+    return clf.coef_[0]
 
 
 # not checked
@@ -142,7 +173,13 @@ def find_coefficients_Huber_on_sphere(ys, xs, reg_param, q_fixed, a, gamma=1e-04
     iter = 0
     while iter < MAX_ITER_MINIMIZE and LA.norm(grad) > GTOL_MINIMIZE:
         if iter % 10 == 0:
-            print(str(iter) + "th Iteration  Loss :: " + str(loss) + " gradient :: " + str(LA.norm(grad)))
+            print(
+                str(iter)
+                + "th Iteration  Loss :: "
+                + str(loss)
+                + " gradient :: "
+                + str(LA.norm(grad))
+            )
 
         alpha = 1
         new_w = w - alpha * grad
@@ -180,7 +217,9 @@ def vanillaGD_Huber(
 
     if save_run:
         if ground_truth_theta is None:
-            raise ValueError("ground_truth_theta is None, if save_run is True, ground_truth_theta must be provided")
+            raise ValueError(
+                "ground_truth_theta is None, if save_run is True, ground_truth_theta must be provided"
+            )
 
         losses = empty(max_iters + 1)
         qs = empty(max_iters + 1)
@@ -205,17 +244,3 @@ def vanillaGD_Huber(
         return w, losses, qs, gen_errors
     else:
         return w
-
-
-def find_coefficients_Hinge(ys, xs, reg_param):
-    clf = LinearSVC(
-        penalty="l2",
-        loss="hinge",
-        fit_intercept=False,
-        C=1 / reg_param,
-        max_iter=MAX_ITER_MINIMIZE,
-        tol=GTOL_MINIMIZE,
-        dual=True,
-    )
-    clf.fit(xs, ys)
-    return clf.coef_[0]

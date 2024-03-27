@@ -1,9 +1,9 @@
 from ..fixed_point_equations.fpeqs import fixed_point_finder, fixed_point_finder_loser
 from typing import Tuple
-from ..regression_numerics import TOL_GAMP, BLEND_GAMP, MAX_ITER_GAMP
+from ..erm import TOL_GAMP, BLEND_GAMP, MAX_ITER_GAMP
 from numpy import logspace, empty, mean, std, around
-from ..regression_numerics.amp_funcs import GAMP_algorithm_unsimplified
-from ..regression_numerics.data_generation import data_generation
+from ..amp.amp_funcs import GAMP_algorithm_unsimplified
+from ..data.generation import data_generation
 from ..utils.errors import ConvergenceError
 from math import log10
 from ..aux_functions.misc import estimation_error
