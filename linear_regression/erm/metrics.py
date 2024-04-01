@@ -33,12 +33,16 @@ def angle_teacher_student_data(ys, xs, estimated_theta, ground_truth_theta):
 #     return sum(square(tmp)) / n
 
 
-def percentage_flipped_labels(
-    ys, xs, estimated_theta, ground_truth_theta, xs_perturbation
-):
-    return mean(
-        sign(xs @ estimated_theta) != sign((xs + xs_perturbation) @ estimated_theta)
-    )
+# def percentage_flipped_labels(
+#     ys, xs, estimated_theta, ground_truth_theta, xs_perturbation
+# ):
+#     return mean(
+#         sign(xs @ estimated_theta) != sign((xs + xs_perturbation) @ estimated_theta)
+#     )
+
+
+def percentage_flipped_labels(ys, xs, estimated_theta, ground_truth_theta, xs_pertubed):
+    return mean(sign(xs @ estimated_theta) != sign(xs_pertubed @ estimated_theta))
 
 
 # Overlaps Estimation

@@ -1,4 +1,4 @@
-from ..aux_functions import sigmoid, D_sigmoid, log1pexp
+from .aux_functions import sigmoid, D_sigmoid, log1pexp
 from math import sqrt
 from numba import njit, vectorize
 from numpy import where, abs as np_abs, exp as np_exp, asarray, float64

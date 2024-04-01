@@ -185,8 +185,8 @@ def data_generation(
 
     if hidden_model:
         n = sqrt(ratio_hidden * n_features)
-        vs = hidden_fun(projector @ xs / sqrt(n_features)) / n
-        vs_gen = hidden_fun(projector @ xs_gen / sqrt(n_features)) / n
+        vs = hidden_fun(xs @ projector.T / sqrt(n_features)) / n
+        vs_gen = hidden_fun(xs_gen @ projector.T / sqrt(n_features)) / n
 
         return vs, xs, ys, vs_gen, xs_gen, ys_gen, theta_0_teacher, projector
     else:
