@@ -1,24 +1,43 @@
-from autograd import grad, elementwise_grad
-import matplotlib.pyplot as plt 
-import autograd.numpy as np
+from typing import Tuple, List
+import numpy as np
+from numpy import sqrt, sum, dot, empty_like
+from numpy.linalg import norm
 
-def func(x):
-    return np.sin(x**2)
 
-if __name__ == "__main__":
+def adversarial_direction_generation(
+    xs,
+    function_grad: callable,
+    function_grad_args: List[Tuple],
+    teacher_vector,
+    orthogonal_projetion: bool = True,
+    ord: float = 2,
+    hidden_model: bool = False,
+    ratio_hidden: float = 1.0,
+    hidden_fun: callable = None,
+    proj_mat_hidden=None,
+):
+    if hidden_model and hidden_fun is None:
+        hidden_fun = lambda x: x
 
-    # Create a function that computes the gradient of func
-    grad_func = elementwise_grad(func)
+    if hidden_model and proj_mat_hidden is None:
+        raise ValueError("Hidden model requires a projection matrix")
 
-    xs = np.linspace(-3, 5, 1000)
+    n, d = xs.shape
+    adv_perturbation = empty_like(xs)
+    for i, (x, f_args) in enumerate(zip(xs, function_grad_args)):
+        grad_dir = function_grad(x, *f_args)
 
-    # Compute the gradient at each point
-    gradients = grad_func(xs)
-    func_values = func(xs)
+        if orthogonal_projetion:
+            grad_dir -= (
+                dot(grad_dir, teacher_vector) / sum(teacher_vector**2) * teacher_vector
+            )
 
-    plt.plot(xs, func_values, label="f(x) = x^2")
-    plt.plot(xs, gradients, label="f'(x) = 2x")
+        adv_perturbation[i] = grad_dir / norm(grad_dir, ord=ord)
 
-    plt.legend()
-    plt.grid()
-    plt.show()
+    if hidden_model:
+        vs_adv = hidden_fun(proj_mat_hidden @ (xs + adv_perturbation) / sqrt(d)) / sqrt(
+            ratio_hidden * d
+        )
+        return vs_adv, xs + adv_perturbation, adv_perturbation
+    else:
+        return xs + adv_perturbation, adv_perturbation
