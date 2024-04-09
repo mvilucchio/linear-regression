@@ -165,7 +165,7 @@ def data_generation(
     n_generalization: int,
     measure_fun_args,
     hidden_model: bool = False,
-    ratio_hidden: float = 1.0,
+    overparam_ratio: float = 1.0,
     hidden_fun: callable = None,
 ):
     if hidden_model and hidden_fun is None:
@@ -174,7 +174,7 @@ def data_generation(
     theta_0_teacher = normal(loc=0.0, scale=1.0, size=(n_features,))
     if hidden_model:
         projector = normal(
-            loc=0.0, scale=1.0, size=(int(ratio_hidden * n_features), n_features)
+            loc=0.0, scale=1.0, size=(int(overparam_ratio * n_features), n_features)
         )
 
     xs = normal(loc=0.0, scale=1.0, size=(n_samples, n_features))
@@ -184,7 +184,7 @@ def data_generation(
     ys_gen = measure_fun(False, theta_0_teacher, xs_gen, *measure_fun_args)
 
     if hidden_model:
-        n = sqrt(ratio_hidden * n_features)
+        n = sqrt(overparam_ratio * n_features)
         vs = hidden_fun(xs @ projector.T / sqrt(n_features)) / n
         vs_gen = hidden_fun(xs_gen @ projector.T / sqrt(n_features)) / n
 

@@ -98,7 +98,7 @@ def erm_weight_finding_2(
             n_generalization=1,
             measure_fun_args=measure_fun_args,
             hidden_model=hidden_model,
-            ratio_hidden=hidden_ratio,
+            overparam_ratio=hidden_ratio,
             hidden_fun=hidden_fun,
         )
 
