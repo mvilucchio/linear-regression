@@ -137,6 +137,7 @@ def find_coefficients_Huber(ys, xs, reg_param, a, scale_init=1.0):
 
 
 def find_coefficients_Hinge(ys, xs, reg_param):
+    _, d = xs.shape
     clf = LinearSVC(
         penalty="l2",
         loss="hinge",
@@ -146,11 +147,12 @@ def find_coefficients_Hinge(ys, xs, reg_param):
         tol=GTOL_MINIMIZE,
         dual=True,
     )
-    clf.fit(xs, ys)
+    clf.fit(xs / sqrt(d), ys)
     return clf.coef_[0]
 
 
 def find_coefficients_Logistic(ys, xs, reg_param):
+    _, d = xs.shape
     clf = LogisticRegression(
         penalty="l2" if reg_param > 0 else "none",
         C=1 / reg_param,
@@ -158,8 +160,11 @@ def find_coefficients_Logistic(ys, xs, reg_param):
         max_iter=MAX_ITER_MINIMIZE,
         tol=GTOL_MINIMIZE,
     )
-    clf.fit(xs, ys)
+    clf.fit(xs / sqrt(d), ys)
     return clf.coef_[0]
+
+
+# ---------------
 
 
 # not checked
