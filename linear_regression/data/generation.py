@@ -167,11 +167,14 @@ def data_generation(
     hidden_model: bool = False,
     overparam_ratio: float = 1.0,
     hidden_fun: callable = None,
+    theta_0_teacher: ndarray = None,
 ):
     if hidden_model and hidden_fun is None:
         hidden_fun = lambda x: x
 
-    theta_0_teacher = normal(loc=0.0, scale=1.0, size=(n_features,))
+    if theta_0_teacher is None:
+        theta_0_teacher = normal(loc=0.0, scale=1.0, size=(n_features,))
+        
     if hidden_model:
         projector = normal(
             loc=0.0, scale=1.0, size=(int(overparam_ratio * n_features), n_features)

@@ -26,7 +26,7 @@ BIG_NUMBER = 6
 # those are wrong, the integral needs to consider the correaltion between the ω and z
 
 
-# @vectorize
+@vectorize
 def stability_L2_decorrelated_regress(
     m: float,
     q: float,
@@ -40,7 +40,7 @@ def stability_L2_decorrelated_regress(
     return 1 - alpha * (Σ / (Σ + 1)) ** 2
 
 
-# @vectorize
+@vectorize
 def stability_L1_decorrelated_regress(
     m: float,
     q: float,
@@ -61,7 +61,7 @@ def stability_L1_decorrelated_regress(
     )
 
 
-# @vectorize
+@vectorize
 def stability_Huber_decorrelated_regress(
     m: float,
     q: float,

@@ -1,5 +1,6 @@
 from math import pi, atan, sqrt, erf
 from scipy.special import owens_t
+from math import gamma, inf
 
 
 def percentage_flipped_direct_space_true_label(
@@ -14,6 +15,10 @@ def percentage_flipped_direct_space_true_label(
 
 
 def percentage_flipped_direct_space(
-    m: float, q: float, rho: float, epsilon: float
+    m: float, q: float, rho: float, epsilon: float, p
 ) -> float:
-    return erf((epsilon * sqrt(2 - (2 * m**2) / (q * rho))) / 2.0)
+    if p == inf:
+        return erf((epsilon * sqrt(1 - m**2 / (q * rho))) / sqrt(2.0))
+    else:
+        Cp = 2 ** (p / 2) * gamma((p + 1) / 2) / sqrt(pi)
+        return erf(((epsilon / Cp ** (1 / p)) * sqrt(1 - m**2 / (q * rho))) / sqrt(2.0))

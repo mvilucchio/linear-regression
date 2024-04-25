@@ -233,3 +233,14 @@ def log1pexp(x: float) -> float:
         return exp(-x) + x
     else:
         return x
+
+
+# overlaps
+def m_overlap(m, q, sigma, **args):
+    return m
+
+def q_overlap(m, q, sigma, **args):
+    return q
+
+def sigma_overlap(m, q, sigma, **args):
+    return sigma
