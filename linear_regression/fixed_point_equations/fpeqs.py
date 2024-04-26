@@ -1,9 +1,17 @@
 from typing import Tuple
 from numba import njit
-from ..fixed_point_equations import BLEND_FPE, TOL_FPE, REL_TOL_FPE, MIN_ITER_FPE, MAX_ITER_FPE
+from ..fixed_point_equations import (
+    BLEND_FPE,
+    TOL_FPE,
+    REL_TOL_FPE,
+    MIN_ITER_FPE,
+    MAX_ITER_FPE,
+)
 from ..utils.errors import ConvergenceError
 from ..aux_functions.misc import damped_update
 import numpy as np
+import time
+
 
 def fixed_point_finder(
     f_func,
@@ -43,6 +51,62 @@ def fixed_point_finder(
     return m, q, sigma
 
 
+def fixed_point_finder_adversiaral(
+    f_func,
+    f_hat_func,
+    initial_condition: Tuple[float, float, float],
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
+    abs_tol: float = TOL_FPE,
+    # rel_tol: float = REL_TOL_FPE,
+    min_iter: int = MIN_ITER_FPE,
+    max_iter: int = MAX_ITER_FPE,
+):
+    m, q, sigma, P = (
+        initial_condition[0],
+        initial_condition[1],
+        initial_condition[2],
+        initial_condition[3],
+    )
+    err = 1.0
+    iter_nb = 0
+
+    print(f_kwargs, f_hat_kwargs)
+    print(f"m = {m:.3e} \t\tq = {q:.3e} \t\tΣ = {sigma:.3e} \t\tP = {P:.3e}")
+    while err > abs_tol or iter_nb < min_iter:
+        m_hat, q_hat, Σ_hat, P_hat = f_hat_func(m, q, sigma, P, **f_hat_kwargs)
+        print(
+            f"m_hat = {m_hat:.3e} \tq_hat = {q_hat:.3e} \tΣ_hat = {Σ_hat:.3e} \tP_hat = {P_hat:.3e}"
+        )
+        new_m, new_q, new_sigma, new_P = f_func(m_hat, q_hat, Σ_hat, P_hat, **f_kwargs)
+
+        # time.sleep(1)
+
+        err = max(
+            [
+                abs((new_m - m)),
+                abs((new_q - q)),
+                abs((new_sigma - sigma)),
+                abs((new_P - P)),
+            ]
+        )
+
+        m = damped_update(new_m, m, BLEND_FPE)
+        q = damped_update(new_q, q, BLEND_FPE)
+        sigma = damped_update(new_sigma, sigma, BLEND_FPE)
+        P = damped_update(new_P, P, BLEND_FPE)
+
+        print(
+            f"m = {m:.3e} \t\tq = {q:.3e} \t\tΣ = {sigma:.3e} \t\tP = {P:.3e} \t\terr = {err:.3e}"
+        )
+
+        iter_nb += 1
+        if iter_nb > max_iter:
+            raise ConvergenceError("fixed_point_finder", iter_nb)
+
+    return m, q, sigma, P
+
+
 def fixed_point_finder_loser(
     f_func,
     f_hat_func,
@@ -69,9 +133,9 @@ def fixed_point_finder_loser(
             errs.append(abs(new_q - q))
         if control_variate[2]:
             errs.append(abs(new_sigma - sigma))
-            
+
         err = max(errs)
-    
+
         m = damped_update(new_m, m, BLEND_FPE)
         q = damped_update(new_q, q, BLEND_FPE)
         sigma = damped_update(new_sigma, sigma, BLEND_FPE)
@@ -79,13 +143,13 @@ def fixed_point_finder_loser(
         iter_nb += 1
         if iter_nb > max_iter:
             raise ConvergenceError("fixed_point_finder", iter_nb)
-        
+
     # print(
     #     "\t\t\tm = {:.1e} Δm = {:.1e} q = {:.1e} Δq = {:.1e} Σ = {:.1e} ΔΣ = {:.1e} ".format(
     #         m, abs(new_m - m), q, abs(new_q - q), sigma, abs(new_sigma - sigma)
     #     )
     # )
-    
+
     return m, q, sigma
 
 
