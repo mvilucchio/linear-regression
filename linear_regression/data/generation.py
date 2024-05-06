@@ -1,5 +1,6 @@
 from numpy.random import normal, choice
-from numpy import empty, sqrt, where, divide, ndarray
+from numpy import empty, sqrt, where, divide, ndarray, float32
+from numpy.random import default_rng
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -169,19 +170,30 @@ def data_generation(
     hidden_fun: callable = None,
     theta_0_teacher: ndarray = None,
 ):
+    rng = default_rng()
+
     if hidden_model and hidden_fun is None:
         hidden_fun = lambda x: x
 
     if theta_0_teacher is None:
-        theta_0_teacher = normal(loc=0.0, scale=1.0, size=(n_features,))
-        
+        # theta_0_teacher = normal(loc=0.0, scale=1.0, size=(n_features,), dtype=float32)
+        theta_0_teacher = rng.standard_normal(size=(n_features,), dtype=float32)
+
     if hidden_model:
         projector = normal(
-            loc=0.0, scale=1.0, size=(int(overparam_ratio * n_features), n_features)
+            loc=0.0,
+            scale=1.0,
+            size=(int(overparam_ratio * n_features), n_features),
+            dtype=float32,
         )
 
-    xs = normal(loc=0.0, scale=1.0, size=(n_samples, n_features))
-    xs_gen = normal(loc=0.0, scale=1.0, size=(n_generalization, n_features))
+    # xs = normal(loc=0.0, scale=1.0, size=(n_samples, n_features), dtype=float32)
+    # xs_gen = normal(
+    #     loc=0.0, scale=1.0, size=(n_generalization, n_features), dtype=float32
+    # )
+
+    xs = rng.standard_normal(size=(n_samples, n_features), dtype=float32)
+    xs_gen = rng.standard_normal(size=(n_generalization, n_features), dtype=float32)
 
     ys = measure_fun(False, theta_0_teacher, xs, *measure_fun_args)
     ys_gen = measure_fun(False, theta_0_teacher, xs_gen, *measure_fun_args)
