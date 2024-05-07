@@ -41,7 +41,12 @@ def angle_teacher_student_data(ys, xs, estimated_theta, ground_truth_theta):
 #     )
 
 
-def percentage_flipped_labels(ys, xs, estimated_theta, ground_truth_theta, xs_pertubed):
+def percentage_flipped_labels(ys, xs, estimated_theta, ground_truth_theta, xs_pertubed, hidden_model=False, projection_matrix=None):
+    if hidden_model:
+        if projection_matrix is None:
+            raise ValueError("Hidden model requires projection matrix")
+        return mean(sign(xs @ projection_matrix @ estimated_theta) != sign(xs_pertubed @ projection_matrix @ estimated_theta))
+    
     return mean(sign(xs @ estimated_theta) != sign(xs_pertubed @ estimated_theta))
 
 

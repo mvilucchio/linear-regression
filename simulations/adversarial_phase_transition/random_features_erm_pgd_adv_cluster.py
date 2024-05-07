@@ -28,6 +28,7 @@ import time
 import datetime
 from numpy.random import default_rng
 
+
 @jax.jit
 def total_loss_logistic_RF(w, Xs, ys, F, reg_param):
     ys = ys.reshape(-1, 1) if ys.ndim == 1 else ys
@@ -43,11 +44,14 @@ def linear_loss_function_single_RF(x, y, w, F):
     return -y * prediction
 
 
-linear_loss_all_RF = jax.jit(vmap(linear_loss_function_single_RF, in_axes=(0, 0, None, None)))
+linear_loss_all_RF = jax.jit(
+    vmap(linear_loss_function_single_RF, in_axes=(0, 0, None, None)))
 
-grad_linear_loss_single_RF = jax.jit(grad(linear_loss_function_single_RF, argnums=0))
+grad_linear_loss_single_RF = jax.jit(
+    grad(linear_loss_function_single_RF, argnums=0))
 
-grad_linear_loss_all_RF = jax.jit(vmap(grad_linear_loss_single_RF, in_axes=(0, 0, None, None)))
+grad_linear_loss_all_RF = jax.jit(
+    vmap(grad_linear_loss_single_RF, in_axes=(0, 0, None, None)))
 
 
 @jax.jit
@@ -68,13 +72,15 @@ def project_and_normalize_RF(x, wstar, p, eps_t):
     norm_x_projected = jnp.sum(jnp.abs(x) ** p) ** (1 / p)
 
     return jax.lax.cond(
-        norm_x_projected > eps_t, then_func_RF, else_func_RF, (x, eps_t, norm_x_projected)
+        norm_x_projected > eps_t, then_func_RF, else_func_RF, (
+            x, eps_t, norm_x_projected)
     )
 
 
 vecorized_project_and_normalize_RF = jax.jit(
     vmap(project_and_normalize_RF, in_axes=(0, None, None, None))
 )
+
 
 @jax.jit
 def projected_GA_step_jit(vs, ys, w, wstar, F, step_size, eps, p):
@@ -83,7 +89,7 @@ def projected_GA_step_jit(vs, ys, w, wstar, F, step_size, eps, p):
 
 
 def projected_GA(ys, w, wstar, F, step_size, n_steps, eps, p):
-    adv_perturbation = jnp.zeros((len(ys), len(w)))
+    adv_perturbation = jnp.zeros((len(ys), len(wstar)))
 
     for _ in range(n_steps):
         adv_perturbation = projected_GA_step_jit(
@@ -106,7 +112,8 @@ reg_param = 1.0
 ps = [2, 3, 5]  # assuming these are your p values
 assert len(ps) >= size, "Number of processes should not exceed number of p values."
 
-print(f"rank = {rank}, size = {size} and ps = {ps[rank]} started at {datetime.datetime.now()}")
+print(
+    f"rank = {rank}, size = {size} and ps = {ps[rank]} started at {datetime.datetime.now()}")
 
 dimensions_hidden = [int(2**a) for a in range(9, 10)]
 print(dimensions_hidden)
@@ -136,7 +143,8 @@ for n_features_hidden, c in zip(dimensions_hidden, colors):
 
     rng = default_rng()
 
-    F = rng.standard_normal(size=(n_features_hidden, n_features_data), dtype=np.float32)
+    F = rng.standard_normal(
+        size=(n_features_hidden, n_features_data), dtype=np.float32)
 
     for j in range(reps):
         xs, ys, xs_gen, ys_gen, teacher_vector = data_generation(
@@ -147,10 +155,13 @@ for n_features_hidden, c in zip(dimensions_hidden, colors):
             measure_fun_args={},
         )
 
+        first_guess_w = F.T @ teacher_vector / np.sqrt(n_features_hidden)
+
         estimated_theta = jax_minimize(
             total_loss_logistic_RF,
-            x0=teacher_vector,
-            args=(xs / np.sqrt(n_features_hidden), ys, F, reg_param),
+            x0=first_guess_w,
+            args=(xs / np.sqrt(n_features_hidden), ys,
+                  F / np.sqrt(n_features_data), reg_param),
             method="BFGS",
         ).x
 
@@ -186,6 +197,8 @@ for n_features_hidden, c in zip(dimensions_hidden, colors):
                 estimated_theta,
                 teacher_vector,
                 xs_gen + adv_perturbation,
+                hidden_model=True,
+                projection_matrix=F,
             )
 
             vals[j, i] = flipped
@@ -218,4 +231,5 @@ for n_features_hidden, c in zip(dimensions_hidden, colors):
     ) as f:
         pickle.dump(data, f)
 
-    print(f"process {rank} finished with n_features = {n_features_hidden} time = {datetime.datetime.now()}")
+    print(
+        f"process {rank} finished with n_features = {n_features_hidden} time = {datetime.datetime.now()}")
