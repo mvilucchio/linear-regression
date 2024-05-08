@@ -147,11 +147,11 @@ assert len(ps) >= size, "Number of processes should not exceed number of p value
 
 print(f"rank = {rank}, size = {size} and ps = {ps[rank]} started at {datetime.datetime.now()}")
 
-dimensions = [int(2**a) for a in range(9, 10)]
+dimensions = [int(2**a) for a in range(11, 12)]
 print(dimensions)
-epss = np.logspace(-2, 2, 5)
+epss = np.logspace(-2, 2, 10)
 eps_dense = np.logspace(-2, 2, 100)
-reps = 5
+reps = 20
 
 colors = [f"C{i}" for i in range(len(dimensions))]
 linestyles = ["-", "--", "-.", ":"]
@@ -162,7 +162,7 @@ assert len(markers) >= len(ps)
 if ps[rank] == "inf":
     for n_features, c in zip(dimensions, colors):
         print(f"process {rank} starts with n_features = {n_features}")
-        epss_rescaled = epss / (n_features ** (1 / 2 - 1 / p))
+        epss_rescaled = epss * (n_features ** (1 / 2 - 1))
 
         vals = np.empty((reps, len(epss)))
         estim_vals_m = np.empty((reps,))
@@ -198,7 +198,7 @@ if ps[rank] == "inf":
             ):
                 # print(f"current eps_i = {eps_i:.3f}")
                 adv_perturbation = projected_GA_inf(
-                    yhat, estimated_theta, teacher_vector, 0.5, 200, eps_i
+                    yhat, estimated_theta, teacher_vector, 0.5, 500, eps_i
                 )
 
                 # check that it has the maximum allowed norm
@@ -255,7 +255,8 @@ else:
 
     for n_features, c in zip(dimensions, colors):
         print(f"process {rank} starts with n_features = {n_features}")
-        epss_rescaled = epss / (n_features ** (1 / 2 - 1 / p))
+        # epss_rescaled = epss / (n_features ** (1 / 2 - 1 / p))
+        epss_rescaled = epss * (n_features ** (- 1 / 2 + 1 / p))
 
         vals = np.empty((reps, len(epss)))
         estim_vals_m = np.empty((reps,))
@@ -291,7 +292,7 @@ else:
             ):
                 # print(f"current eps_i = {eps_i:.3f}")
                 adv_perturbation = projected_GA_p(
-                    yhat, estimated_theta, teacher_vector, 0.5, 200, eps_i, p
+                    yhat, estimated_theta, teacher_vector, 0.5, 400, eps_i, p
                 )
 
                 # check that it has the maximum allowed norm
