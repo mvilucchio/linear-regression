@@ -147,11 +147,11 @@ assert len(ps) >= size, "Number of processes should not exceed number of p value
 
 print(f"rank = {rank}, size = {size} and ps = {ps[rank]} started at {datetime.datetime.now()}")
 
-dimensions = [int(2**a) for a in range(11, 12)]
+dimensions = [int(2**a) for a in range(15, 16)]
 print(dimensions)
-epss = np.logspace(-2, 2, 10)
+epss = np.logspace(-2, 2, 15)
 eps_dense = np.logspace(-2, 2, 100)
-reps = 20
+reps = 50
 
 colors = [f"C{i}" for i in range(len(dimensions))]
 linestyles = ["-", "--", "-.", ":"]

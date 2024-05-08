@@ -2,12 +2,12 @@
 #SBATCH --chdir=/home/vilucchi/projects/linear-regression
 #SBATCH --job-name=direct_space
 #SBATCH --nodes=1
-#SBATCH --ntasks=3
+#SBATCH --ntasks=4
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=250G
+#SBATCH --mem=10G
 #SBATCH --output=direct_space.out
 #SBATCH --error=direct_space.err
-#SBATCH --time=10:00:00
+#SBATCH --time=12:00:00
 #SBATCH --qos=serial
 
 module load gcc openmpi python/3.10.4
