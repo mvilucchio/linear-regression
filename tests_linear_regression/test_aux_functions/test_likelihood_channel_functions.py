@@ -1,3 +1,4 @@
+
 from unittest import main
 from scipy.optimize import minimize_scalar
 from tests_linear_regression.function_comparison import TestFunctionComparison
