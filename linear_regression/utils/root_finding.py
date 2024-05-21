@@ -1,6 +1,7 @@
 import numpy as np
 from numba import njit
 
+
 @njit(error_model="numpy", fastmath=True)
 def find_first_greather_than_zero(vec, reversed):
     if reversed:
@@ -27,7 +28,7 @@ def brent_root_finder(fun, xa, xb, xtol, rtol, max_iter, args):
     fcur = fun(xcur, *args)
 
     if fpre * fcur > 0:
-        raise ValueError("The endpoints should have different signs.")
+        raise ValueError("BRENT The endpoints should have different signs.")
 
     if fpre == 0:
         return xpre
@@ -63,7 +64,8 @@ def brent_root_finder(fun, xa, xb, xtol, rtol, max_iter, args):
                 # /* extrapolate */
                 dpre = (fpre - fcur) / (xpre - xcur)
                 dblk = (fblk - fcur) / (xblk - xcur)
-                stry = -fcur * (fblk * dblk - fpre * dpre) / (dblk * dpre * (fblk - fpre))
+                stry = -fcur * (fblk * dblk - fpre * dpre) / \
+                    (dblk * dpre * (fblk - fpre))
 
             if 2 * np.abs(stry) < np.minimum(np.abs(spre), 3 * np.abs(sbis) - delta):
                 # /* good short step */
@@ -86,5 +88,8 @@ def brent_root_finder(fun, xa, xb, xtol, rtol, max_iter, args):
             xcur += delta if sbis > 0 else -delta
 
         fcur = fun(xcur, *args)
+
+    if i == max_iter - 1:
+        raise RuntimeError("BRENT Maximum number of iterations reached.")
 
     return xcur
