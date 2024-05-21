@@ -176,7 +176,6 @@ def data_generation(
         hidden_fun = lambda x: x
 
     if theta_0_teacher is None:
-        # theta_0_teacher = normal(loc=0.0, scale=1.0, size=(n_features,), dtype=float32)
         theta_0_teacher = rng.standard_normal(size=(n_features,), dtype=float32)
 
     if hidden_model:
@@ -186,11 +185,6 @@ def data_generation(
             size=(int(overparam_ratio * n_features), n_features),
             dtype=float32,
         )
-
-    # xs = normal(loc=0.0, scale=1.0, size=(n_samples, n_features), dtype=float32)
-    # xs_gen = normal(
-    #     loc=0.0, scale=1.0, size=(n_generalization, n_features), dtype=float32
-    # )
 
     xs = rng.standard_normal(size=(n_samples, n_features), dtype=float32)
     xs_gen = rng.standard_normal(size=(n_generalization, n_features), dtype=float32)
