@@ -27,6 +27,8 @@ class TestFunctionGeneral(TestCase):
             return random.choice([0, 1])
         elif signature == "n":
             return random.gauss(0, 1)
+        elif isinstance(signature, tuple):
+            return random.choice(signature)
         else:
             raise ValueError("Invalid argument signature")
 
@@ -48,7 +50,8 @@ class TestFunctionComparison(TestFunctionGeneral):
             if arg_signatures is None:
                 args = [np.array([random.uniform(-100, 100)]) for _ in range(num_args_func1)]
             else:
-                args = [np.array([self.sample_arg(sig)]) for sig in arg_signatures]
+                # args = [np.array([self.sample_arg(sig)]) for sig in arg_signatures]
+                args = [float(self.sample_arg(sig)) for sig in arg_signatures]
 
             result1 = func1(*args)
             result2 = func2(*args)

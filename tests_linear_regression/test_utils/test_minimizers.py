@@ -4,7 +4,7 @@ from numba import njit
 from math import sin, cos, exp
 from numpy.testing import assert_allclose
 import linear_regression.utils.minimizers as mm
-import linear_regression.aux_functions.moreau_proximal_losses as mpl
+import linear_regression.aux_functions.moreau_proximals as mpl
 
 
 @njit
