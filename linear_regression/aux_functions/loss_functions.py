@@ -61,7 +61,7 @@ def Dz_logistic_loss(y: float, z: float) -> float:
 
 @vectorize("float64(float64, float64)")
 def DDz_logistic_loss(y: float, z: float) -> float:
-    return 0.5 * y**2 * 0.5 * (1 + tanh(0.5 * y * z)) ** 2
+    return 0.5 * y**2 / (1 + cosh(y * z))
 
 
 # ----
