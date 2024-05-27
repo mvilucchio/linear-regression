@@ -1,13 +1,15 @@
 from numba import vectorize, njit
-from .loss_functions import logistic_loss, exponential_loss
+from .loss_functions import logistic_loss, exponential_loss, DDz_logistic_loss, DDz_exponential_loss
 from ..utils.minimizers import brent_minimize_scalar
 from . import MAX_ITER_BRENT_MINIMIZE, TOL_BRENT_MINIMIZE
 
 
 # ---------------------------------------------------------------------------- #
-#                          Channel functions proximals                         #
+#                            Loss functions proximal                           #
 # ---------------------------------------------------------------------------- #
-# @vectorize("float64(float64, float64, float64)")
+
+
+# -------------------------------- hinge loss -------------------------------- #
 @njit(error_model="numpy", fastmath=False)
 def proximal_Hinge_loss(y: float, omega: float, V: float) -> float:
     if y * omega <= 1 - V:
@@ -18,9 +20,8 @@ def proximal_Hinge_loss(y: float, omega: float, V: float) -> float:
         return omega
 
 
-# @vectorize("float64(float64, float64, float64)")
 @njit(error_model="numpy", fastmath=False)
-def Domega_proximal_Hinge_loss(y: float, omega: float, V: float) -> float:
+def Dproximal_Hinge_loss(y: float, omega: float, V: float) -> float:
     if y * omega < 1 - V:
         return 1.0
     elif y * omega < 1:
@@ -29,13 +30,12 @@ def Domega_proximal_Hinge_loss(y: float, omega: float, V: float) -> float:
         return 1.0
 
 
-# @vectorize("float64(float64, float64, float64, float64)")
+# ------------------------------- logistic loss ------------------------------ #
 @njit(error_model="numpy", fastmath=False)
 def moreau_loss_Logistic(x: float, y: float, omega: float, V: float) -> float:
     return (x - omega) ** 2 / (2 * V) + logistic_loss(y, x)
 
 
-# @vectorize("float64(float64, float64, float64)")
 @njit(error_model="numpy", fastmath=False)
 def proximal_Logistic_loss(y: float, omega: float, V: float) -> float:
     return brent_minimize_scalar(
@@ -48,6 +48,57 @@ def proximal_Logistic_loss(y: float, omega: float, V: float) -> float:
     )[0]
 
 
+@njit(error_model="numpy", fastmath=False)
+def Dproximal_Logistic_loss(y: float, omega: float, V: float) -> float:
+    proximal = brent_minimize_scalar(
+        moreau_loss_Logistic,
+        -5000,
+        5000,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+        (y, omega, V),
+    )[0]
+    return 1 / (1 + V * DDz_logistic_loss(y, proximal))
+
+
+# ------------------------- adversarial logistic loss ------------------------ #
+@njit(error_model="numpy", fastmath=False)
+def moreau_loss_Logistic_adversarial(
+    x: float, y: float, omega: float, V: float, P: float, eps_t: float
+) -> float:
+    return (x - omega) ** 2 / (2 * V) + logistic_loss(y, x - y * P * eps_t)
+
+
+@njit(error_model="numpy", fastmath=False)
+def proximal_Logistic_adversarial(
+    y: float, omega: float, V: float, P: float, eps_t: float
+) -> float:
+    return brent_minimize_scalar(
+        moreau_loss_Logistic_adversarial,
+        -5000,
+        5000,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+        (y, omega, V, P, eps_t),
+    )[0]
+
+
+@njit(error_model="numpy", fastmath=False)
+def Dproximal_Logistic_adversarial(
+    y: float, omega: float, V: float, P: float, eps_t: float
+) -> float:
+    proximal = brent_minimize_scalar(
+        moreau_loss_Logistic_adversarial,
+        -5000,
+        5000,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+        (y, omega, V, P, eps_t),
+    )[0]
+    return 1 / (1 + V * DDz_logistic_loss(y, proximal - y * eps_t * P))
+
+
+# ----------------------------- exponential loss ----------------------------- #
 # @vectorize("float64(float64, float64, float64, float64)")
 @njit(error_model="numpy", fastmath=False)
 def moreau_loss_Exponential(x: float, y: float, omega: float, V: float) -> float:

@@ -3,7 +3,7 @@ import numpy as np
 from math import exp, erf, sqrt, pi
 from scipy.integrate import quad, dblquad
 from scipy.optimize import minimize_scalar
-from ...aux_functions.moreau_proximals import proximal_Logistic_loss
+from ...aux_functions.moreau_proximals import proximal_Logistic_loss, Dproximal_Logistic_loss
 from ...aux_functions.misc import gaussian
 from ...aux_functions.loss_functions import logistic_loss, DDz_logistic_loss
 
@@ -46,8 +46,7 @@ def Σ_int_Logistic_probit_classif(
     ξ: float, y: float, q: float, m: float, Σ: float, delta: float
 ) -> float:
     η = m**2 / q
-    proximal = proximal_Logistic_loss(y, sqrt(q) * ξ, Σ)
-    Dproximal = 1 / (1 + Σ * DDz_logistic_loss(y, proximal))
+    Dproximal = Dproximal_Logistic_loss(y, sqrt(q) * ξ, Σ)
     return (
         0.5
         * gaussian(ξ, 0, 1)

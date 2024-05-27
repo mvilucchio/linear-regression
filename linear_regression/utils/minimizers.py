@@ -128,7 +128,7 @@ def get_bracket_info(fun, args, brack):
     return xa, xb, xc, fa, fb, fc, funcalls
 
 
-@njit(error_model="numpy", fastmath=True)
+@njit(error_model="numpy", fastmath=False)
 def brent_minimize_scalar(
     fun: callable, xa: float, xb: float, rtol: float, max_iter: int, args: tuple
 ) -> tuple:

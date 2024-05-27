@@ -32,7 +32,6 @@ def fixed_point_finder(
         new_m, new_q, new_sigma = f_func(m_hat, q_hat, Σ_hat, **f_kwargs)
 
         err = max([abs(new_m - m), abs(new_q - q), abs(new_sigma - sigma)])
-        # err = max([abs(new_m - m), abs(new_q - q)])
 
         # print(
         #     "\t\t\tm = {:.1e} Δm = {:.1e} q = {:.1e} Δq = {:.1e} Σ = {:.1e} ΔΣ = {:.1e} ".format(
