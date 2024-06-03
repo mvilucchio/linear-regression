@@ -5,7 +5,7 @@ from scipy.integrate import quad, dblquad
 from scipy.optimize import minimize_scalar
 from ...aux_functions.misc import gaussian
 from ...aux_functions.loss_functions import exponential_loss, DDz_exponential_loss
-from ...aux_functions.moreau_proximal_losses import moreau_loss_Exponential
+from ...aux_functions.moreau_proximals import moreau_loss_Exponential
 
 BIG_NUMBER = 20
 
@@ -14,7 +14,13 @@ BIG_NUMBER = 20
 def m_int_Exponential_probit_classif(ξ, y, q, m, Σ, delta):
     η = m**2 / q
     proximal = minimize_scalar(moreau_loss_Exponential, args=(y, sqrt(q) * ξ, Σ))["x"]
-    return y * gaussian(ξ, 0, 1) * gaussian(sqrt(η) * ξ, 0, 1 - η + delta) * (proximal - sqrt(q) * ξ) / Σ
+    return (
+        y
+        * gaussian(ξ, 0, 1)
+        * gaussian(sqrt(η) * ξ, 0, 1 - η + delta)
+        * (proximal - sqrt(q) * ξ)
+        / Σ
+    )
 
 
 def q_int_Exponential_probit_classif(ξ, y, q, m, Σ, delta):
@@ -33,7 +39,13 @@ def Σ_int_Exponential_probit_classif(ξ, y, q, m, Σ, delta):
     η = m**2 / q
     proximal = minimize_scalar(moreau_loss_Exponential, args=(y, sqrt(q) * ξ, Σ))["x"]
     Dproximal = 1 / (1 + Σ * DDz_exponential_loss(y, proximal))
-    return 0.5 * gaussian(ξ, 0, 1) * (1 + erf(y * sqrt(0.5 * η / (1 - η + delta)) * ξ)) * (Dproximal - 1) / Σ
+    return (
+        0.5
+        * gaussian(ξ, 0, 1)
+        * (1 + erf(y * sqrt(0.5 * η / (1 - η + delta)) * ξ))
+        * (Dproximal - 1)
+        / Σ
+    )
 
 
 # -----------------------------------
@@ -67,7 +79,13 @@ def Σ_int_Exponential_no_noise_classif(ξ, y, q, m, Σ):
     η = m**2 / q
     proximal = minimize_scalar(moreau_loss_Exponential, args=(y, sqrt(q) * ξ, Σ))["x"]
     Dproximal = 1 / (1 + Σ * DDz_exponential_loss(y, proximal))
-    return 0.5 * gaussian(ξ, 0, 1) * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η)))) * (Dproximal - 1) / Σ
+    return (
+        0.5
+        * gaussian(ξ, 0, 1)
+        * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η))))
+        * (Dproximal - 1)
+        / Σ
+    )
 
 
 # -----------------------------------

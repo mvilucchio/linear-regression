@@ -50,6 +50,9 @@ def fixed_point_finder(
     return m, q, sigma
 
 
+NNN = 50
+
+
 def fixed_point_finder_adversiaral(
     f_func,
     f_hat_func,
@@ -70,17 +73,18 @@ def fixed_point_finder_adversiaral(
     err = 1.0
     iter_nb = 0
 
-    print(f_kwargs, f_hat_kwargs)
-    print(f"m = {m:.3e} \t\tq = {q:.3e} \t\tΣ = {sigma:.3e} \t\tP = {P:.3e}")
+    # print(f_kwargs, f_hat_kwargs)
+    # print(f"{m,q,sigma,P=}")
+
     while err > abs_tol or iter_nb < min_iter:
         m_hat, q_hat, Σ_hat, P_hat = f_hat_func(m, q, sigma, P, **f_hat_kwargs)
-        print(
-            f"m_hat = {m_hat:.3e} \tq_hat = {q_hat:.3e} \tΣ_hat = {Σ_hat:.3e} \tP_hat = {P_hat:.3e}"
-        )
+
+        # if iter_nb % NNN == 0:
+        #     print(f"{m_hat,q_hat,Σ_hat,P_hat=}")
         new_m, new_q, new_sigma, new_P = f_func(m_hat, q_hat, Σ_hat, P_hat, **f_kwargs)
 
-        # time.sleep(1)
-
+        # if iter_nb % NNN == 0:
+        #     print(f"{new_m,new_q,new_sigma,new_P=}")
         err = max(
             [
                 abs((new_m - m)),
@@ -95,14 +99,15 @@ def fixed_point_finder_adversiaral(
         sigma = damped_update(new_sigma, sigma, BLEND_FPE)
         P = damped_update(new_P, P, BLEND_FPE)
 
-        print(
-            f"m = {m:.3e} \t\tq = {q:.3e} \t\tΣ = {sigma:.3e} \t\tP = {P:.3e} \t\terr = {err:.3e}"
-        )
+        # if iter_nb % NNN == 0:
+        #     # print(f"{m,q,sigma,P=}")
+        #     print(f"{err=:.3e} {iter_nb=:d}")
 
         iter_nb += 1
         if iter_nb > max_iter:
             raise ConvergenceError("fixed_point_finder", iter_nb)
 
+    print(f"{m,q,sigma,P=}")
     return m, q, sigma, P
 
 

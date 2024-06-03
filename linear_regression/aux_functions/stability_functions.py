@@ -5,7 +5,7 @@ from math import erf, exp, pi
 # from scipy.special import erf
 from scipy.optimize import minimize_scalar
 from scipy.integrate import quad, dblquad, tplquad
-from ..aux_functions.moreau_proximal_losses import (
+from ..aux_functions.moreau_proximals import (
     moreau_loss_Exponential,
     moreau_loss_Logistic,
 )
@@ -79,8 +79,7 @@ def stability_Huber_decorrelated_regress(
     # )
     return 1 - alpha * (Σ / (Σ + 1)) ** 2 * (
         (1 - percentage) * erf(a * (Σ + 1) / sqrt(2 * (q - 2 * m + delta_in + 1)))
-        + percentage
-        * erf(a * (Σ + 1) / sqrt(2 * (q - 2 * m * beta + delta_out + beta**2)))
+        + percentage * erf(a * (Σ + 1) / sqrt(2 * (q - 2 * m * beta + delta_out + beta**2)))
     )
 
 
@@ -120,9 +119,7 @@ def negative_integrand_stability_Hinge_probit_classif(
     )
 
 
-def stability_Hinge_probit_classif(
-    m: float, q: float, Σ: float, alpha: float, Δ: float
-) -> float:
+def stability_Hinge_probit_classif(m: float, q: float, Σ: float, alpha: float, Δ: float) -> float:
     domains = [
         [
             [-BIG_NUMBER * sqrt(Δ), BIG_NUMBER * sqrt(Δ)],
@@ -218,26 +215,16 @@ def stability_Exponential_probit_classif(
 @njit(error_model="numpy", fastmath=False)
 def positive_integrand_stability_Hinge_no_noise_classif(z, m, q, Σ):
     denom = sqrt(2 * (q - m**2))
-    return (
-        0.5
-        * gaussian(z, 0, 1)
-        * (erf((-1 + m * z + Σ) / denom) - erf((-1 + m * z) / denom))
-    )
+    return 0.5 * gaussian(z, 0, 1) * (erf((-1 + m * z + Σ) / denom) - erf((-1 + m * z) / denom))
 
 
 @njit(error_model="numpy", fastmath=False)
 def negative_integrand_stability_Hinge_no_noise_classif(z, m, q, Σ):
     denom = sqrt(2 * (q - m**2))
-    return (
-        0.5
-        * gaussian(z, 0, 1)
-        * (erf((1 + m * z) / denom) - erf((1 + m * z - Σ) / denom))
-    )
+    return 0.5 * gaussian(z, 0, 1) * (erf((1 + m * z) / denom) - erf((1 + m * z - Σ) / denom))
 
 
-def stability_Hinge_no_noise_classif(
-    m: float, q: float, Σ: float, alpha: float
-) -> float:
+def stability_Hinge_no_noise_classif(m: float, q: float, Σ: float, alpha: float) -> float:
     integral_value = quad(
         negative_integrand_stability_Hinge_no_noise_classif,
         -BIG_NUMBER,
@@ -264,9 +251,7 @@ def integrand_stability_Logistic_no_noise_classif(z, ω, m, q, Σ):
     )
 
 
-def stability_Logistic_no_noise_classif(
-    m: float, q: float, Σ: float, alpha: float
-) -> float:
+def stability_Logistic_no_noise_classif(m: float, q: float, Σ: float, alpha: float) -> float:
     domains_z, domains_ω = stability_integration_domains()
 
     integral_value = 0.0
@@ -293,9 +278,7 @@ def integrand_stability_Exponential_no_noise_classif(z, ω, m, q, Σ):
     )
 
 
-def stability_Exponential_no_noise_classif(
-    m: float, q: float, Σ: float, alpha: float
-) -> float:
+def stability_Exponential_no_noise_classif(m: float, q: float, Σ: float, alpha: float) -> float:
     print(" m = {:.3f} q = {:.3f} q - m^2 = {:.3f}".format(m, q, q - m**2))
     domains_z, domains_ω = stability_integration_domains()
     integral_value = 0.0
