@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from linear_regression.erm.erm_solvers import find_coefficients_Logistic_adv
+from linear_regression.erm.erm_solvers import (
+    find_coefficients_Logistic_adv,
+    find_coefficients_Logistic_adv_Linf_L1,
+)
 from linear_regression.data.generation import data_generation, measure_gen_no_noise_clasif
 from linear_regression.erm.metrics import (
     estimation_error_data,
@@ -71,7 +74,6 @@ if __name__ == "__main__":
                 tmp_ps = []
 
                 iter = 0
-                # for _ in tqdm(range(reps), leave=False):
                 pbar = tqdm(total=reps)
                 while iter < reps:
                     xs_train, ys_train, xs_gen, ys_gen, wstar = data_generation(
@@ -79,17 +81,24 @@ if __name__ == "__main__":
                     )
 
                     try:
-                        w = find_coefficients_Logistic_adv(
-                            ys_train, xs_train, reg_param, eps_t, reg_order, pstar, wstar
-                        )
+                        if reg_order == 1:
+                            print("Running reg_order = 1")
+                            w = find_coefficients_Logistic_adv_Linf_L1(
+                                ys_train, xs_train, reg_param, eps_t
+                            )
+                        else:
+                            print(f"Running reg_order = {reg_order}")
+                            w = find_coefficients_Logistic_adv(
+                                ys_train, xs_train, reg_param, eps_t, reg_order, pstar, wstar
+                            )
                     except ValueError as e:
                         print(e)
                         continue
 
-                    tmp_estim_errors.append(estimation_error_data(ys_gen, xs_gen, w, wstar))
                     tmp_qs.append(np.sum(w**2) / d)
                     tmp_ms.append(np.dot(wstar, w) / d)
                     tmp_ps.append(np.sum(np.abs(w) ** pstar) / d)
+                    tmp_estim_errors.append(estimation_error_data(ys_gen, xs_gen, w, wstar))
                     tmp_train_errors.append(
                         adversarial_error_data(ys_train, xs_train, w, wstar, eps_t, pstar)
                     )

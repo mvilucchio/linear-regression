@@ -9,13 +9,13 @@ rng = np.random.default_rng()
 alpha = 0.2
 reps = 10
 
-ds = np.logspace(1, 5, 5)
+ds = np.logspace(1, 4, 5)
 min_val_mean = np.empty_like(ds)
 min_val_std = np.empty_like(ds)
 
 for i, d in enumerate(tqdm(ds)):
     min_val_list = []
-    n = int(0.8 * d)
+    n = int(alpha * d)
     d = int(d)
 
     for _ in tqdm(range(reps), leave=False):
