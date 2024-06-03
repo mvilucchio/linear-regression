@@ -1,45 +1,6 @@
 from numpy import around, empty, mean, std
 from ..data.generation import data_generation
 
-# from numpy import around, empty, sum, mean, std, square, divide, sqrt, dot
-# from math import acos, pi
-
-
-# def estimation_error_data(ys, xs, estimated_theta, ground_truth_theta):
-#     _, d = xs.shape
-#     estimation_error = sum((ground_truth_theta - estimated_theta) ** 2) / d
-#     return estimation_error
-
-
-# def train_error_data(
-#     ys, xs, estimated_theta, ground_truth_theta, loss_function, loss_function_args
-# ):
-#     n, d = xs.shape
-#     xs_norm = xs / sqrt(d)
-#     tmp = loss_function(ys, xs_norm @ estimated_theta, *loss_function_args)
-#     return sum(tmp) / n
-
-
-# def angle_teacher_student_data(ys, xs, estimated_theta, ground_truth_theta):
-#     tmp = dot(estimated_theta, ground_truth_theta) / sqrt(
-#         dot(estimated_theta, estimated_theta)
-#         * dot(ground_truth_theta, ground_truth_theta)
-#     )
-#     return acos(tmp) / pi
-
-
-# def m_real_overlaps(ys, xs, estimated_theta, ground_truth_theta):
-#     d = xs.shape[1]
-#     m = dot(estimated_theta, ground_truth_theta) / d
-#     return m
-
-
-# def q_real_overlaps(ys, xs, estimated_theta, ground_truth_theta):
-#     d = xs.shape[1]
-#     q = sum(square(estimated_theta)) / d
-#     return q
-
-
 def erm_weight_finding_2(
     sample_complexity: float,
     measure_fun: callable,
@@ -164,11 +125,11 @@ def erm_weight_finding(
     out_list_std = empty(len(funs_train_data))
 
     if verbose:
-        print("sample_complexity = {:f} rep : ".format(sample_complexity), end="")
+        print("sample_complexity = {:.3f} rep : ".format(sample_complexity), end="")
 
     for idx in range(repetitions):
         if verbose:
-            print("{:d}".format(idx), end=",")
+            print("{:d}".format(idx), end=", ")
         xs, ys, _, _, ground_truth_theta = data_generation(
             measure_fun,
             n_features=n_features,
@@ -190,7 +151,7 @@ def erm_weight_finding(
         out_list_mean[idx], out_list_std[idx] = mean(out_vals), std(out_vals)
 
     if verbose:
-        print(" Done.")
+        print("Done.")
 
     del out_vals
 

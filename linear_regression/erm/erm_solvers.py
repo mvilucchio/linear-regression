@@ -12,6 +12,7 @@ from numpy import (
     tile,
     finfo,
     float64,
+    float32,
     empty,
     sum,
 )
@@ -24,12 +25,28 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.utils import axis0_safe_slice
 from sklearn.utils.extmath import safe_sparse_dot
 from scipy.optimize import minimize, line_search
-from cvxpy import Variable, Minimize, Problem, norm, sum_squares
+from cvxpy import (
+    Variable,
+    Parameter,
+    Minimize,
+    Problem,
+    norm,
+    sum_squares,
+    logistic,
+    multiply,
+    norm1,
+)
+from cvxpy import sum as cp_sum
 from ..utils.matrix_utils import axis0_pos_neg_mask, safe_sparse_dot
 from ..erm import GTOL_MINIMIZE, MAX_ITER_MINIMIZE
 import jax.numpy as jnp
 import jax
-from jax.scipy.optimize import minimize as jax_minimize
+from jax import jit, vmap, grad
+from numpy.random import default_rng
+
+# from jax.scipy.optimize import minimize as jax_minimize
+
+rng = default_rng()
 
 
 @njit(error_model="numpy", fastmath=True)
@@ -142,8 +159,7 @@ def find_coefficients_Huber(ys, xs, reg_param, a, scale_init=1.0):
 
     if opt_res.status == 2:
         raise ValueError(
-            "HuberRegressor convergence failed: l-BFGS-b solver terminated with %s"
-            % opt_res.message
+            f"HuberRegressor convergence failed: l-BFGS-b solver terminated with {opt_res.message}"
         )
 
     return opt_res.x
@@ -178,38 +194,96 @@ def find_coefficients_Logistic(ys, xs, reg_param):
     return clf.coef_[0]
 
 
+# @jax.jit
+# def _loss_Logistic_adv_Linf(w, xs_norm, ys, reg_param, eps_t, reg_order):
+#     n, d = xs_norm.shape
+#     loss = jnp.sum(jnp.log1p(jnp.exp(-ys * jnp.dot(xs_norm, w) + eps_t * jnp.sum(jnp.abs(w)) / d)))
+#     +reg_param * jnp.sum(jnp.abs(w) ** reg_order)
+#     return loss
+
+
+# def find_coefficients_Logistic_adv_Linf(ys, xs, reg_param: float, eps_t: float, reg_order: float):
+#     _, d = xs.shape
+#     w = rng.standard_normal((d,), float32)  # w = normal(loc=0.0, scale=1.0, size=(d,))
+#     xs_norm = divide(xs, sqrt(d))
+
+#     opt_res = jax_minimize(
+#         _loss_Logistic_adv_Linf,
+#         w,
+#         method="BFGS",
+#         args=(xs_norm, ys, reg_param, eps_t, reg_order),
+#         options={"maxiter": MAX_ITER_MINIMIZE},
+#     )
+
+#     if opt_res.status == 2:
+#         raise ValueError(
+#             f"LogisticRegressor convergence failed: l-BFGS solver terminated with {opt_res.message}"
+#         )
+
+#     return opt_res.x
+
+
 @jax.jit
-def _loss_Logistic_adv_Linf(w, xs_norm, ys, reg_param, eps_t, reg_order):
-    n, d = xs_norm.shape
+def _loss_Logistic_adv(
+    w, xs_norm, ys, reg_param: float, eps_t: float, reg_order: float, pstar: float, d: int
+):
     loss = jnp.sum(
-        jnp.log(
-            1 + jnp.exp(-ys * jnp.dot(xs_norm, w) + eps_t * jnp.sum(jnp.abs(w)) / d)
+        jnp.log1p(
+            jnp.exp(
+                -ys * jnp.dot(xs_norm, w)
+                + eps_t * jnp.sum(jnp.abs(w) ** pstar) ** (1 / pstar) / d**pstar
+            )
         )
-    )
-    + reg_param * jnp.sum(jnp.abs(w) ** reg_order)
+    ) + reg_param * jnp.sum(jnp.abs(w) ** reg_order)
     return loss
 
 
-def find_coefficients_Logistic_adv_Linf(ys, xs, reg_param, eps_t, reg_order):
+_grad_loss_Logistic_adv = jax.jit(jax.grad(_loss_Logistic_adv))
+_hess_loss_Logistic_adv = jax.jit(jax.hessian(_loss_Logistic_adv))
+
+
+def find_coefficients_Logistic_adv(
+    ys, xs, reg_param: float, eps_t: float, reg_order: float, pstar: float, wstar: ndarray
+):
     _, d = xs.shape
-    w = normal(loc=0.0, scale=1.0, size=(d,))
+    # w = rng.standard_normal((d,), float32)  # normal(loc=0.0, scale=1.0, size=(d,))
+    w = wstar.copy() + rng.standard_normal((d,), float32)
     xs_norm = divide(xs, sqrt(d))
 
-    opt_res = jax_minimize(
-        _loss_Logistic_adv_Linf,
+    opt_res = minimize(
+        _loss_Logistic_adv,
         w,
-        method="BFGS",
-        args=(xs_norm, ys, reg_param, eps_t, reg_order),
-        options={"maxiter": MAX_ITER_MINIMIZE},
+        method="Newton-CG",
+        jac=_grad_loss_Logistic_adv,
+        hess=_hess_loss_Logistic_adv,
+        args=(xs_norm, ys, reg_param, eps_t, reg_order, pstar, d),
+        options={"maxiter": MAX_ITER_MINIMIZE, "xtol": 1e-3},
     )
 
     if opt_res.status == 2:
         raise ValueError(
-            "LogisticRegressor convergence failed: l-BFGS solver terminated with %s"
-            % opt_res.message
+            f"LogisticRegressor convergence failed: Newton-CG solver terminated with {opt_res.message}"
         )
 
     return opt_res.x
+
+
+# for this it is better to consider the data as parameters and avoid recompilation at each iteration
+def find_coefficients_Logistic_adv_Linf_L1(
+    ys: ndarray, xs: ndarray, reg_param: float, eps_t: float, wstar: ndarray
+):
+    _, d = xs.shape
+    xs_norm = divide(xs, sqrt(d))
+    w = Variable(d)
+    loss_term = cp_sum(logistic(-multiply(ys, xs_norm @ w) + eps_t * norm1(w) / d))
+
+    l1_reg = norm1(w)
+
+    objective = Minimize(loss_term + reg_param * l1_reg)
+    problem = Problem(objective)
+    problem.solve(verbose=False)
+
+    return w.value
 
 
 def find_coefficients_vanilla_GD(
@@ -240,9 +314,7 @@ def find_coefficients_vanilla_GD(
 
     if save_run:
         if ground_truth_theta is None:
-            raise ValueError(
-                "ground_truth_theta must be provided when save_run is True."
-            )
+            raise ValueError("ground_truth_theta must be provided when save_run is True.")
         losses = empty(max_iters + 1)
         qs = empty(max_iters + 1)
         estimation_error = empty(max_iters + 1)
@@ -305,3 +377,20 @@ def find_coefficients_Huber_on_sphere(ys, xs, reg_param, q_fixed, a, gamma=1e-04
         iter += 1
 
     return w
+
+
+# -----------------------------------
+@jit
+def linear_loss_function_single(x, y, w):
+    prediction = jnp.dot(x, w)
+    return -y * prediction
+
+
+linear_loss_all = jit(vmap(linear_loss_function_single, in_axes=(0, 0, None)))
+
+grad_linear_loss_single = jit(grad(linear_loss_function_single, argnums=0))
+
+grad_linear_loss_all = jit(vmap(grad_linear_loss_single, in_axes=(0, 0, None)))
+
+
+# -----------------------------------

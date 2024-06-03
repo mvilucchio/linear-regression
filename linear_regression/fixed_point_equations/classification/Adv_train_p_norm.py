@@ -3,25 +3,22 @@ import numpy as np
 from numpy import sign as np_sign
 from math import exp, erf, sqrt, pi, log, exp
 from scipy.integrate import quad, dblquad
-from scipy.optimize import minimize_scalar
 from ...aux_functions.misc import gaussian
-from ...aux_functions.loss_functions import logistic_loss, DDz_logistic_loss
+from ...aux_functions.moreau_proximals import (
+    proximal_Logistic_adversarial,
+    Dω_proximal_Logistic_adversarial,
+)
 
-BIG_NUMBER = 20
-
-
-
-@njit(error_model="numpy", fastmath=False)
-def moreau_loss_adv_Linf(x, y, omega, V, P, eps_t):
-    return (x - omega) ** 2 / (2 * V) + logistic_loss(y, x - y * P * eps_t)
+BIG_NUMBER = 35
 
 
 # -----------------------------------
-def m_int_Adv_Logistic_no_noise_classif(ξ, y, q, m, Σ, P, eps_t):
+@njit(error_model="numpy", fastmath=False)
+def m_int_Adv_Logistic_no_noise_classif(
+    ξ: float, y: float, q: float, m: float, Σ: float, P: float, eps_t: float
+) -> float:
     η = m**2 / q
-    proximal = minimize_scalar(
-        moreau_loss_adv_Linf, args=(y, sqrt(q) * ξ, Σ, P, eps_t)
-    )["x"]
+    proximal = proximal_Logistic_adversarial(y, sqrt(q) * ξ, Σ, P, eps_t)
     return (
         y
         * gaussian(ξ, 0, 1)
@@ -32,11 +29,12 @@ def m_int_Adv_Logistic_no_noise_classif(ξ, y, q, m, Σ, P, eps_t):
     )
 
 
-def q_int_Adv_Logistic_no_noise_classif(ξ, y, q, m, Σ, P, eps_t):
+@njit(error_model="numpy", fastmath=False)
+def q_int_Adv_Logistic_no_noise_classif(
+    ξ: float, y: float, q: float, m: float, Σ: float, P: float, eps_t: float
+) -> float:
     η = m**2 / q
-    proximal = minimize_scalar(
-        moreau_loss_adv_Linf, args=(y, sqrt(q) * ξ, Σ, P, eps_t)
-    )["x"]
+    proximal = proximal_Logistic_adversarial(y, sqrt(q) * ξ, Σ, P, eps_t)
     return 0.5 * (
         gaussian(ξ, 0, 1)
         * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η))))
@@ -45,12 +43,12 @@ def q_int_Adv_Logistic_no_noise_classif(ξ, y, q, m, Σ, P, eps_t):
     )
 
 
-def Σ_int_Adv_Logistic_no_noise_classif(ξ, y, q, m, Σ, P, eps_t):
+@njit(error_model="numpy", fastmath=False)
+def Σ_int_Adv_Logistic_no_noise_classif(
+    ξ: float, y: float, q: float, m: float, Σ: float, P: float, eps_t: float
+) -> float:
     η = m**2 / q
-    proximal = minimize_scalar(
-        moreau_loss_adv_Linf, args=(y, sqrt(q) * ξ, Σ, P, eps_t)
-    )["x"]
-    Dproximal = 1 / (1 + Σ * DDz_logistic_loss(y, proximal))
+    Dproximal = Dω_proximal_Logistic_adversarial(y, sqrt(q) * ξ, Σ, P, eps_t)
     return (
         0.5
         * gaussian(ξ, 0, 1)
@@ -60,11 +58,12 @@ def Σ_int_Adv_Logistic_no_noise_classif(ξ, y, q, m, Σ, P, eps_t):
     )
 
 
-def P_int_Adv_Logistic_no_noise_classif(ξ, y, q, m, Σ, P, eps_t):
+@njit(error_model="numpy", fastmath=False)
+def P_int_Adv_Logistic_no_noise_classif(
+    ξ: float, y: float, q: float, m: float, Σ: float, P: float, eps_t: float
+) -> float:
     η = m**2 / q
-    proximal = minimize_scalar(
-        moreau_loss_adv_Linf, args=(y, sqrt(q) * ξ, Σ, P, eps_t)
-    )["x"]
+    proximal = proximal_Logistic_adversarial(y, sqrt(q) * ξ, Σ, P, eps_t)
     return 0.5 * (
         gaussian(ξ, 0, 1)
         * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η))))
