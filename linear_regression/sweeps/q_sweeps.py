@@ -58,7 +58,7 @@ def sweep_q_fixed_point_proj_denoiser(
 
     old_initial_cond_fpe = initial_cond_fpe
     for idx, q in enumerate(qs):
-        print(f"\tq = {q}")
+        # print(f"\tq = {q}")
         f_kwargs.update({"q_fixed": q})
         ms_qs_sigmas[idx] = fixed_point_finder_loser(
             f_projection_denoising,
@@ -66,11 +66,11 @@ def sweep_q_fixed_point_proj_denoiser(
             old_initial_cond_fpe,
             f_kwargs,
             f_hat_kwargs,
-            control_variate=(True, True, False),
+            control_variate=(True, True, True),
         )
         old_initial_cond_fpe = ms_qs_sigmas[idx]
         m, q, sigma = ms_qs_sigmas[idx]
-        print(f"\tm = {m}, q = {q}, sigma = {sigma}")
+        # print(f"\tm = {m}, q = {q}, sigma = {sigma}")
 
         for jdx, (f, f_args, update_f_args) in enumerate(zip(funs, funs_args, update_funs_args)):
             if update_f_args:

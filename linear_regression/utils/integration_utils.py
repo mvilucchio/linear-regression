@@ -17,6 +17,7 @@ N_GAUSS_HERMITE = 95
 
 x_ge, w_ge = np.polynomial.hermite.hermgauss(N_GAUSS_HERMITE)
 
+
 @njit(error_model="numpy", fastmath=True)
 def gauss_hermite_quadrature(fun: Callable[[float], float], mean: float, std: float) -> float:
     # x, w = np.polynomial.hermite.hermgauss(N_GAUSS_HERMITE)
@@ -66,49 +67,9 @@ def find_integration_borders_square(
             mult += 1
 
         if n_test > 10:
-            raise ValueError("Cannot find the integration borders. The function is probably not bounded.")
-
-    # borders = [[-mult * scale1, mult * scale1], [-mult * scale2, mult * scale2]]
-
-    # for idx, ax in enumerate(borders):
-    #     for jdx, border in enumerate(ax):
-    #         while True:
-    #             if idx == 0:
-    #                 max_val = np.max(
-    #                     [
-    #                         fun(borders[idx][jdx], pt, *args)
-    #                         for pt in np.linspace(
-    #                             borders[1 if idx == 0 else 0][0],
-    #                             borders[1 if idx == 0 else 0][1],
-    #                             n_points,
-    #                         )
-    #                     ]
-    #                 )
-    #             else:
-    #                 max_val = np.max(
-    #                     [
-    #                         fun(pt, borders[idx][jdx], *args)
-    #                         for pt in np.linspace(
-    #                             borders[1 if idx == 0 else 0][0],
-    #                             borders[1 if idx == 0 else 0][1],
-    #                             n_points,
-    #                         )
-    #                     ]
-    #                 )
-    #             if max_val > tol:
-    #                 borders[idx][jdx] = borders[idx][jdx] + (-1.0 if jdx == 0 else 1.0) * (
-    #                     scale1 if idx == 0 else scale2
-    #                 )
-    #             else:
-    #                 break
-
-    # for ax in borders:
-    #     ax[0] = -np.max(np.abs(ax))
-    #     ax[1] = np.max(np.abs(ax))
-
-    # max_val = np.max([borders[0][1], borders[1][1]])
-
-    # return [[-max_val, max_val], [-max_val, max_val]]
+            raise ValueError(
+                "Cannot find the integration borders. The function is probably not bounded."
+            )
 
 
 def divide_integration_borders_multiple_grid(square_borders, N=10):
@@ -177,7 +138,9 @@ def domains_line_constraint(square_borders, y_fun, x_fun, args_y, args_x):
     return domain_x, domain_y
 
 
-def domains_double_line_constraint(square_borders, y_fun_upper, y_fun_lower, x_fun_upper, args1, args2, args3):
+def domains_double_line_constraint(
+    square_borders, y_fun_upper, y_fun_lower, x_fun_upper, args1, args2, args3
+):
     max_range = square_borders[0][1]
 
     x_test_val = x_fun_upper(max_range, **args3)
@@ -462,7 +425,11 @@ def domains_sep_hyperboles_above(square_borders, hyp, arg_hyp):
             domain_x = [[-max_range, max_range]]
             domain_y = [[-max_range, max_range]]
         else:
-            domain_x = [[-max_range, -x_test_val], [-x_test_val, x_test_val], [x_test_val, max_range]]
+            domain_x = [
+                [-max_range, -x_test_val],
+                [-x_test_val, x_test_val],
+                [x_test_val, max_range],
+            ]
             domain_y = [
                 [lambda x: hyp(x, **arg_hyp), lambda x: max_range],
                 [lambda x: -max_range, lambda x: max_range],
@@ -492,14 +459,23 @@ def line_borders_hinge_above(m, q, Σ):
 
 def stability_integration_domains():
     domains_z = [[-BIG_NUMBER, 0.0], [0.0, BIG_NUMBER]]
-    domains_ω = [[lambda z: -BIG_NUMBER, lambda z: BIG_NUMBER], [lambda z: -BIG_NUMBER, lambda z: BIG_NUMBER]]
+    domains_ω = [
+        [lambda z: -BIG_NUMBER, lambda z: BIG_NUMBER],
+        [lambda z: -BIG_NUMBER, lambda z: BIG_NUMBER],
+    ]
 
     return domains_z, domains_ω
 
 
 def stability_integration_domains_triple():
     domains_z = [[-BIG_NUMBER, BIG_NUMBER], [-BIG_NUMBER, BIG_NUMBER]]
-    domains_ω = [[lambda z: -BIG_NUMBER, lambda z: BIG_NUMBER], [lambda z: -BIG_NUMBER, lambda z: BIG_NUMBER]]
-    domains_w = [[lambda z, ω: -BIG_NUMBER, lambda z, ω: -z], [lambda z, ω: -z, lambda z, ω: BIG_NUMBER]]
+    domains_ω = [
+        [lambda z: -BIG_NUMBER, lambda z: BIG_NUMBER],
+        [lambda z: -BIG_NUMBER, lambda z: BIG_NUMBER],
+    ]
+    domains_w = [
+        [lambda z, ω: -BIG_NUMBER, lambda z, ω: -z],
+        [lambda z, ω: -z, lambda z, ω: BIG_NUMBER],
+    ]
 
     return domains_z, domains_ω, domains_w

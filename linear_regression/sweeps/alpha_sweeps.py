@@ -46,7 +46,9 @@ def sweep_alpha_fixed_point(
 
     if alpha_min > alpha_max:
         raise ValueError(
-            "alpha_min should be smaller than alpha_max, in this case are {:f} and {:f}".format(alpha_min, alpha_max)
+            "alpha_min should be smaller than alpha_max, in this case are {:f} and {:f}".format(
+                alpha_min, alpha_max
+            )
         )
 
     if alpha_min <= 0:
@@ -64,13 +66,15 @@ def sweep_alpha_fixed_point(
 
     old_initial_cond = initial_cond_fpe
     for idx, alpha in enumerate(alphas):
-        print(f"\talpha = {alpha}")
+        print(f"\t{alpha = }")
         f_hat_kwargs.update({"alpha": alpha})
-        ms_qs_sigmas[idx] = fixed_point_finder(f_func, f_hat_func, old_initial_cond, f_kwargs, f_hat_kwargs)
+        ms_qs_sigmas[idx] = fixed_point_finder(
+            f_func, f_hat_func, old_initial_cond, f_kwargs, f_hat_kwargs
+        )
         old_initial_cond = tuple(ms_qs_sigmas[idx])
         m, q, sigma = ms_qs_sigmas[idx]
 
-        print(f"\t\tm = {m}, q = {q}, sigma = {sigma}")
+        print(f"\t\t{m = :.3e}, {q = :.3e}, {sigma = :.3e}")
         for jdx, (f, f_args, update_flag) in enumerate(zip(funs, funs_args, update_funs_args)):
             if update_flag:
                 f_args.update({"m": m, "q": q, "sigma": sigma})
@@ -121,7 +125,9 @@ def sweep_alpha_optimal_lambda_fixed_point(
 
     if alpha_min > alpha_max:
         raise ValueError(
-            "alpha_min should be smaller than alpha_max, in this case are {:f} and {:f}".format(alpha_min, alpha_max)
+            "alpha_min should be smaller than alpha_max, in this case are {:f} and {:f}".format(
+                alpha_min, alpha_max
+            )
         )
 
     if alpha_min <= 0:
@@ -225,7 +231,9 @@ def sweep_alpha_optimal_lambda_hub_param_fixed_point(
 
     if alpha_min > alpha_max:
         raise ValueError(
-            "alpha_min should be smaller than alpha_max, in this case are {:f} and {:f}".format(alpha_min, alpha_max)
+            "alpha_min should be smaller than alpha_max, in this case are {:f} and {:f}".format(
+                alpha_min, alpha_max
+            )
         )
 
     if alpha_min <= 0:
@@ -271,7 +279,10 @@ def sweep_alpha_optimal_lambda_hub_param_fixed_point(
             f_hat_func,
             copy_f_kwargs,
             copy_f_hat_kwargs,
-            (old_reg_param_opt, old_hub_param_opt),  # (float(np.random.rand(1) + 1), old_hub_param_opt),
+            (
+                old_reg_param_opt,
+                old_hub_param_opt,
+            ),  # (float(np.random.rand(1) + 1), old_hub_param_opt),
             old_initial_cond_fpe,
             funs=funs,
             funs_args=copy_funs_args,
@@ -404,7 +415,9 @@ def sweep_alpha_descend_lambda(
 ):
     if alpha_min > alpha_max:
         raise ValueError(
-            "alpha_min should be smaller than alpha_max, in this case are {:f} and {:f}".format(alpha_min, alpha_max)
+            "alpha_min should be smaller than alpha_max, in this case are {:f} and {:f}".format(
+                alpha_min, alpha_max
+            )
         )
 
     if alpha_min <= 0:
@@ -498,7 +511,9 @@ def sweep_alpha_minimal_stable_reg_param(
 ):
     if alpha_min > alpha_max:
         raise ValueError(
-            "alpha_min should be smaller than alpha_max, in this case are {:f} and {:f}".format(alpha_min, alpha_max)
+            "alpha_min should be smaller than alpha_max, in this case are {:f} and {:f}".format(
+                alpha_min, alpha_max
+            )
         )
 
     if alpha_min <= 0:
@@ -532,7 +547,9 @@ def sweep_alpha_minimal_stable_reg_param(
         copy_f_hat_kwargs.update({"alpha": alpha})
 
         not_converged_idx = 0
-        reg_params_test = linspace(bounds_reg_param_search[0], bounds_reg_param_search[1], points_per_run)
+        reg_params_test = linspace(
+            bounds_reg_param_search[0], bounds_reg_param_search[1], points_per_run
+        )
 
         for jdx, reg_param in enumerate(reg_params_test[::-1]):
             copy_f_kwargs.update({"reg_param": reg_param})
