@@ -270,7 +270,7 @@ def find_coefficients_Logistic_adv(
 
 # for this it is better to consider the data as parameters and avoid recompilation at each iteration
 def find_coefficients_Logistic_adv_Linf_L1(
-    ys: ndarray, xs: ndarray, reg_param: float, eps_t: float, wstar: ndarray
+    ys: ndarray, xs: ndarray, reg_param: float, eps_t: float
 ):
     _, d = xs.shape
     xs_norm = divide(xs, sqrt(d))

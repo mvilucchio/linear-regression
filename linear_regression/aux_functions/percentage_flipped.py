@@ -15,10 +15,7 @@ def percentage_flipped_direct_space_true_label(
 
 
 def percentage_flipped_direct_space(
-    m: float, q: float, rho: float, epsilon: float, p
+    m: float, q: float, rho: float, epsilon: float, p: float
 ) -> float:
-    if p == inf:
-        return erf((epsilon * sqrt(1 - m**2 / (q * rho))) / sqrt(2.0))
-    else:
-        Cp = 2 ** (p / 2) * gamma((p + 1) / 2) / sqrt(pi)
-        return erf(((epsilon / Cp ** (1 / p)) * sqrt(1 - m**2 / (q * rho))) / sqrt(2.0))
+    Cp = (gamma((p + 1) / 2) / sqrt(pi)) ** (1 / p)
+    return erf(epsilon * sqrt(1 - m**2 / (q * rho)) * Cp)
