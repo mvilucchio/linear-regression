@@ -1,3 +1,7 @@
+# cluser output and errors
+*.out
+*.err
+
 # data folder
 data/
 !data/.gitkeep
