@@ -29,6 +29,7 @@ from cvxpy import (
     Variable,
     Parameter,
     Minimize,
+    Maximize,
     Problem,
     norm,
     sum_squares,
@@ -41,6 +42,7 @@ from ..utils.matrix_utils import axis0_pos_neg_mask, safe_sparse_dot
 from ..erm import GTOL_MINIMIZE, MAX_ITER_MINIMIZE
 import jax.numpy as jnp
 import jax
+from jax.lax import while_loop
 from jax import jit, vmap, grad
 from numpy.random import default_rng
 
@@ -49,6 +51,9 @@ from numpy.random import default_rng
 rng = default_rng()
 
 
+# ---------------------------------------------------------------------------- #
+#                                  Regression                                  #
+# ---------------------------------------------------------------------------- #
 @njit(error_model="numpy", fastmath=True)
 def _loss_and_gradient_L2(w, xs_norm, ys, reg_param):
     linear_loss = ys - xs_norm @ w
@@ -165,127 +170,6 @@ def find_coefficients_Huber(ys, xs, reg_param, a, scale_init=1.0):
     return opt_res.x
 
 
-def find_coefficients_Hinge(ys, xs, reg_param):
-    _, d = xs.shape
-    clf = LinearSVC(
-        penalty="l2",
-        loss="hinge",
-        fit_intercept=False,
-        C=1 / reg_param,
-        max_iter=MAX_ITER_MINIMIZE,
-        tol=GTOL_MINIMIZE,
-        dual=True,
-    )
-    clf.fit(xs / sqrt(d), ys)
-    return clf.coef_[0]
-
-
-def find_coefficients_Logistic(ys, xs, reg_param):
-    _, d = xs.shape
-    clf = LogisticRegression(
-        solver="lbfgs",
-        C=(1.0 / reg_param),
-        dual=False,
-        fit_intercept=False,
-        max_iter=MAX_ITER_MINIMIZE,
-        tol=GTOL_MINIMIZE,
-    )
-    clf.fit(xs / sqrt(d), ys)
-    return clf.coef_[0]
-
-
-# @jax.jit
-# def _loss_Logistic_adv_Linf(w, xs_norm, ys, reg_param, eps_t, reg_order):
-#     n, d = xs_norm.shape
-#     loss = jnp.sum(jnp.log1p(jnp.exp(-ys * jnp.dot(xs_norm, w) + eps_t * jnp.sum(jnp.abs(w)) / d)))
-#     +reg_param * jnp.sum(jnp.abs(w) ** reg_order)
-#     return loss
-
-
-# def find_coefficients_Logistic_adv_Linf(ys, xs, reg_param: float, eps_t: float, reg_order: float):
-#     _, d = xs.shape
-#     w = rng.standard_normal((d,), float32)  # w = normal(loc=0.0, scale=1.0, size=(d,))
-#     xs_norm = divide(xs, sqrt(d))
-
-#     opt_res = jax_minimize(
-#         _loss_Logistic_adv_Linf,
-#         w,
-#         method="BFGS",
-#         args=(xs_norm, ys, reg_param, eps_t, reg_order),
-#         options={"maxiter": MAX_ITER_MINIMIZE},
-#     )
-
-#     if opt_res.status == 2:
-#         raise ValueError(
-#             f"LogisticRegressor convergence failed: l-BFGS solver terminated with {opt_res.message}"
-#         )
-
-#     return opt_res.x
-
-
-@jax.jit
-def _loss_Logistic_adv(
-    w, xs_norm, ys, reg_param: float, eps_t: float, reg_order: float, pstar: float, d: int
-):
-    loss = jnp.sum(
-        jnp.log1p(
-            jnp.exp(
-                -ys * jnp.dot(xs_norm, w)
-                + eps_t * jnp.sum(jnp.abs(w) ** pstar) ** (1 / pstar) / d**pstar
-            )
-        )
-    ) + reg_param * jnp.sum(jnp.abs(w) ** reg_order)
-    return loss
-
-
-_grad_loss_Logistic_adv = jax.jit(jax.grad(_loss_Logistic_adv))
-_hess_loss_Logistic_adv = jax.jit(jax.hessian(_loss_Logistic_adv))
-
-
-def find_coefficients_Logistic_adv(
-    ys, xs, reg_param: float, eps_t: float, reg_order: float, pstar: float, wstar: ndarray
-):
-    _, d = xs.shape
-    # w = rng.standard_normal((d,), float32)  # normal(loc=0.0, scale=1.0, size=(d,))
-    w = wstar.copy() + rng.standard_normal((d,), float32)
-    xs_norm = divide(xs, sqrt(d))
-
-    opt_res = minimize(
-        _loss_Logistic_adv,
-        w,
-        method="Newton-CG",
-        jac=_grad_loss_Logistic_adv,
-        hess=_hess_loss_Logistic_adv,
-        args=(xs_norm, ys, reg_param, eps_t, reg_order, pstar, d),
-        options={"maxiter": MAX_ITER_MINIMIZE, "xtol": 1e-3},
-    )
-
-    if opt_res.status == 2:
-        raise ValueError(
-            f"LogisticRegressor convergence failed: Newton-CG solver terminated with {opt_res.message}"
-        )
-
-    return opt_res.x
-
-
-# for this it is better to consider the data as parameters and avoid recompilation at each iteration
-def find_coefficients_Logistic_adv_Linf_L1(
-    ys: ndarray, xs: ndarray, reg_param: float, eps_t: float
-):
-    _, d = xs.shape
-    xs_norm = divide(xs, sqrt(d))
-    w = Variable(d)
-    loss_term = cp_sum(logistic(-multiply(ys, xs_norm @ w) + eps_t * norm1(w) / d))
-
-    l1_reg = norm1(w)
-
-    objective = Minimize(loss_term + reg_param * l1_reg)
-    problem = Problem(objective)
-    problem.solve(verbose=False)
-
-    return w.value
-
-
 def find_coefficients_vanilla_GD(
     ys: ndarray,
     xs: ndarray,
@@ -381,16 +265,315 @@ def find_coefficients_Huber_on_sphere(ys, xs, reg_param, q_fixed, a, gamma=1e-04
 
 # -----------------------------------
 @jit
-def linear_loss_function_single(x, y, w):
+def linear_classif_loss(x, y, w):
     prediction = jnp.dot(x, w)
     return -y * prediction
 
 
-linear_loss_all = jit(vmap(linear_loss_function_single, in_axes=(0, 0, None)))
+vec_linear_classif_loss = jit(vmap(linear_classif_loss, in_axes=(0, 0, None)))
 
-grad_linear_loss_single = jit(grad(linear_loss_function_single, argnums=0))
+grad_linear_classif_loss = jit(grad(linear_classif_loss, argnums=0))
 
-grad_linear_loss_all = jit(vmap(grad_linear_loss_single, in_axes=(0, 0, None)))
+vec_grad_linear_classif_loss = jit(vmap(grad_linear_classif_loss, in_axes=(0, 0, None)))
 
 
-# -----------------------------------
+# ---------------------------------------------------------------------------- #
+#                                Classification                                #
+# ---------------------------------------------------------------------------- #
+def find_coefficients_Hinge(ys, xs, reg_param):
+    _, d = xs.shape
+    clf = LinearSVC(
+        penalty="l2",
+        loss="hinge",
+        fit_intercept=False,
+        C=1 / reg_param,
+        max_iter=MAX_ITER_MINIMIZE,
+        tol=GTOL_MINIMIZE,
+        dual=True,
+    )
+    clf.fit(xs / sqrt(d), ys)
+    return clf.coef_[0]
+
+
+def find_coefficients_Logistic(ys, xs, reg_param):
+    _, d = xs.shape
+    clf = LogisticRegression(
+        solver="lbfgs",
+        C=(1.0 / reg_param),
+        dual=False,
+        fit_intercept=False,
+        max_iter=MAX_ITER_MINIMIZE,
+        tol=GTOL_MINIMIZE,
+    )
+    clf.fit(xs / sqrt(d), ys)
+    return clf.coef_[0]
+
+
+# --------------------------- adversarial training --------------------------- #
+@jax.jit
+def _loss_Logistic_adv(
+    w, xs_norm, ys, reg_param: float, ε: float, reg_order: float, pstar: float, d: int
+):
+    loss = jnp.sum(
+        jnp.log1p(
+            jnp.exp(
+                -ys * jnp.dot(xs_norm, w)
+                + ε * jnp.sum(jnp.abs(w) ** pstar) ** (1 / pstar) / d**pstar
+            )
+        )
+    ) + reg_param * jnp.sum(jnp.abs(w) ** reg_order)
+    return loss
+
+
+_grad_loss_Logistic_adv = jax.jit(jax.grad(_loss_Logistic_adv))
+_hess_loss_Logistic_adv = jax.jit(jax.hessian(_loss_Logistic_adv))
+
+
+def find_coefficients_Logistic_adv(
+    ys, xs, reg_param: float, ε: float, reg_order: float, pstar: float, wstar: ndarray
+):
+    _, d = xs.shape
+    # w = rng.standard_normal((d,), float32)  # normal(loc=0.0, scale=1.0, size=(d,))
+    w = wstar.copy() + rng.standard_normal((d,), float32)
+    xs_norm = divide(xs, sqrt(d))
+
+    opt_res = minimize(
+        _loss_Logistic_adv,
+        w,
+        method="Newton-CG",
+        jac=_grad_loss_Logistic_adv,
+        hess=_hess_loss_Logistic_adv,
+        args=(xs_norm, ys, reg_param, ε, reg_order, pstar, d),
+        options={"maxiter": MAX_ITER_MINIMIZE, "xtol": 1e-3},
+    )
+
+    if opt_res.status == 2:
+        raise ValueError(
+            f"LogisticRegressor convergence failed: Newton-CG solver terminated with {opt_res.message}"
+        )
+
+    return opt_res.x
+
+
+@jax.jit
+def approximalte_L1_regularsation(x, a):
+    return (jnp.log(1 + jnp.exp(a * x)) + jnp.log(1 + jnp.exp(-a * x))) / a
+
+
+v_approximalte_L1_regularsation = jax.jit(
+    jax.vmap(approximalte_L1_regularsation, in_axes=(0, None))
+)
+
+
+@jax.jit
+def _loss_Logistic_adv_approx_L1(w, xs_norm, ys, reg_param: float, ε: float, pstar: float, d: int):
+    loss = (
+        jnp.sum(
+            jnp.log1p(
+                jnp.exp(
+                    -ys * jnp.dot(xs_norm, w)
+                    + ε * jnp.sum(jnp.abs(w) ** pstar) ** (1 / pstar) / d**pstar
+                )
+            )
+        )
+        + reg_param * v_approximalte_L1_regularsation(w, 32.0).sum()
+    )
+    return loss
+
+
+_grad_loss_Logistic_approx_L1 = jax.jit(jax.grad(_loss_Logistic_adv_approx_L1))
+_hess_loss_Logistic_approx_L1 = jax.jit(jax.hessian(_loss_Logistic_adv_approx_L1))
+
+
+def find_coefficients_Logistic_approx_L1(
+    ys, xs, reg_param: float, ε: float, pstar: float, wstar: ndarray
+):
+    _, d = xs.shape
+    # w = rng.standard_normal((d,), float32)  # normal(loc=0.0, scale=1.0, size=(d,))
+    w = wstar.copy() + rng.standard_normal((d,), float32)
+    xs_norm = divide(xs, sqrt(d))
+
+    opt_res = minimize(
+        _loss_Logistic_adv_approx_L1,
+        w,
+        method="Newton-CG",
+        jac=_grad_loss_Logistic_approx_L1,
+        hess=_hess_loss_Logistic_approx_L1,
+        args=(xs_norm, ys, reg_param, ε, pstar, d),
+        options={"maxiter": MAX_ITER_MINIMIZE, "xtol": 1e-6},
+    )
+
+    if opt_res.status == 2:
+        raise ValueError(
+            f"LogisticRegressor convergence failed: Newton-CG solver terminated with {opt_res.message}"
+        )
+
+    return opt_res.x
+
+
+# for this it is better to consider the data as parameters and avoid recompilation at each iteration
+def find_coefficients_Logistic_adv_Linf_L1(ys: ndarray, xs: ndarray, reg_param: float, ε: float):
+    _, d = xs.shape
+    xs_norm = divide(xs, sqrt(d))
+    w = Variable(d)
+    loss_term = cp_sum(logistic(-multiply(ys, xs_norm @ w) + ε * norm1(w) / d))
+
+    l1_reg = norm1(w)
+
+    objective = Minimize(loss_term + reg_param * l1_reg)
+    problem = Problem(objective)
+    problem.solve(verbose=False)
+
+    return w.value
+
+
+# ---------------------- adversarial perturbation finder --------------------- #
+
+
+def find_adversarial_perturbation_direct_space(
+    ys: ndarray,
+    xs: ndarray,
+    w: ndarray,
+    wstar: ndarray,
+    ε: float,
+    p: float,
+):
+    _, d = xs.shape
+    x = Variable(len(w))
+
+    constraints = [norm(x, p) <= ε, wstar @ x == 0]
+
+    objective = Maximize(w @ x)
+
+    problem = Problem(objective, constraints)
+    problem.solve()
+
+    return -ys[:, None] * np.tile(x.value, (len(ys), 1))
+
+
+def find_adversarial_perturbation_RandomFeatures_space(
+    ys: ndarray,
+    xs: ndarray,
+    w: ndarray,
+    F: ndarray,
+    wstar: ndarray,
+    ε: float,
+    p: float,
+):
+    _, d = xs.shape
+    x = Variable(len(w))
+
+    constraints = [norm(x, p) <= ε, wstar @ x == 0]
+
+    wtilde = F.T @ w
+    objective = Maximize(wtilde @ x)
+
+    problem = Problem(objective, constraints)
+    problem.solve()
+
+    return -ys[:, None] * np.tile(x.value, (len(ys), 1))
+
+
+# ---------------------------------------------------------------------------- #
+#                          Projected Gradient Descent                          #
+# ---------------------------------------------------------------------------- #
+@jax.jit
+def total_loss_logistic(w, Xs, ys, reg_param):
+    ys = ys.reshape(-1, 1) if ys.ndim == 1 else ys
+    scores = jnp.matmul(Xs, w)
+    loss_part = jnp.sum(jnp.log(1 + jnp.exp(-ys * scores)))
+    reg_part = 0.5 * reg_param * jnp.dot(w, w)
+    return loss_part + reg_part
+
+
+@jax.jit
+def linear_classif_loss(x, y, w):
+    return -y * jnp.dot(x, w)
+
+
+vec_linear_classif_loss = jax.jit(vmap(linear_classif_loss, in_axes=(0, 0, None)))
+grad_linear_classif_loss = jax.jit(grad(linear_classif_loss, argnums=0))
+vec_grad_linear_classif_loss = jax.jit(vmap(grad_linear_classif_loss, in_axes=(0, 0, None)))
+
+
+@jax.jit
+def then_func(ops):
+    x, ε, norm_x_projected = ops
+    return ε * x / norm_x_projected
+
+
+@jax.jit
+def else_func(ops):
+    return ops[0]
+
+
+# jitted_norm = jax.jit(jnp.linalg.norm, static_argnums=["ord"])
+
+
+@jax.jit
+def project_and_normalize(x, wstar, ε, p):
+    x -= jnp.dot(x, wstar) * wstar / jnp.dot(wstar, wstar)
+    norm_x_projected = jnp.sum(jnp.abs(x) ** p) ** (1 / p)
+    # norm_x_projected = jitted_norm(x, ord=p)
+
+    return jax.lax.cond(norm_x_projected > ε, then_func, else_func, (x, ε, norm_x_projected))
+
+
+vec_project_and_normalize = jax.jit(vmap(project_and_normalize, in_axes=(0, None, None, None)))
+
+
+@jax.jit
+def projected_GA_step_jit(vs, ys, w, wstar, step_size, ε, p):
+    g = vec_grad_linear_classif_loss(vs, ys, w)
+    return vec_project_and_normalize(vs + step_size * g, wstar, ε, p)
+
+
+def projected_GA(ys, w, wstar, step_size, n_steps, ε, p, adv_perturbation=None):
+    if adv_perturbation is None:
+        adv_perturbation = jnp.zeros((len(ys), len(w)))
+
+    for _ in range(n_steps):
+        adv_perturbation = projected_GA_step_jit(adv_perturbation, ys, w, wstar, step_size, ε, p)
+    return adv_perturbation
+
+
+def check_if_additional_step_improves(adv_perturbation, ys, w, ε, p):
+    loss_before = linear_classif_loss(adv_perturbation, ys, w)
+    adv_perturbation_after = projected_GA_step_jit(adv_perturbation, ys, w, ε, p)
+    loss_after = linear_classif_loss(adv_perturbation_after, ys, w)
+    return loss_after < loss_before
+
+
+def projected_GA_untill_convergence(
+    ys, w, wstar, step_size, ε, p, adv_perturbation=None, step_block=100
+):
+    if adv_perturbation is None:
+        adv_perturbation = jnp.zeros((len(ys), len(w)))
+
+    while not check_if_additional_step_improves(adv_perturbation, ys, w, ε, p):
+        for _ in range(step_block):
+            adv_perturbation = projected_GA_step_jit(
+                adv_perturbation, ys, w, wstar, step_size, ε, p
+            )
+
+    return adv_perturbation
+
+
+# def projected_GA(ys, w, wstar, step_size, n_steps, ε, p):
+#     adv_perturbation = jnp.zeros((len(ys), len(w)))
+
+#     @jax.jit
+#     def cond_fun(state):
+#         i, _ = state
+#         return i < n_steps
+
+#     @jax.jit
+#     def body_fun(state):
+#         i, adv_perturbation = state
+#         adv_perturbation = projected_GA_step_jit(adv_perturbation, ys, w, wstar, step_size, ε, p)
+#         return i + 1, adv_perturbation
+
+#     initial_state = (0, adv_perturbation)
+#     _, adv_perturbation = while_loop(cond_fun, body_fun, initial_state)
+
+#     return adv_perturbation
