@@ -14,7 +14,9 @@ def percentage_flipped_direct_space_true_label(
     )
 
 
-def percentage_flipped_direct_space(m: float, q: float, rho: float, epsilon: float, p) -> float:
+def percentage_flipped_direct_space_true_min(
+    m: float, q: float, rho: float, epsilon: float, p
+) -> float:
     if p == "inf":
         # return erf((epsilon * sqrt(1 - m**2 / (q * rho))) / sqrt(2.0))
         Cpstar = 1 / sqrt(pi)
@@ -23,6 +25,18 @@ def percentage_flipped_direct_space(m: float, q: float, rho: float, epsilon: flo
         pstar = p / (p - 1)
         Cpstar = (gamma((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar)
         return erf(epsilon * sqrt(1 - m**2 / (q * rho)) * Cpstar)
+
+
+def percentage_flipped_direct_space_FGM(
+    m: float, q: float, rho: float, epsilon: float, p: float
+) -> float:
+    raise NotImplementedError
+    # if p == "inf":
+    # return erf(epsilon * sqrt(1 - m**2 / (q * rho)) / sqrt(2.0))
+    # else:
+    # pstar = p / (p - 1)
+    # Cpstar = (gamma((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar)
+    # return erf(epsilon * sqrt(1 - m**2 / (q * rho)) * Cpstar)
 
 
 def percentage_flipped_random_linear_features(

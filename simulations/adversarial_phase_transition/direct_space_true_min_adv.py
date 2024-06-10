@@ -10,7 +10,9 @@ from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic_adv,
 )
 from linear_regression.erm.erm_solvers import find_adversarial_perturbation_direct_space
-from linear_regression.aux_functions.percentage_flipped import percentage_flipped_direct_space
+from linear_regression.aux_functions.percentage_flipped import (
+    percentage_flipped_direct_space_true_min,
+)
 from tqdm.auto import tqdm
 import pickle
 import os
@@ -21,10 +23,10 @@ reg_param = 1.0
 eps_training = 0.0
 pstar_t = 1.0
 ps = [2, 3, "inf"]
-dimensions = [int(2**a) for a in range(10, 11)]
+dimensions = [int(2**a) for a in range(10, 12)]
 
-epss = np.logspace(-2, 2, 15)
-eps_dense = np.logspace(-2, 2, 100)
+epss = np.logspace(-2, 1, 15)
+eps_dense = np.logspace(-2, 1, 100)
 reps = 10
 run_experiment = True
 
@@ -146,11 +148,13 @@ for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
     out = np.empty_like(eps_dense)
 
     for i, eps_i in enumerate(eps_dense):
-        out[i] = percentage_flipped_direct_space(mean_m, mean_q, mean_rho, eps_i, p)
+        out[i] = percentage_flipped_direct_space_true_min(mean_m, mean_q, mean_rho, eps_i, p)
 
     plt.plot(eps_dense, out, linestyle=ls, color="black", linewidth=0.5)
 
-plt.title(f"Direct space $\\alpha$ = {alpha:.1f} $\\lambda$ = {reg_param:.1e}")
+plt.title(
+    f"Direct space $\\alpha$ = {alpha:.1f} $\\lambda$ = {reg_param:.1e} $\\epsilon_t$ = {eps_training:.2f} $p^*$ = {pstar_t}"
+)
 plt.xscale("log")
 plt.xlabel(r"$\epsilon (\sqrt[p]{d} / \sqrt{d})$")
 plt.ylabel("Percentage of flipped labels")
