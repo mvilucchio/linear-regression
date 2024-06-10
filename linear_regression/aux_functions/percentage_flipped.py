@@ -1,6 +1,6 @@
 from math import pi, atan, sqrt, erf
 from scipy.special import owens_t
-from math import gamma, inf
+from math import gamma
 
 
 def percentage_flipped_direct_space_true_label(
@@ -18,7 +18,6 @@ def percentage_flipped_direct_space_true_min(
     m: float, q: float, rho: float, epsilon: float, p
 ) -> float:
     if p == "inf":
-        # return erf((epsilon * sqrt(1 - m**2 / (q * rho))) / sqrt(2.0))
         Cpstar = 1 / sqrt(pi)
         return erf(epsilon * sqrt(1 - m**2 / (q * rho)) * Cpstar)
     else:
@@ -27,16 +26,12 @@ def percentage_flipped_direct_space_true_min(
         return erf(epsilon * sqrt(1 - m**2 / (q * rho)) * Cpstar)
 
 
-def percentage_flipped_direct_space_FGM(
-    m: float, q: float, rho: float, epsilon: float, p: float
-) -> float:
-    raise NotImplementedError
-    # if p == "inf":
-    # return erf(epsilon * sqrt(1 - m**2 / (q * rho)) / sqrt(2.0))
-    # else:
-    # pstar = p / (p - 1)
-    # Cpstar = (gamma((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar)
-    # return erf(epsilon * sqrt(1 - m**2 / (q * rho)) * Cpstar)
+def percentage_flipped_direct_space_FGM(m: float, q: float, rho: float, epsilon: float, p) -> float:
+    if p == "inf":
+        return erf((epsilon * sqrt(1 - m**2 / (q * rho))) / sqrt(2.0))
+    else:
+        Cp = 2 ** (p / 2) * gamma((p + 1) / 2) / sqrt(pi)
+        return erf(((epsilon / Cp ** (1 / p)) * sqrt(1 - m**2 / (q * rho))) / sqrt(2.0))
 
 
 def percentage_flipped_random_linear_features(
