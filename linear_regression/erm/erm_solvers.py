@@ -484,9 +484,9 @@ def linear_classif_loss(x, y, w):
     return -y * jnp.dot(x, w)
 
 
-vec_linear_classif_loss = jax.jit(vmap(linear_classif_loss, in_axes=(0, 0, None)))
-grad_linear_classif_loss = jax.jit(grad(linear_classif_loss, argnums=0))
-vec_grad_linear_classif_loss = jax.jit(vmap(grad_linear_classif_loss, in_axes=(0, 0, None)))
+vec_linear_classif_loss = jax.jit(jax.vmap(linear_classif_loss, in_axes=(0, 0, None)))
+grad_linear_classif_loss = jax.jit(jax.grad(linear_classif_loss, argnums=0))
+vec_grad_linear_classif_loss = jax.jit(jax.vmap(grad_linear_classif_loss, in_axes=(0, 0, None)))
 
 
 @jax.jit
@@ -512,7 +512,7 @@ def project_and_normalize(x, wstar, ε, p):
     return jax.lax.cond(norm_x_projected > ε, then_func, else_func, (x, ε, norm_x_projected))
 
 
-vec_project_and_normalize = jax.jit(vmap(project_and_normalize, in_axes=(0, None, None, None)))
+vec_project_and_normalize = jax.jit(jax.vmap(project_and_normalize, in_axes=(0, None, None, None)))
 
 
 @jax.jit
