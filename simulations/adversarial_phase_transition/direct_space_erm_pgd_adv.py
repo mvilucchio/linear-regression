@@ -5,7 +5,7 @@ from linear_regression.data.generation import (
     data_generation,
 )
 from tqdm.auto import tqdm
-from linear_regression.erm.metrics import percentage_flipped_labels
+from linear_regression.erm.metrics import percentage_flipped_labels_estim
 from linear_regression.erm.erm_solvers import find_coefficients_Logistic
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.classification.Logistic_loss import (
@@ -103,9 +103,7 @@ def projected_GA(ys, w, wstar, step_size, n_steps, eps, p):
     adv_perturbation = jnp.zeros((len(ys), len(w)))
 
     for _ in range(n_steps):
-        adv_perturbation = projected_GA_step_jit(
-            adv_perturbation, ys, w, wstar, step_size, eps, p
-        )
+        adv_perturbation = projected_GA_step_jit(adv_perturbation, ys, w, wstar, step_size, eps, p)
         # if np.allclose(jnp.linalg.norm(adv_perturbation, ord=p, axis=1) - eps, 0.0, atol=1e-5):
         #     break
     return adv_perturbation
@@ -236,9 +234,7 @@ if __name__ == "__main__":
                     ).x
 
                     estim_vals_rho[j] = np.sum(teacher_vector**2) / n_features
-                    estim_vals_m[j] = (
-                        np.sum(teacher_vector * estimated_theta) / n_features
-                    )
+                    estim_vals_m[j] = np.sum(teacher_vector * estimated_theta) / n_features
                     estim_vals_q[j] = np.sum(estimated_theta**2) / n_features
 
                     # yhat = np.repeat(
@@ -246,9 +242,7 @@ if __name__ == "__main__":
                     # )
                     yhat = np.sign(xs_gen @ estimated_theta)  # .reshape(-1, 1)
 
-                    for i, eps_i in enumerate(
-                        tqdm(epss_rescaled, desc="eps", leave=False)
-                    ):
+                    for i, eps_i in enumerate(tqdm(epss_rescaled, desc="eps", leave=False)):
                         # print(f"current eps_i = {eps_i:.3f}")
                         adv_perturbation = projected_GA(
                             yhat, estimated_theta, teacher_vector, 0.5, 200, eps_i, p
@@ -262,7 +256,7 @@ if __name__ == "__main__":
                             rtol=1e-5,
                         )
 
-                        flipped = percentage_flipped_labels(
+                        flipped = percentage_flipped_labels_estim(
                             yhat,
                             xs_gen,
                             estimated_theta,
@@ -295,14 +289,10 @@ if __name__ == "__main__":
                     "std_rho": std_rho,
                 }
 
-                with open(
-                    f"./data/n_features_{n_features:d}_reps_{reps:d}_p_{p:d}.pkl", "wb"
-                ) as f:
+                with open(f"./data/n_features_{n_features:d}_reps_{reps:d}_p_{p:d}.pkl", "wb") as f:
                     pickle.dump(data, f)
             else:
-                with open(
-                    f"./data/n_features_{n_features:d}_reps_{reps:d}_p_{p:d}.pkl", "rb"
-                ) as f:
+                with open(f"./data/n_features_{n_features:d}_reps_{reps:d}_p_{p:d}.pkl", "rb") as f:
                     data = pickle.load(f)
                     epss = data["epss"]
                     vals = data["vals"]
@@ -332,7 +322,7 @@ if __name__ == "__main__":
         out = np.empty_like(eps_dense)
 
         for i, eps_i in enumerate(eps_dense):
-            out[i] = percentage_flipped_direct_space(
+            out[i] = percentage_flipped_direct_space_true_min(
                 mean_m, mean_q, mean_rho, eps_i, p / (p - 1)
             )
 
@@ -347,9 +337,7 @@ if __name__ == "__main__":
     handles = []
     labels = []
     for p, ls, mrk in zip(ps, linestyles, markers):
-        handle = plt.Line2D(
-            [], [], linestyle=ls, linewidth=0.5, marker=mrk, color="black"
-        )
+        handle = plt.Line2D([], [], linestyle=ls, linewidth=0.5, marker=mrk, color="black")
         handles.append(handle)
         labels.append(f"p = {p:d}" if p != np.inf else "p = $\infty$")
 

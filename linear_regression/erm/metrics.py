@@ -29,6 +29,12 @@ def adversarial_error_data(ys, xs, w, wstar, eps, pstar):
     return mean(ys != tmp)
 
 
+def adversarial_error_data_Sigmaupsilon(ys, xs, w, wstar, Sigmaupsilon, eps):
+    _, d = xs.shape
+    tmp = sign(xs @ w / sqrt(d) - eps / sqrt(d) * sqrt(dot(w, Sigmaupsilon @ w)) * ys)
+    return mean(ys != tmp)
+
+
 # Adversarial Errors
 
 # def adversarial_error_data(ys, xs, w, wstar):
@@ -38,15 +44,7 @@ def adversarial_error_data(ys, xs, w, wstar, eps, pstar):
 #     return sum(square(tmp)) / n
 
 
-# def percentage_flipped_labels(
-#     ys, xs, w, wstar, xs_perturbation
-# ):
-#     return mean(
-#         sign(xs @ w) != sign((xs + xs_perturbation) @ w)
-#     )
-
-
-def percentage_flipped_labels(
+def percentage_flipped_labels_estim(
     ys,
     xs,
     w,

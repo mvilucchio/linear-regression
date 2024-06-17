@@ -4,7 +4,7 @@ from linear_regression.data.generation import (
     measure_gen_no_noise_clasif,
     data_generation,
 )
-from linear_regression.erm.metrics import percentage_flipped_labels
+from linear_regression.erm.metrics import percentage_flipped_labels_estim
 from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic,
     find_coefficients_Logistic_adv,
@@ -77,7 +77,7 @@ for j in tqdm(range(reps), desc="rps", leave=False):
             yhat, xs_gen, w, wstar, eps_i, p
         )
 
-        flipped = percentage_flipped_labels(
+        flipped = percentage_flipped_labels_estim(
             yhat,
             xs_gen,
             w,
