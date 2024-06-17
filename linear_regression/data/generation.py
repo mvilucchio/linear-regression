@@ -1,5 +1,5 @@
 from numpy.random import normal, choice
-from numpy import empty, sqrt, where, divide, ndarray, float32
+from numpy import empty, sqrt, where, divide, ndarray, float32, zeros
 from numpy.random import default_rng
 
 
@@ -8,9 +8,7 @@ from numpy.random import default_rng
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-def measure_gen_no_noise_clasif(
-    generalization: bool, teacher_vector: ndarray, xs: ndarray
-):
+def measure_gen_no_noise_clasif(generalization: bool, teacher_vector: ndarray, xs: ndarray):
     _, n_features = xs.shape
     w_xs = divide(xs @ teacher_vector, sqrt(n_features))
     if generalization:
@@ -31,9 +29,7 @@ def measure_gen_probit_clasif(generalization: bool, teacher_vector, xs, delta):
     return ys
 
 
-def measure_gen_single_noise_clasif(
-    generalization: bool, teacher_vector, xs, delta: float
-):
+def measure_gen_single_noise_clasif(generalization: bool, teacher_vector, xs, delta: float):
     n_samples, n_features = xs.shape
     w_xs = divide(xs @ teacher_vector, sqrt(n_features))
     if generalization:
@@ -75,12 +71,8 @@ def measure_gen_double(
     else:
         c = choice([0, 1], p=[1 - percentage, percentage], size=(n_samples,))
         error_sample = empty((n_samples, 2))
-        error_sample[:, 0] = sqrt(delta_in) * normal(
-            loc=0.0, scale=1.0, size=(n_samples,)
-        )
-        error_sample[:, 1] = sqrt(delta_out) * normal(
-            loc=0.0, scale=1.0, size=(n_samples,)
-        )
+        error_sample[:, 0] = sqrt(delta_in) * normal(loc=0.0, scale=1.0, size=(n_samples,))
+        error_sample[:, 1] = sqrt(delta_out) * normal(loc=0.0, scale=1.0, size=(n_samples,))
         total_error = where(c, error_sample[:, 1], error_sample[:, 0])
         ys = w_xs + total_error
     return ys
@@ -102,12 +94,8 @@ def measure_gen_decorrelated(
     else:
         c = choice([0, 1], p=[1 - percentage, percentage], size=(n_samples,))
         error_sample = empty((n_samples, 2))
-        error_sample[:, 0] = sqrt(delta_in) * normal(
-            loc=0.0, scale=1.0, size=(n_samples,)
-        )
-        error_sample[:, 1] = sqrt(delta_out) * normal(
-            loc=0.0, scale=1.0, size=(n_samples,)
-        )
+        error_sample[:, 0] = sqrt(delta_in) * normal(loc=0.0, scale=1.0, size=(n_samples,))
+        error_sample[:, 1] = sqrt(delta_out) * normal(loc=0.0, scale=1.0, size=(n_samples,))
         total_error = where(c, error_sample[:, 1], error_sample[:, 0])
         factor_in_front = where(c, beta, 1.0)
         ys = factor_in_front * w_xs + total_error
@@ -200,3 +188,25 @@ def data_generation(
         return vs, xs, ys, vs_gen, xs_gen, ys_gen, theta_0_teacher, projector
     else:
         return xs, ys, xs_gen, ys_gen, theta_0_teacher
+
+
+def data_generation_correalted(
+    measure_fun,
+    n_features: int,
+    n_samples: int,
+    n_generalization: int,
+    measure_fun_args,
+    Sigmax_cov: ndarray,
+    Sigmatheta_cov: ndarray,
+):
+    rng = default_rng()
+    mean = zeros(n_features)
+    theta_0_vector = rng.multivariate_normal(mean, Sigmatheta_cov, size=(1,)).astype(float32)[0]
+
+    xs = rng.multivariate_normal(mean, Sigmax_cov, size=(n_samples,)).astype(float32)
+    xs_gen = rng.multivariate_normal(mean, Sigmax_cov, size=(n_generalization,)).astype(float32)
+
+    ys = measure_fun(False, theta_0_vector, xs, *measure_fun_args)
+    ys_gen = measure_fun(False, theta_0_vector, xs_gen, *measure_fun_args)
+
+    return xs, ys, xs_gen, ys_gen, theta_0_vector
