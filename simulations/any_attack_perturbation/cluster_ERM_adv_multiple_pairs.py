@@ -20,21 +20,18 @@ from itertools import product
 
 warnings.filterwarnings("error")
 
-alpha_min, alpha_max, n_alpha_pts = 0.1, 26.82695795, 18
-# reg_orders = [
-#     1,
-#     2,
-#     3,
-#     4,
-# ]
-reg_order = 1
-# eps_t = 0.1
-# eps_g = 0.1
-epss = [0.05, 0.1, 0.2, 0.3]
-reg_params = [1e-1, 1e-2, 1e-3, 1e-4]
+alpha_min, alpha_max, n_alpha_pts = 0.1, 10, 15
+reg_orders = [
+    # 1,
+    2,
+    3,
+    4,
+]
+epss = [0.1, 0.2, 0.3]
+reg_params = [1e-1, 1e-2, 1e-3]
 pstar = 1.0
 
-pairs = list(product(epss, reg_params))
+pairs = list(product(epss, reg_params, reg_orders))
 
 d = 500
 reps = 10
@@ -50,7 +47,7 @@ size = comm.Get_size()
 
 assert len(pairs) >= size
 
-eps_t, reg_param = pairs[rank]
+eps_t, reg_param, reg_order = pairs[rank]
 eps_g = eps_t
 
 alphas = np.logspace(np.log10(alpha_min), np.log10(alpha_max), n_alpha_pts)
