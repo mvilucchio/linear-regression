@@ -1,8 +1,8 @@
 from numpy import (
     divide,
     ndarray,
-    identity,
     sqrt,
+    identity,
     abs,
     count_nonzero,
     sum,
@@ -355,6 +355,49 @@ def find_coefficients_Logistic_adv(
     return opt_res.x
 
 
+# ------------------------------ sigmadeltacase ------------------------------ #
+@jax.jit
+def _loss_Logistic_adv_Sigmadelta(w, xs_norm, ys, reg_param: float, ε: float, Sigmadelta, d: int):
+    loss = jnp.sum(
+        jnp.log1p(
+            jnp.exp(
+                -ys * jnp.dot(xs_norm, w) + ε / jnp.sqrt(d) * jnp.sqrt(jnp.dot(w, Sigmadelta @ w))
+            )
+        )
+    ) + 0.5 * reg_param * jnp.sum(w**2)
+    return loss
+
+
+_grad_loss_Logistic_adv_Sigmadelta = jax.jit(jax.grad(_loss_Logistic_adv_Sigmadelta))
+_hess_loss_Logistic_adv_Sigmadelta = jax.jit(jax.hessian(_loss_Logistic_adv_Sigmadelta))
+
+
+def find_coefficients_Logistic_adv_Sigmadelta(
+    ys, xs, reg_param: float, ε: float, wstar: ndarray, Sigmadelta
+):
+    _, d = xs.shape
+    w = wstar.copy() + rng.standard_normal((d,), float32)
+    xs_norm = divide(xs, sqrt(d))
+
+    opt_res = minimize(
+        _loss_Logistic_adv_Sigmadelta,
+        w,
+        method="Newton-CG",
+        jac=_grad_loss_Logistic_adv_Sigmadelta,
+        hess=_hess_loss_Logistic_adv_Sigmadelta,
+        args=(xs_norm, ys, reg_param, ε, Sigmadelta, d),
+        options={"maxiter": MAX_ITER_MINIMIZE},
+    )
+
+    if opt_res.status == 2:
+        raise ValueError(
+            f"LogisticRegressor Sigmadelta convergence failed: Newton-CG solver terminated with {opt_res.message}"
+        )
+
+    return opt_res.x
+
+
+# ------------------------------ approximate L1 ------------------------------ #
 @jax.jit
 def approximalte_L1_regularsation(x, a):
     return (jnp.log(1 + jnp.exp(a * x)) + jnp.log(1 + jnp.exp(-a * x))) / a
@@ -453,25 +496,26 @@ def find_adversarial_perturbation_direct_space(
 
 def find_adversarial_perturbation_RandomFeatures_space(
     ys: ndarray,
-    xs: ndarray,
+    cs: ndarray,
     w: ndarray,
     F: ndarray,
     wstar: ndarray,
     ε: float,
     p: float,
 ):
-    _, d = xs.shape
-    x = Variable(len(w))
+    _, d = cs.shape
+    delta = Variable(d)
 
-    constraints = [norm(x, p) <= ε, wstar @ x == 0]
+    constraints = [norm(delta, p) <= ε, wstar.T @ delta == 0]
 
-    wtilde = F.T @ w
-    objective = Maximize(wtilde @ x)
+    wtilde = F @ w
+    objective = Maximize(wtilde.T @ delta)
 
     problem = Problem(objective, constraints)
     problem.solve()
 
-    return -ys[:, None] * np.tile(x.value, (len(ys), 1))
+    return -ys[:, None] * np.tile(delta.value, (len(ys), 1))
+    # return delta.value
 
 
 # ---------------------------------------------------------------------------- #
