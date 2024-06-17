@@ -34,7 +34,13 @@ def percentage_flipped_direct_space_FGM(m: float, q: float, rho: float, epsilon:
         return erf(((epsilon / Cp ** (1 / p)) * sqrt(1 - m**2 / (q * rho))) / sqrt(2.0))
 
 
-def percentage_flipped_random_linear_features(
-    m: float, q: float, rho: float, epsilon: float, p: float
+def percentage_flipped_linear_features_space_true_min(
+    m: float, q: float, rho: float, epsilon: float, p, gamma_val: float
 ) -> float:
-    raise NotImplementedError
+    if p == "inf":
+        Cpstar = 1 / sqrt(pi) * gamma_val ** (1 / 2)
+        return erf(epsilon * sqrt(1 - m**2 / (q * rho)) * Cpstar)
+    else:
+        pstar = p / (p - 1)
+        Cpstar = (gamma((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar) * gamma_val ** (1 / 2 - 1 / p)
+        return erf(epsilon * sqrt(1 - m**2 / (q * rho)) * Cpstar)
