@@ -6,6 +6,9 @@
 data/
 !data/.gitkeep
 
+imgs/
+!imgs/.gitkeep
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
