@@ -13,6 +13,6 @@
 module load gcc openmpi python/3.10.4
 source /home/vilucchi/venvs/my-venv/bin/activate
 
-srun python3 ./simulations/adversarial_phase_transition/cluster_direct_space_true_min_adv.py
+srun python3 ./simulations/adversarial_phase_transition/linear_random_features/cluster_linear_random_features_true_min_adv.py
 
 deactivate

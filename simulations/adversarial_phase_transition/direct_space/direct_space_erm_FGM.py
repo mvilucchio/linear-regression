@@ -4,7 +4,7 @@ from linear_regression.data.generation import (
     measure_gen_no_noise_clasif,
     data_generation,
 )
-from linear_regression.erm.metrics import percentage_flipped_labels
+from linear_regression.erm.metrics import percentage_flipped_labels_estim
 from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic,
     find_coefficients_Logistic_adv,
@@ -95,7 +95,7 @@ for p, ls, mrk in zip(ps, linestyles, markers):
                 adv_perturbation = -(yhat * direction_adv_norm[None, :])
 
                 for i, eps_i in enumerate(epss_rescaled):
-                    flipped = percentage_flipped_labels(
+                    flipped = percentage_flipped_labels_estim(
                         yhat,
                         xs_gen,
                         w,

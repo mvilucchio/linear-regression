@@ -5,7 +5,7 @@ from linear_regression.data.generation import (
     data_generation,
 )
 from tqdm.auto import tqdm
-from linear_regression.erm.metrics import percentage_flipped_labels
+from linear_regression.erm.metrics import percentage_flipped_labels_estim
 from linear_regression.erm.erm_solvers import find_coefficients_Logistic
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.classification.Logistic_loss import (
@@ -26,6 +26,7 @@ import sys
 from mpi4py import MPI
 import time
 import datetime
+
 
 @jax.jit
 def total_loss_logistic(w, Xs, ys, reg_param):
@@ -97,6 +98,7 @@ vecorized_project_and_normalize_p = jax.jit(
     vmap(project_and_normalize_p, in_axes=(0, None, None, None))
 )
 
+
 @jax.jit
 def projected_GA_step_jit_p(vs, ys, w, wstar, step_size, eps, p):
     g = grad_linear_loss_all(vs, ys, w)
@@ -117,6 +119,7 @@ vecorized_project_and_normalize_inf = jax.jit(
     vmap(project_and_normalize_inf, in_axes=(0, None, None))
 )
 
+
 @jax.jit
 def projected_GA_step_jit_inf(vs, ys, w, wstar, step_size, eps):
     g = grad_linear_loss_all(vs, ys, w)
@@ -127,9 +130,7 @@ def projected_GA_inf(ys, w, wstar, step_size, n_steps, eps):
     adv_perturbation = jnp.zeros((len(ys), len(w)))
 
     for _ in range(n_steps):
-        adv_perturbation = projected_GA_step_jit_inf(
-            adv_perturbation, ys, w, wstar, step_size, eps
-        )
+        adv_perturbation = projected_GA_step_jit_inf(adv_perturbation, ys, w, wstar, step_size, eps)
     return adv_perturbation
 
 
@@ -186,16 +187,12 @@ if ps[rank] == "inf":
             ).x
 
             estim_vals_rho[j] = np.sum(teacher_vector**2) / n_features
-            estim_vals_m[j] = (
-                np.sum(teacher_vector * estimated_theta) / n_features
-            )
+            estim_vals_m[j] = np.sum(teacher_vector * estimated_theta) / n_features
             estim_vals_q[j] = np.sum(estimated_theta**2) / n_features
 
             yhat = np.sign(xs_gen @ estimated_theta)  # .reshape(-1, 1)
 
-            for i, eps_i in enumerate(
-                epss_rescaled
-            ):
+            for i, eps_i in enumerate(epss_rescaled):
                 # print(f"current eps_i = {eps_i:.3f}")
                 adv_perturbation = projected_GA_inf(
                     yhat, estimated_theta, teacher_vector, 0.5, 500, eps_i
@@ -211,7 +208,7 @@ if ps[rank] == "inf":
                     )
                 )
 
-                flipped = percentage_flipped_labels(
+                flipped = percentage_flipped_labels_estim(
                     yhat,
                     xs_gen,
                     estimated_theta,
@@ -249,14 +246,16 @@ if ps[rank] == "inf":
         ) as f:
             pickle.dump(data, f)
 
-        print(f"process {rank} finished with n_features = {n_features} time = {datetime.datetime.now()}")
+        print(
+            f"process {rank} finished with n_features = {n_features} time = {datetime.datetime.now()}"
+        )
 else:
     p = ps[rank]  # each process gets a different p value
 
     for n_features, c in zip(dimensions, colors):
         print(f"process {rank} starts with n_features = {n_features}")
         # epss_rescaled = epss / (n_features ** (1 / 2 - 1 / p))
-        epss_rescaled = epss * (n_features ** (- 1 / 2 + 1 / p))
+        epss_rescaled = epss * (n_features ** (-1 / 2 + 1 / p))
 
         vals = np.empty((reps, len(epss)))
         estim_vals_m = np.empty((reps,))
@@ -280,16 +279,12 @@ else:
             ).x
 
             estim_vals_rho[j] = np.sum(teacher_vector**2) / n_features
-            estim_vals_m[j] = (
-                np.sum(teacher_vector * estimated_theta) / n_features
-            )
+            estim_vals_m[j] = np.sum(teacher_vector * estimated_theta) / n_features
             estim_vals_q[j] = np.sum(estimated_theta**2) / n_features
 
             yhat = np.sign(xs_gen @ estimated_theta)  # .reshape(-1, 1)
 
-            for i, eps_i in enumerate(
-                epss_rescaled
-            ):
+            for i, eps_i in enumerate(epss_rescaled):
                 # print(f"current eps_i = {eps_i:.3f}")
                 adv_perturbation = projected_GA_p(
                     yhat, estimated_theta, teacher_vector, 0.5, 400, eps_i, p
@@ -305,7 +300,7 @@ else:
                     )
                 )
 
-                flipped = percentage_flipped_labels(
+                flipped = percentage_flipped_labels_estim(
                     yhat,
                     xs_gen,
                     estimated_theta,
@@ -343,4 +338,6 @@ else:
         ) as f:
             pickle.dump(data, f)
 
-        print(f"process {rank} finished with n_features = {n_features} time = {datetime.datetime.now()}")
+        print(
+            f"process {rank} finished with n_features = {n_features} time = {datetime.datetime.now()}"
+        )

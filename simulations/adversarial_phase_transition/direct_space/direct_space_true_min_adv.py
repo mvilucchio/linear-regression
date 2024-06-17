@@ -4,7 +4,7 @@ from linear_regression.data.generation import (
     measure_gen_no_noise_clasif,
     data_generation,
 )
-from linear_regression.erm.metrics import percentage_flipped_labels
+from linear_regression.erm.metrics import percentage_flipped_labels_estim
 from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic,
     find_coefficients_Logistic_adv,
@@ -23,7 +23,7 @@ reg_param = 1.0
 eps_training = 0.0
 pstar_t = 1.0
 ps = [2, 3, "inf"]
-dimensions = [int(2**a) for a in range(10, 12)]
+dimensions = [int(2**a) for a in range(8, 10)]
 
 epss = np.logspace(-2, 1, 15)
 eps_dense = np.logspace(-2, 1, 100)
@@ -44,9 +44,9 @@ for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
     for n_features, c in zip(tqdm(dimensions, desc="n", leave=False), colors):
         if run_experiment:
             if p == "inf":
-                epss_rescaled = epss / (n_features ** (1 / 2))
+                epss_rescaled = epss * (n_features ** (-1 / 2))
             else:
-                epss_rescaled = epss / (n_features ** (1 / 2 - 1 / p))
+                epss_rescaled = epss * (n_features ** (-1 / 2 + 1 / p))
 
             vals = np.empty((reps, len(epss)))
             estim_vals_m = np.empty((reps,))
@@ -80,7 +80,7 @@ for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
                         yhat, xs_gen, w, wstar, eps_i, p
                     )
 
-                    flipped = percentage_flipped_labels(
+                    flipped = percentage_flipped_labels_estim(
                         yhat,
                         xs_gen,
                         w,
