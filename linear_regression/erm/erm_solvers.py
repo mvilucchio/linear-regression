@@ -3,11 +3,8 @@ from numpy import (
     ndarray,
     sqrt,
     identity,
-    abs,
-    count_nonzero,
     sum,
     dot,
-    ones_like,
     inf,
     tile,
     finfo,
@@ -22,10 +19,9 @@ from numpy.random import normal
 from numba import njit
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
-from scipy.optimize import minimize, line_search
+from scipy.optimize import minimize
 from cvxpy import (
     Variable,
-    Parameter,
     Minimize,
     Maximize,
     Problem,
@@ -36,13 +32,10 @@ from cvxpy import (
     norm1,
 )
 from cvxpy import sum as cp_sum
-from ..erm import GTOL_MINIMIZE, MAX_ITER_MINIMIZE
 import jax.numpy as jnp
 import jax
-
 from numpy.random import default_rng
-
-# from jax.scipy.optimize import minimize as jax_minimize
+from ..erm import GTOL_MINIMIZE, MAX_ITER_MINIMIZE
 
 rng = default_rng()
 
@@ -157,8 +150,6 @@ def find_coefficients_vanilla_GD(
         qs[0] = sum(w**2) / d
 
     for t in range(1, max_iters + 1):
-        # if t % 50 == 0:
-        #     print("Iteration ", t)
         loss, gradient = loss_grad_function(w, xs_norm, ys, reg_param, *loss_grad_args)
         w -= lr * gradient
         if save_run:
@@ -169,47 +160,6 @@ def find_coefficients_vanilla_GD(
     if save_run:
         return w, losses, qs, estimation_error
     return w
-
-
-# ---------------
-
-
-# # not checked
-# def find_coefficients_Huber_on_sphere(ys, xs, reg_param, q_fixed, a, gamma=1e-04):
-#     _, d = xs.shape
-#     w = normal(loc=0.0, scale=1.0, size=(d,))
-#     w = w / sqrt(LA.norm(w)) * sqrt(q_fixed)
-#     xs_norm = divide(xs, sqrt(d))
-
-#     loss, grad = _loss_and_gradient_Huber(w, xs_norm, ys, reg_param, a)
-#     iter = 0
-#     while iter < MAX_ITER_MINIMIZE and LA.norm(grad) > GTOL_MINIMIZE:
-#         if iter % 10 == 0:
-#             print(
-#                 str(iter)
-#                 + "th Iteration  Loss :: "
-#                 + str(loss)
-#                 + " gradient :: "
-#                 + str(LA.norm(grad))
-#             )
-
-#         alpha = 1
-#         new_w = w - alpha * grad
-#         new_loss, new_grad = _loss_and_gradient_Huber(w, xs_norm, ys, reg_param, a)
-
-#         # backtracking line search
-#         while new_loss > loss - gamma * alpha * LA.norm(grad):
-#             alpha = alpha / 2
-#             new_w = w - alpha * grad
-#             new_loss, new_grad = _loss_and_gradient_Huber(w, xs_norm, ys, reg_param, a)
-
-#         loss = new_loss
-#         grad = new_grad
-#         w = new_w
-
-#         iter += 1
-
-#     return w
 
 
 # -----------------------------------
@@ -550,23 +500,3 @@ def projected_GA_untill_convergence(
             )
 
     return adv_perturbation
-
-
-# def projected_GA(ys, w, wstar, step_size, n_steps, ε, p):
-#     adv_perturbation = jnp.zeros((len(ys), len(w)))
-
-#     @jax.jit
-#     def cond_fun(state):
-#         i, _ = state
-#         return i < n_steps
-
-#     @jax.jit
-#     def body_fun(state):
-#         i, adv_perturbation = state
-#         adv_perturbation = projected_GA_step_jit(adv_perturbation, ys, w, wstar, step_size, ε, p)
-#         return i + 1, adv_perturbation
-
-#     initial_state = (0, adv_perturbation)
-#     _, adv_perturbation = while_loop(cond_fun, body_fun, initial_state)
-
-#     return adv_perturbation

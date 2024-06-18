@@ -1,5 +1,6 @@
 from numba import njit
 import numpy as np
+from numpy import ndarray
 
 
 @njit(error_model="numpy", fastmath=False)
@@ -16,9 +17,9 @@ def f_L2_regularisation_adversarial(
     Σ_hat: float,
     P_hat: float,
     reg_param: float,
-    Sigmadelta,
-    Sigmax,
-    Sigmatheta,
+    Sigmadelta: ndarray,
+    Sigmax: ndarray,
+    Sigmatheta: ndarray,
 ) -> tuple:
     d, _ = Sigmax.shape
     H = reg_param + Σ_hat * Sigmax + P_hat * Sigmadelta

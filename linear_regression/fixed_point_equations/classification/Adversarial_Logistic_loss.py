@@ -67,7 +67,7 @@ def P_int_Adv_Logistic_no_noise_classif(ξ, y, q, m, Σ, P, eps_t):
 # -----------------------------------
 
 
-def f_hat_Logistic_no_noise_classif(m, q, Σ, P, N, eps_t, alpha):
+def f_hat_Logistic_no_noise_classif(m, q, Σ, P, eps_t, alpha):
     domains = [(1, [-BIG_NUMBER, BIG_NUMBER]), (-1, [-BIG_NUMBER, BIG_NUMBER])]
 
     int_value_m_hat = 0.0
