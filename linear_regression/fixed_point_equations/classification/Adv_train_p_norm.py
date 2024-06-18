@@ -9,7 +9,7 @@ from ...aux_functions.moreau_proximals import (
     Dω_proximal_Logistic_adversarial,
 )
 
-BIG_NUMBER = 35
+BIG_NUMBER = 55
 
 
 # -----------------------------------

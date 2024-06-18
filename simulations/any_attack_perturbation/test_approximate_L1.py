@@ -59,10 +59,8 @@ for reg_param in reg_params:
             try:
                 w = find_coefficients_Logistic_adv_Linf_L1(ys_train, xs_train, reg_param, eps_t)
             except UserWarning as e:
-                # print(e)
                 continue
             except ValueError as e:
-                # print(e)
                 continue
 
             tmp_gen_errors.append(generalisation_error_classification(ys_gen, xs_gen, w, wstar))
