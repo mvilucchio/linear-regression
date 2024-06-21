@@ -33,12 +33,6 @@ def fixed_point_finder(
 
         err = max([abs(new_m - m), abs(new_q - q), abs(new_sigma - sigma)])
 
-        # print(
-        #     "\t\t\tm = {:.1e} Δm = {:.1e} q = {:.1e} Δq = {:.1e} Σ = {:.1e} ΔΣ = {:.1e} ".format(
-        #         m, abs(new_m - m), q, abs(new_q - q), sigma, abs(new_sigma - sigma)
-        #     )
-        # )
-
         m = damped_update(new_m, m, BLEND_FPE)
         q = damped_update(new_q, q, BLEND_FPE)
         sigma = damped_update(new_sigma, sigma, BLEND_FPE)
@@ -60,9 +54,9 @@ def fixed_point_finder_adversiaral(
     f_kwargs: dict,
     f_hat_kwargs: dict,
     abs_tol: float = TOL_FPE,
-    # rel_tol: float = REL_TOL_FPE,
     min_iter: int = MIN_ITER_FPE,
     max_iter: int = MAX_ITER_FPE,
+    verbose: bool = False,
 ):
     m, q, sigma, P = (
         initial_condition[0],
@@ -73,18 +67,21 @@ def fixed_point_finder_adversiaral(
     err = 1.0
     iter_nb = 0
 
-    # print(f_kwargs, f_hat_kwargs)
-    # print(f"{m,q,sigma,P=}")
+    if verbose:
+        print(f"Fixed point Finder Adversarial called with:")
+        print(f"Initial conditions m = {m:.3e}, q = {q:.3e}, sigma = {sigma:.3e}, P = {P:.3e}")
+        print(f"Parameters f_func = {f_func}, f_hat_func = {f_hat_func}")
 
     while err > abs_tol or iter_nb < min_iter:
         m_hat, q_hat, Σ_hat, P_hat = f_hat_func(m, q, sigma, P, **f_hat_kwargs)
 
-        # if iter_nb % NNN == 0:
-        #     print(f"{m_hat,q_hat,Σ_hat,P_hat=}")
+        if verbose and iter_nb % NNN == 0:
+            print(
+                f"m_hat = {m_hat:.3e}, q_hat = {q_hat:.3e}, Σ_hat = {Σ_hat:.3e}, P_hat = {P_hat:.3e}"
+            )
+
         new_m, new_q, new_sigma, new_P = f_func(m_hat, q_hat, Σ_hat, P_hat, **f_kwargs)
 
-        # if iter_nb % NNN == 0:
-        #     print(f"{new_m,new_q,new_sigma,new_P=}")
         err = max(
             [
                 abs((new_m - m)),
@@ -99,15 +96,18 @@ def fixed_point_finder_adversiaral(
         sigma = damped_update(new_sigma, sigma, BLEND_FPE)
         P = damped_update(new_P, P, BLEND_FPE)
 
-        # if iter_nb % NNN == 0:
-        #     # print(f"{m,q,sigma,P=}")
-        #     print(f"{err=:.3e} {iter_nb=:d}")
+        if verbose and iter_nb % NNN == 0:
+            print(f"m = {m:.3e}, q = {q:.3e}, sigma = {sigma:.3e}, P = {P:.3e}")
+            print(f"err = {err:.3e}")
 
         iter_nb += 1
         if iter_nb > max_iter:
             raise ConvergenceError("fixed_point_finder", iter_nb)
 
-    print(f"{m,q,sigma,P=}")
+    if verbose:
+        print(f"Fixed point Finder Adversarial finished with:")
+        print(f"Final conditions m = {m:.3e}, q = {q:.3e}, sigma = {sigma:.3e}, P = {P:.3e}")
+
     return m, q, sigma, P
 
 

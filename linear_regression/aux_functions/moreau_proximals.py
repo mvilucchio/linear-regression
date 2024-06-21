@@ -11,8 +11,8 @@ from ..utils.minimizers import brent_minimize_scalar
 from . import MAX_ITER_BRENT_MINIMIZE, TOL_BRENT_MINIMIZE
 
 
-BIG_NUMBER = 500_000
-SMALL_NUMBER = 1e-11
+BIG_NUMBER = 50_000_000
+SMALL_NUMBER = 1e-14
 
 # ---------------------------------------------------------------------------- #
 #                            Loss functions proximal                           #
@@ -140,7 +140,6 @@ def moreau_loss_sum_absolute(
         - Ɣ * x
         + power_regularisation(x, p, lambda_p)
         + power_regularisation(x, q, lambda_q)
-        # + SMALL_NUMBER * abs(x) ** 2
     )
 
 
@@ -170,7 +169,7 @@ def DƔ_proximal_sum_absolute(
         MAX_ITER_BRENT_MINIMIZE,
         (Ɣ, Λ, lambda_p, p, lambda_q, q),
     )[0]
-    if abs(proximal) < 1e-10:
+    if abs(proximal) < SMALL_NUMBER:
         return 0.0
     return 1 / (
         Λ
@@ -211,7 +210,7 @@ def Dlambdaq_moreau_loss_sum_absolute(
         MAX_ITER_BRENT_MINIMIZE,
         (Ɣ, Λ, lambda_p, p, lambda_q, q),
     )[0]
-    if abs(prox) < 1e-10:
+    if abs(prox) < SMALL_NUMBER:
         first_term = 0.0
     else:
         first_term = Dx_power_regularisation(prox, q, lambda_q) + Dx_power_regularisation(
