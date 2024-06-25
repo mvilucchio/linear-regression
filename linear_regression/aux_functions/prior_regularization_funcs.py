@@ -1,48 +1,48 @@
 from numba import vectorize, njit
-from math import exp, sqrt, cosh, sinh
+from math import exp, sqrt, cosh, sinh, pi
 from numpy import sum
 
 
+# ------------------------------ gaussian prior ------------------------------ #
 @vectorize("float64(float64, float64, float64, float64)")
-def Z_w_Bayes_gaussian_prior(
-    gamma: float, Lambda: float, mu: float, sigma: float
-) -> float:
+def Z_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, sigma: float) -> float:
     return exp(
-        (sigma * gamma**2 + 2 * gamma * mu - Lambda * mu**2)
-        / (2 * (Lambda * sigma + 1))
+        (sigma * gamma**2 + 2 * gamma * mu - Lambda * mu**2) / (2 * (Lambda * sigma + 1))
     ) / sqrt(Lambda * sigma + 1)
 
 
 @vectorize("float64(float64, float64, float64, float64)")
-def DZ_w_Bayes_gaussian_prior(
-    gamma: float, Lambda: float, mu: float, sigma: float
-) -> float:
+def DZ_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, sigma: float) -> float:
     return (
-        exp(
-            (2 * gamma * mu - Lambda * mu**2 + gamma**2 * sigma)
-            / (2 + 2 * Lambda * sigma)
-        )
+        exp((2 * gamma * mu - Lambda * mu**2 + gamma**2 * sigma) / (2 + 2 * Lambda * sigma))
         * (mu + gamma * sigma)
     ) / (1 + Lambda * sigma) ** 1.5
 
 
 @vectorize("float64(float64, float64, float64, float64)")
-def f_w_Bayes_gaussian_prior(
-    gamma: float, Lambda: float, mu: float, sigma: float
-) -> float:
+def f_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, sigma: float) -> float:
     return (gamma * sigma + mu) / (1 + sigma * Lambda)
 
 
 @vectorize("float64(float64, float64, float64, float64)")
-def Df_w_Bayes_gaussian_prior(
-    gamma: float, Lambda: float, mu: float, sigma: float
-) -> float:
+def Df_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, sigma: float) -> float:
     return sigma / (1 + sigma * Lambda)
 
 
-# --------------------------
+# ----------------------------
+@vectorize("float64(float64, float64, float64, float64, float64)")
+def gauss_Z_w_Bayes_gaussian_prior(
+    ξ: float, m_hat: float, q_hat: float, mu: float, sigma: float
+) -> float:
+    η_hat = m_hat**2 / q_hat
+    return exp(
+        -0.5 * pow(ξ, 2.0)
+        + (sigma * η_hat * ξ**2 + 2 * sqrt(η_hat) * ξ * mu - η_hat * mu**2)
+        / (2 * (η_hat * sigma + 1))
+    ) / sqrt(2 * pi * (η_hat * sigma + 1))
 
 
+# ---------------------------- sparse binary prior --------------------------- #
 @vectorize("float64(float64, float64, float64)")
 def Z_w_Bayes_sparse_binary_weights(gamma: float, Lambda: float, rho: float) -> float:
     return rho + exp(-Lambda / 2) * (1 - rho) * cosh(gamma)
@@ -71,10 +71,7 @@ def Z_w_Bayes_Gauss_Bernoulli_weights(
 ) -> float:
     return (
         rho
-        * exp(
-            (2 * gamma * mu - Lambda * mu**2 + gamma**2 * sigma)
-            / (2 + 2 * Lambda * sigma)
-        )
+        * exp((2 * gamma * mu - Lambda * mu**2 + gamma**2 * sigma) / (2 + 2 * Lambda * sigma))
         / sqrt(1 + Lambda * sigma)
     )
 

@@ -1,4 +1,4 @@
-from numba import vectorize, njit
+from numba import njit
 from .loss_functions import logistic_loss, exponential_loss, DDz_logistic_loss, DDz_exponential_loss
 from .regularisation_functions import (
     power_regularisation,
