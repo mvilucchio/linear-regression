@@ -17,7 +17,7 @@ from ...aux_functions.moreau_proximals import (
 BIG_NUMBER = 55
 
 
-# @njit(error_model="numpy", fastmath=False)
+@njit(error_model="numpy", fastmath=False)
 def m_integral_gaussian_weights_Lr_reg_Lp_attack(
     ξ: float,
     q_hat: float,
@@ -35,15 +35,9 @@ def m_integral_gaussian_weights_Lr_reg_Lp_attack(
         * f_w_Bayes_gaussian_prior(sqrt(η_hat) * ξ, η_hat, 0, 1)
         * proximal
     )
-    return (
-        gaussian(ξ, 0, 1)
-        * Z_w_Bayes_gaussian_prior(sqrt(η_hat) * ξ, η_hat, 0, 1)
-        * f_w_Bayes_gaussian_prior(sqrt(η_hat) * ξ, η_hat, 0, 1)
-        * proximal
-    )
 
 
-# @njit(error_model="numpy", fastmath=False)
+@njit(error_model="numpy", fastmath=False)
 def q_integral_gaussian_weights_Lr_reg_Lp_attack(
     ξ: float,
     q_hat: float,
@@ -54,15 +48,11 @@ def q_integral_gaussian_weights_Lr_reg_Lp_attack(
     reg_param: float,
     pstar: float,
 ) -> float:
-    η_hat = m_hat**2 / q_hat
     proximal = proximal_sum_absolute(sqrt(q_hat) * ξ, Σ_hat, reg_param, reg_order, P_hat, pstar)
     return gauss_Z_w_Bayes_gaussian_prior(ξ, m_hat, q_hat, 0, 1) * (proximal**2)
-    return (
-        gaussian(ξ, 0, 1) * Z_w_Bayes_gaussian_prior(sqrt(η_hat) * ξ, η_hat, 0, 1) * (proximal**2)
-    )
 
 
-# @njit(error_model="numpy", fastmath=False)
+@njit(error_model="numpy", fastmath=False)
 def Σ_integral_gaussian_weights_Lr_reg_Lp_attack(
     ξ: float,
     q_hat: float,
@@ -73,13 +63,11 @@ def Σ_integral_gaussian_weights_Lr_reg_Lp_attack(
     reg_param: float,
     pstar: float,
 ) -> float:
-    η_hat = m_hat**2 / q_hat
     DƔ_prox = DƔ_proximal_sum_absolute(sqrt(q_hat) * ξ, Σ_hat, reg_param, reg_order, P_hat, pstar)
     return gauss_Z_w_Bayes_gaussian_prior(ξ, m_hat, q_hat, 0, 1) * DƔ_prox
-    return gaussian(ξ, 0, 1) * Z_w_Bayes_gaussian_prior(sqrt(η_hat) * ξ, η_hat, 0, 1) * DƔ_prox
 
 
-# @njit(error_model="numpy", fastmath=False)
+@njit(error_model="numpy", fastmath=False)
 def P_integral_gaussian_weights_Lr_reg_Lp_attack(
     ξ: float,
     q_hat: float,
@@ -90,12 +78,10 @@ def P_integral_gaussian_weights_Lr_reg_Lp_attack(
     reg_param: float,
     pstar: float,
 ) -> float:
-    η_hat = m_hat**2 / q_hat
     DPhat_moreau = Dlambdaq_moreau_loss_sum_absolute(
         sqrt(q_hat) * ξ, Σ_hat, reg_param, reg_order, P_hat, pstar
     )
     return gauss_Z_w_Bayes_gaussian_prior(ξ, m_hat, q_hat, 0, 1) * DPhat_moreau
-    return gaussian(ξ, 0, 1) * Z_w_Bayes_gaussian_prior(sqrt(η_hat) * ξ, η_hat, 0, 1) * DPhat_moreau
 
 
 # -----------------------------------

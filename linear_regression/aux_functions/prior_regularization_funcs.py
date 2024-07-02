@@ -1,5 +1,5 @@
 from numba import vectorize, njit
-from math import exp, sqrt, cosh, sinh, pi
+from math import exp, sqrt, cosh, sinh, pi, log
 from numpy import sum
 
 
@@ -29,6 +29,12 @@ def Df_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, sigma: flo
     return sigma / (1 + sigma * Lambda)
 
 
+def log_Z_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, sigma: float) -> float:
+    return (sigma * gamma**2 + 2 * gamma * mu - Lambda * mu**2) / (
+        2 * (Lambda * sigma + 1)
+    ) - 0.5 * log(Lambda * sigma + 1)
+
+
 # ----------------------------
 @vectorize("float64(float64, float64, float64, float64, float64)")
 def gauss_Z_w_Bayes_gaussian_prior(
@@ -36,7 +42,7 @@ def gauss_Z_w_Bayes_gaussian_prior(
 ) -> float:
     η_hat = m_hat**2 / q_hat
     return exp(
-        -0.5 * pow(ξ, 2.0)
+        -0.5 * ξ**2
         + (sigma * η_hat * ξ**2 + 2 * sqrt(η_hat) * ξ * mu - η_hat * mu**2)
         / (2 * (η_hat * sigma + 1))
     ) / sqrt(2 * pi * (η_hat * sigma + 1))

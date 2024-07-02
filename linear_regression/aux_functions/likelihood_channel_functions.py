@@ -1,7 +1,7 @@
 from numba import vectorize, njit
 
 # from numpy import pi, sign
-from math import exp, sqrt, pow, erf, pi
+from math import exp, sqrt, pow, erf, pi, log
 from ..aux_functions.misc import gaussian
 
 
@@ -14,10 +14,12 @@ def Z_out_Bayes_single_noise_classif(y: float, omega: float, V: float, delta: fl
 
 
 @vectorize("float64(float64, float64, float64, float64)")
-def Z_out_Bayes_f_out_Bayes_single_noise_classif(y: float, omega: float, V: float, delta: float) -> float:
-    return (exp(-0.5 * (1 + y) ** 2 / delta - omega**2 / (2.0 * V)) * (-1 + exp((2 * y) / delta))) / (
-        2.0 * pi * sqrt(V * delta)
-    )
+def Z_out_Bayes_f_out_Bayes_single_noise_classif(
+    y: float, omega: float, V: float, delta: float
+) -> float:
+    return (
+        exp(-0.5 * (1 + y) ** 2 / delta - omega**2 / (2.0 * V)) * (-1 + exp((2 * y) / delta))
+    ) / (2.0 * pi * sqrt(V * delta))
 
 
 # -----------------------------------
@@ -75,7 +77,9 @@ def DZ_out_Bayes_decorrelated_noise(
     beta: float,
 ) -> float:
     small_exponential = exp(-((y - omega) ** 2) / (2 * (V + delta_in))) / sqrt(2 * pi)
-    large_exponential = exp(-((y - beta * omega) ** 2) / (2 * (beta**2 * V + delta_out))) / sqrt(2 * pi)
+    large_exponential = exp(-((y - beta * omega) ** 2) / (2 * (beta**2 * V + delta_out))) / sqrt(
+        2 * pi
+    )
 
     return (1 - eps) * small_exponential * (y - omega) / pow(
         V + delta_in, 1.5
@@ -98,7 +102,8 @@ def f_out_Bayes_decorrelated_noise(
         (y - omega) * (1 - eps) * exp_in / pow(V + delta_in, 3 / 2)
         + eps * beta * (y - beta * omega) * exp_out / pow(beta**2 * V + delta_out, 3 / 2)
     ) / (
-        (1 - eps) * exp_in / pow(V + delta_in, 1 / 2) + eps * exp_out / pow(beta**2 * V + delta_out, 1 / 2)
+        (1 - eps) * exp_in / pow(V + delta_in, 1 / 2)
+        + eps * exp_out / pow(beta**2 * V + delta_out, 1 / 2)
     )
 
 
@@ -122,7 +127,33 @@ def Df_out_Bayes_decorrelated_noise(
         + exp_out * (y - beta * omega) ** 2 * (beta**2 * eps) / pow(V * beta**2 + delta_out, 2.5)
         - (1 - eps) * exp_in / pow(V + delta_in, 1.5)
         - exp_out * beta**2 * eps / pow(V * beta**2 + delta_out, 1.5)
-    ) / ((1 - eps) * exp_in / pow(V + delta_in, 0.5) + eps * exp_out / pow(beta**2 * V + delta_out, 0.5))
+    ) / (
+        (1 - eps) * exp_in / pow(V + delta_in, 0.5)
+        + eps * exp_out / pow(beta**2 * V + delta_out, 0.5)
+    )
+
+
+@vectorize("float64(float64, float64, float64, float64, float64, float64, float64)")
+def log_Z_out_Bayes_decorrelated_noise(
+    y: float,
+    omega: float,
+    V: float,
+    delta_in: float,
+    delta_out: float,
+    eps: float,
+    beta: float,
+) -> float:
+    term1_exponent = -((y - omega) ** 2) / (2 * (V + delta_in))
+    term2_exponent = -((y - beta * omega) ** 2) / (2 * (beta**2 * V + delta_out))
+
+    max_exponent = max(term1_exponent, term2_exponent)
+
+    term1 = (1 - eps) * exp(term1_exponent - max_exponent) / sqrt(2 * pi * (V + delta_in))
+    term2 = eps * exp(term2_exponent - max_exponent) / sqrt(2 * pi * (beta**2 * V + delta_out))
+
+    result = max_exponent + log(term1 + term2)
+
+    return result
 
 
 # -----------------------------------

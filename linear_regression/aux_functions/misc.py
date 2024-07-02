@@ -1,9 +1,8 @@
-from math import exp, sqrt, acos, log1p, log, cosh, tanh, erf, erfc
-from numpy import pi, arccos, dot, ndarray
+from math import exp, sqrt, acos, log1p, log, cosh, tanh, erf, erfc, inf
+from numpy import pi, arccos, dot, ndarray, array
 from numpy.linalg import norm, det, inv
 from numpy.random import normal
 from scipy.integrate import quad
-import numpy as np
 from numba import vectorize, njit
 
 
@@ -121,6 +120,16 @@ def damped_update(new, old, damping):
     damping * new + (1 - damping) * old
     """
     return damping * new + (1 - damping) * old
+
+
+@njit(error_model="numpy", fastmath=False)
+def max_difference(x, y):
+    max = -inf
+    for i in range(len(x)):
+        diff = abs(x[i] - y[i])
+        if diff > max:
+            max = diff
+    return max
 
 
 # --------------------------- errors classification -------------------------- #
