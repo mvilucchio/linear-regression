@@ -1,6 +1,6 @@
 from numpy import logspace, empty, linspace
 from math import log10
-from typing import Tuple
+
 from ..fixed_point_equations.fpeqs import fixed_point_finder
 from ..aux_functions.misc import estimation_error
 from ..fixed_point_equations import SMALLEST_REG_PARAM, SMALLEST_HUBER_PARAM
@@ -41,15 +41,23 @@ def sweep_eps_fixed_point(
 
     if eps_min > eps_max:
         raise ValueError(
-            "eps_min should be smaller than eps_max, in this case are {:f} and {:f}".format(eps_min, eps_max)
+            "eps_min should be smaller than eps_max, in this case are {:f} and {:f}".format(
+                eps_min, eps_max
+            )
         )
 
     if eps_min < 0:
-        raise ValueError("eps_min should be positive or equal to zero, in this case is {:f}".format(eps_min))
+        raise ValueError(
+            "eps_min should be positive or equal to zero, in this case is {:f}".format(eps_min)
+        )
 
     n_observables = len(funs)
     if linear:
-        epsilons = linspace(eps_min, eps_max, n_eps_pts) if not decreasing else linspace(eps_max, eps_min, n_eps_pts)
+        epsilons = (
+            linspace(eps_min, eps_max, n_eps_pts)
+            if not decreasing
+            else linspace(eps_max, eps_min, n_eps_pts)
+        )
     else:
         epsilons = (
             logspace(log10(eps_min), log10(eps_max), n_eps_pts)
@@ -121,12 +129,18 @@ def sweep_eps_optimal_lambda_fixed_point(
 
     if eps_min > eps_max:
         raise ValueError(
-            "eps_min should be smaller than eps_max, in this case are {:f} and {:f}".format(eps_min, eps_max)
+            "eps_min should be smaller than eps_max, in this case are {:f} and {:f}".format(
+                eps_min, eps_max
+            )
         )
 
     n_observables = len(funs)
     if linear:
-        epsilons = linspace(eps_min, eps_max, n_eps_pts) if not decreasing else linspace(eps_max, eps_min, n_eps_pts)
+        epsilons = (
+            linspace(eps_min, eps_max, n_eps_pts)
+            if not decreasing
+            else linspace(eps_max, eps_min, n_eps_pts)
+        )
     else:
         epsilons = (
             logspace(log10(eps_min), log10(eps_max), n_eps_pts)
@@ -194,7 +208,7 @@ def sweep_eps_optimal_lambda_hub_param_fixed_point(
     eps_min: float,
     eps_max: float,
     n_eps_pts: int,
-    inital_guess_params: Tuple[float, float],
+    inital_guess_params: tuple[float, float],
     f_kwargs: dict,
     f_hat_kwargs: dict,
     initial_cond_fpe=(0.6, 0.01, 0.9),
@@ -207,7 +221,7 @@ def sweep_eps_optimal_lambda_hub_param_fixed_point(
     min_huber_param=SMALLEST_HUBER_PARAM,
     decreasing=False,
     update_f_min_args=False,
-    linear=False
+    linear=False,
 ):
     if update_funs_args is None:
         update_funs_args = [False] * len(funs)
@@ -225,7 +239,9 @@ def sweep_eps_optimal_lambda_hub_param_fixed_point(
 
     if eps_min > eps_max:
         raise ValueError(
-            "eps_min should be smaller than eps_max, in this case are {:f} and {:f}".format(eps_min, eps_max)
+            "eps_min should be smaller than eps_max, in this case are {:f} and {:f}".format(
+                eps_min, eps_max
+            )
         )
 
     n_observables = len(funs)

@@ -1,6 +1,6 @@
 from numpy import empty
 from numba import njit
-from typing import Tuple
+
 from scipy.optimize import minimize
 from ..utils.errors import MinimizationError
 from .fpeqs import fixed_point_finder
@@ -17,7 +17,7 @@ def find_optimal_reg_param_function(
     f_kwargs: dict,
     f_hat_kwargs: dict,
     initial_guess_reg_param: float,
-    initial_cond_fpe: Tuple[float, float, float],
+    initial_cond_fpe: tuple[float, float, float],
     funs=[estimation_error],
     funs_args=[list()],
     f_min=estimation_error,
@@ -81,8 +81,8 @@ def find_optimal_reg_and_huber_parameter_function(
     f_hat_func,
     f_kwargs: dict,
     f_hat_kwargs: dict,
-    initial_guess_reg_and_huber_param: Tuple[float, float],
-    initial_cond_fpe: Tuple[float, float, float],
+    initial_guess_reg_and_huber_param: tuple[float, float],
+    initial_cond_fpe: tuple[float, float, float],
     funs=[estimation_error],
     funs_args=[list()],
     f_min=estimation_error,
@@ -99,7 +99,7 @@ def find_optimal_reg_and_huber_parameter_function(
     n_observables = len(funs)
     copy_f_kwargs = f_kwargs.copy()
     copy_f_hat_kwargs = f_hat_kwargs.copy()
-    
+
     def minimize_fun(x):
         copy_f_kwargs.update({"reg_param": x[0]})
         copy_f_hat_kwargs.update({"a": x[1]})

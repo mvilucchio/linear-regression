@@ -1,7 +1,7 @@
 from numpy import logspace, empty
 from numpy.random import rand
 from math import log10
-from typing import Tuple
+
 from ..fixed_point_equations.fpeqs import fixed_point_finder
 from ..aux_functions.misc import estimation_error
 from ..fixed_point_equations import SMALLEST_REG_PARAM, SMALLEST_HUBER_PARAM
@@ -190,7 +190,7 @@ def sweep_delta_out_optimal_lambda_hub_param_fixed_point(
     delta_out_min: float,
     delta_out_max: float,
     n_delta_out_pts: int,
-    inital_guess_params: Tuple[float, float],
+    inital_guess_params: tuple[float, float],
     f_kwargs: dict,
     f_hat_kwargs: dict,
     initial_cond_fpe=(0.6, 0.01, 0.9),

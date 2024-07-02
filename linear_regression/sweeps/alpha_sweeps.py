@@ -1,7 +1,7 @@
 from numpy import logspace, linspace, empty, nan, around, mean, std
 from numpy.random import normal
 from math import log10
-from typing import Tuple
+
 from ..utils.errors import ConvergenceError
 from ..fixed_point_equations.fpeqs import fixed_point_finder
 from ..data.generation import data_generation
@@ -201,7 +201,7 @@ def sweep_alpha_optimal_lambda_hub_param_fixed_point(
     alpha_min: float,
     alpha_max: float,
     n_alpha_pts: int,
-    inital_guess_params: Tuple[float, float],
+    inital_guess_params: tuple[float, float],
     f_kwargs: dict,
     f_hat_kwargs: dict,
     initial_cond_fpe=(0.6, 0.01, 0.9),
@@ -325,7 +325,7 @@ def sweep_alpha_GAMP(
     n_features: int,
     f_w_args: tuple,
     f_out_args: tuple,
-    measure_fun_args: Tuple,
+    measure_fun_args: tuple,
     funs=[estimation_error],
     funs_args=[list()],
     decreasing=False,

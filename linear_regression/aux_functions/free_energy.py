@@ -1,7 +1,7 @@
-from typing import Tuple
 from numpy import pi
 from math import sqrt, exp, erf, erfc, log, sinh
 from numba import njit
+
 
 # these functions need to be checked
 # @njit
@@ -15,8 +15,8 @@ def free_energy(
     m_hat: float,
     q_hat: float,
     Σ_hat: float,
-    Psi_w_args: Tuple = (),
-    Psi_out_args: Tuple = (),
+    Psi_w_args: tuple = (),
+    Psi_out_args: tuple = (),
 ):
     # Q_hat = Σ_hat - q_hat
     # Q = sigma + q

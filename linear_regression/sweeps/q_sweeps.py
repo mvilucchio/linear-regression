@@ -1,5 +1,5 @@
 from ..fixed_point_equations.fpeqs import fixed_point_finder, fixed_point_finder_loser
-from typing import Tuple
+
 from ..erm import TOL_GAMP, BLEND_GAMP, MAX_ITER_GAMP
 from numpy import logspace, empty, mean, std, around
 from ..amp.amp_funcs import GAMP_algorithm_unsimplified
@@ -101,7 +101,7 @@ def sweep_fw_first_arg_GAMP(
     repetitions: int,
     n_features: int,
     f_out_args: tuple,
-    measure_fun_args: Tuple,
+    measure_fun_args: tuple,
     funs=[estimation_error],
     funs_args=[list()],
     decreasing=False,
