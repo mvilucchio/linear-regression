@@ -1,22 +1,160 @@
-from typing import Tuple
-from numba import njit
 from ..fixed_point_equations import (
     BLEND_FPE,
     TOL_FPE,
     REL_TOL_FPE,
     MIN_ITER_FPE,
     MAX_ITER_FPE,
+    PRINT_EVERY,
+    ANDERSON_PREVIOUS_POINTS,
 )
 from ..utils.errors import ConvergenceError
-from ..aux_functions.misc import damped_update
-import numpy as np
-import time
+from ..aux_functions.misc import damped_update, max_difference
+
+# import numpy as np
+from numpy import array, roll, zeros
+from numpy.linalg import lstsq, LinAlgError
+
+
+# ---------------------------------------------------------------------------- #
+def print_status_fixed_point(iter_nb, x, err):
+    print(f"iter {iter_nb}: x = ", end="")
+    for val in x:
+        print(f"{val:.6f}", end=", ")
+    print(f"err = {err:.6e}")
+
+
+# ----------------------------- finder functions ----------------------------- #
 
 
 def fixed_point_finder(
+    f_func: callable,
+    f_hat_func: callable,
+    initial_condition: tuple[float, ...],
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
+    abs_tol: float = TOL_FPE,
+    min_iter: int = MIN_ITER_FPE,
+    max_iter: int = MAX_ITER_FPE,
+    update_function: callable = damped_update,
+    args_update_function: tuple = (BLEND_FPE,),
+    error_function: callable = max_difference,
+    verbose: bool = False,
+    print_every: int = PRINT_EVERY,
+):
+    x = initial_condition
+    err = 1.0
+    iter_nb = 0
+
+    if verbose:
+        print_status_fixed_point(iter_nb, x, err)
+
+    while err > abs_tol or iter_nb < min_iter:
+        y = f_hat_func(*x, **f_hat_kwargs)
+        new_x = f_func(*y, **f_kwargs)
+
+        err = error_function(new_x, x)
+
+        x = update_function(new_x, x, *args_update_function)
+
+        iter_nb += 1
+
+        if verbose and iter_nb % print_every == 0 and iter_nb > 0:
+            print_status_fixed_point(iter_nb, x, err)
+
+        if iter_nb > max_iter:
+            raise ConvergenceError("fixed_point_finder", iter_nb)
+
+    if verbose:
+        print("Final result fixed_point_finder: ", end="")
+        print_status_fixed_point(iter_nb, x, err)
+
+    return tuple(x)
+
+
+def fixed_point_finder_anderson(
+    f_func: callable,
+    f_hat_func: callable,
+    initial_condition: tuple[float, ...],
+    f_kwargs: dict,
+    f_hat_kwargs: dict,
+    abs_tol: float = TOL_FPE,
+    min_iter: int = MIN_ITER_FPE,
+    max_iter: int = MAX_ITER_FPE,
+    m: int = ANDERSON_PREVIOUS_POINTS,
+    verbose: bool = False,
+    update_function: callable = damped_update,
+    args_update_function: tuple = (BLEND_FPE,),
+    error_function: callable = max_difference,
+    print_every: int = PRINT_EVERY,
+):
+    x = array(initial_condition)
+    n_params = len(x)
+    iter_nb = 0
+    err = 1.0
+
+    X = zeros((n_params, m + 1))
+    F = zeros((n_params, m + 1))
+
+    if verbose:
+        print_status_fixed_point(iter_nb, x, err)
+
+    while iter_nb < min_iter or err > abs_tol:
+
+        y = f_hat_func(*x, **f_hat_kwargs)
+        fx = array(f_func(*y, **f_kwargs))
+
+        res = fx - x
+
+        if iter_nb < m:
+            X[:, iter_nb] = x
+            F[:, iter_nb] = fx
+        else:
+            X = roll(X, -1, axis=1)
+            F = roll(F, -1, axis=1)
+            X[:, -1] = x
+            F[:, -1] = fx
+
+        if iter_nb > 1:
+            m_k = min(m, iter_nb)
+
+            G = F - X
+            dG = G[:, 1 : m_k + 1] - G[:, :m_k]
+            dX = X[:, 1 : m_k + 1] - X[:, :m_k]
+
+            try:
+                gammas = lstsq(dG, res, rcond=None)[0]
+                x_new = x + res - (dX + dG) @ gammas
+            except LinAlgError:
+                x_new = fx
+        else:
+            x_new = fx
+
+        err = error_function(x_new, x)
+
+        if verbose and iter_nb % print_every == 0 and iter_nb > 0:
+            print_status_fixed_point(iter_nb, x, err)
+
+        x = update_function(x_new, x, *args_update_function)
+
+        iter_nb += 1
+
+        if iter_nb >= max_iter:
+            raise ConvergenceError("fixed_point_finder_anderson", iter_nb)
+
+    if verbose:
+        print("Final result fixed_point_finder_anderson: ", end="")
+        print_status_fixed_point(iter_nb, x, err)
+
+    return tuple(x)
+
+
+# ------------------------------- old functions ------------------------------ #
+
+
+def fixed_point_finder_old(
     f_func,
     f_hat_func,
-    initial_condition: Tuple[float, float, float],
+    initial_condition: tuple[float, float, float],
     f_kwargs: dict,
     f_hat_kwargs: dict,
     abs_tol: float = TOL_FPE,
@@ -44,13 +182,10 @@ def fixed_point_finder(
     return m, q, sigma
 
 
-NNN = 50
-
-
 def fixed_point_finder_adversiaral(
     f_func,
     f_hat_func,
-    initial_condition: Tuple[float, float, float],
+    initial_condition: tuple[float, float, float],
     f_kwargs: dict,
     f_hat_kwargs: dict,
     abs_tol: float = TOL_FPE,
@@ -75,7 +210,7 @@ def fixed_point_finder_adversiaral(
     while err > abs_tol or iter_nb < min_iter:
         m_hat, q_hat, Σ_hat, P_hat = f_hat_func(m, q, sigma, P, **f_hat_kwargs)
 
-        if verbose and iter_nb % NNN == 0:
+        if verbose and iter_nb % PRINT_EVERY == 0:
             print(
                 f"m_hat = {m_hat:.3e}, q_hat = {q_hat:.3e}, Σ_hat = {Σ_hat:.3e}, P_hat = {P_hat:.3e}"
             )
@@ -96,7 +231,7 @@ def fixed_point_finder_adversiaral(
         sigma = damped_update(new_sigma, sigma, BLEND_FPE)
         P = damped_update(new_P, P, BLEND_FPE)
 
-        if verbose and iter_nb % NNN == 0:
+        if verbose and iter_nb % PRINT_EVERY == 0:
             print(f"m = {m:.3e}, q = {q:.3e}, sigma = {sigma:.3e}, P = {P:.3e}")
             print(f"err = {err:.3e}")
 
@@ -114,14 +249,14 @@ def fixed_point_finder_adversiaral(
 def fixed_point_finder_loser(
     f_func,
     f_hat_func,
-    initial_condition: Tuple[float, float, float],
+    initial_condition: tuple[float, float, float],
     f_kwargs: dict,
     f_hat_kwargs: dict,
     abs_tol: float = TOL_FPE,
     rel_tol: float = REL_TOL_FPE,
     min_iter: int = MIN_ITER_FPE,
     max_iter: int = MAX_ITER_FPE,
-    control_variate: Tuple[bool, bool, bool] = (True, True, True),
+    control_variate: tuple[bool, bool, bool] = (True, True, True),
 ):
     m, q, sigma = initial_condition[0], initial_condition[1], initial_condition[2]
     err = 1.0
@@ -161,7 +296,7 @@ def fixed_point_finder_loser(
 # def anderson_fixed_point_finder(
 #     f_func,
 #     f_hat_func,
-#     initial_condition: Tuple[float, float, float],
+#     initial_condition: tuple[float, float, float],
 #     f_kwargs: dict,
 #     f_hat_kwargs: dict,
 #     abs_tol: float = TOL_FPE,
@@ -200,10 +335,3 @@ def plateau_fixed_point_finder(
         if iter_nb > max_iter:
             raise ConvergenceError("plateau_fixed_point_finder", iter_nb)
     return x
-
-
-# def gradient_at_fp(jacobian_at_point : callable, fp : Tuple[float, float, float]):
-#     # the output gradient is an array of size 6 for each of the order parameters
-#     g = np.empty(6)
-
-#     J = jacobian_at_point()
