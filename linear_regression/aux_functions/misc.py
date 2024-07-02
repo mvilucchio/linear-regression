@@ -1,5 +1,8 @@
 from math import exp, sqrt, acos, log1p, log, cosh, tanh, erf, erfc, inf
 from numpy import pi, arccos, dot, ndarray, array
+from numpy import max as np_max
+from numpy import abs as np_abs
+import numpy as np
 from numpy.linalg import norm, det, inv
 from numpy.random import normal
 from scipy.integrate import quad
