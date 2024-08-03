@@ -76,7 +76,7 @@ def sweep_reg_param_fixed_point(
                 for jdx, (f, f_args) in enumerate(zip(funs, funs_args)):
                     out_list[jdx][idx] = nan
             else:
-                m, q, sigma = fixed_point_finder(
+                m, q, V = fixed_point_finder(
                     f_func,
                     f_hat_func,
                     old_initial_cond,
@@ -84,14 +84,16 @@ def sweep_reg_param_fixed_point(
                     f_hat_kwargs,
                 )
 
-                old_initial_cond = tuple([m, q, sigma])
+                old_initial_cond = tuple([m, q, V])
 
-                for jdx, (f, f_args, update_flag) in enumerate(zip(funs, funs_args, update_funs_args)):
+                for jdx, (f, f_args, update_flag) in enumerate(
+                    zip(funs, funs_args, update_funs_args)
+                ):
                     if update_flag:
-                        copy_funs_args[jdx].update({"reg_param" : reg_param})
-                        out_list[jdx][idx] = f(m, q, sigma, **copy_funs_args[jdx])
+                        copy_funs_args[jdx].update({"reg_param": reg_param})
+                        out_list[jdx][idx] = f(m, q, V, **copy_funs_args[jdx])
                     else:
-                        out_list[jdx][idx] = f(m, q, sigma, **f_args)
+                        out_list[jdx][idx] = f(m, q, V, **f_args)
 
         except ConvergenceError:
             not_converged_flag = True

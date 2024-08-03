@@ -8,9 +8,10 @@ from ..utils.errors import ConvergenceError
 from ..aux_functions.misc import damped_update
 import numpy as np
 
-# ---------------------------------------------------------
-# GAMP kernels
-# ---------------------------------------------------------
+# ---------------------------------------------------------------------------- #
+#                                 GAMP Kernels                                 #
+# ---------------------------------------------------------------------------- #
+
 
 @njit
 def GAMP_step(
@@ -66,10 +67,12 @@ def GAMP_step_fullyTAP(
     return new_w_hat_t, f_out_t
 
 
-# ---------------------------------------------------------
+# ---------------------------------------------------------------------------- #
+#                                GAMP functions                                #
+# ---------------------------------------------------------------------------- #
 
 
-def GAMP_algorithm_unsimplified_final(
+def GAMP_unsimplified(
     f_w: callable,
     Df_w: callable,
     f_out: callable,
@@ -84,7 +87,15 @@ def GAMP_algorithm_unsimplified_final(
     max_iter: int = MAX_ITER_GAMP,
     blend: float = BLEND_GAMP,
     return_iters: bool = False,
+    return_overlaps: bool = False,
+    wstar: ndarray = None,
 ):
+    if return_overlaps and wstar is None:
+        raise ValueError("wstar must be provided when return_overlaps is True.")
+
+    if return_overlaps and not return_iters:
+        raise ValueError("return_iters must be True when return_overlaps is True.")
+
     n, d = xs.shape
 
     F = xs / sqrt(d)
@@ -99,9 +110,13 @@ def GAMP_algorithm_unsimplified_final(
 
     f_out_t_1 = f_out(ys, omega_t, V_t, *f_out_args)
 
+    if return_overlaps:
+        ms_list = []
+        qs_list = []
+
     err = 100.0
     iter_nb = 0
-    while err > abs_tol:
+    while err > abs_tol and iter_nb < max_iter:
         new_w_hat_t, new_c_w_t, f_out_t = GAMP_step(
             F2,
             F,
@@ -117,6 +132,10 @@ def GAMP_algorithm_unsimplified_final(
             f_w_args,
         )
 
+        if return_overlaps:
+            ms_list.append(mean(new_w_hat_t * wstar))
+            qs_list.append(mean(new_w_hat_t**2))
+
         err = mean(abs(new_w_hat_t - w_hat_t))
 
         w_hat_t = damped_update(new_w_hat_t, w_hat_t, blend)
@@ -124,37 +143,40 @@ def GAMP_algorithm_unsimplified_final(
         f_out_t_1 = f_out_t
 
         iter_nb += 1
-        if iter_nb > max_iter:
-            if return_iters:
-                return w_hat_t, iter_nb
-            else:
-                return w_hat_t
 
-    if return_iters:
+    if return_overlaps:
+        return w_hat_t, ms_list, qs_list, iter_nb
+    elif return_iters:
         return w_hat_t, iter_nb
     else:
         return w_hat_t
 
 
-def GAMP_fullyTAP_final(
+def GAMP_fullyTAP(
     f_w: callable,
     f_out: callable,
-    V_star: float,
-    Vhat_star: float,
     ys: ndarray,
     xs: ndarray,
     f_w_args: tuple,
     f_out_args: tuple,
     init_w_hat: ndarray,
+    se_values: tuple[float, float],
     abs_tol: float = TOL_GAMP,
     max_iter: int = MAX_ITER_GAMP,
     blend: float = BLEND_GAMP,
     return_iters: bool = False,
+    return_overlaps: bool = False,
+    wstar: ndarray = None,
 ):
+    if return_overlaps and wstar is None:
+        raise ValueError("wstar must be provided when return_overlaps is True.")
+
+    if return_overlaps and not return_iters:
+        raise ValueError("return_iters must be True when return_overlaps is True.")
+
     n, d = xs.shape
 
     F = xs / sqrt(d)
-    F2 = F**2
 
     w_hat_t = init_w_hat
     f_out_t_1 = zeros(n)
@@ -163,9 +185,15 @@ def GAMP_fullyTAP_final(
 
     f_out_t_1 = f_out(ys, omega_t, V_star, *f_out_args)
 
+    V_star, Vhat_star = se_values
+
+    if return_overlaps:
+        ms_list = []
+        qs_list = []
+
     err = 100.0
     iter_nb = 0
-    while err > abs_tol:
+    while err > abs_tol and iter_nb < max_iter:
         new_w_hat_t, f_out_t = GAMP_step_fullyTAP(
             F,
             ys,
@@ -181,17 +209,18 @@ def GAMP_fullyTAP_final(
 
         err = mean(abs(new_w_hat_t - w_hat_t))
 
+        if return_overlaps:
+            ms_list.append(mean(new_w_hat_t * wstar))
+            qs_list.append(mean(new_w_hat_t**2))
+
         w_hat_t = damped_update(new_w_hat_t, w_hat_t, blend)
         f_out_t_1 = f_out_t
 
         iter_nb += 1
-        if iter_nb > max_iter:
-            if return_iters:
-                return w_hat_t, iter_nb
-            else:
-                return w_hat_t
 
-    if return_iters:
+    if return_overlaps:
+        return w_hat_t, ms_list, qs_list, iter_nb
+    elif return_iters:
         return w_hat_t, iter_nb
     else:
         return w_hat_t
@@ -470,9 +499,7 @@ def GAMP_algorithm_unsimplified_mod_2(
             q_list.append(mean(new_w_hat_t**2))
             m_list.append(mean(new_w_hat_t * ground_truth))
             previous_dot_list.append(mean((new_w_hat_t - w_hat_t) ** 2))
-            eps_list.append(
-                mean((new_w_hat_t - init_w_hat) ** 2 / (w_hat_t - init_w_hat) ** 2)
-            )
+            eps_list.append(mean((new_w_hat_t - init_w_hat) ** 2 / (w_hat_t - init_w_hat) ** 2))
 
         w_hat_t = damped_update(new_w_hat_t, w_hat_t, blend)
         c_w_t = damped_update(new_c_w_t, c_w_t, blend)

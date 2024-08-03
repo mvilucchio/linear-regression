@@ -4,38 +4,45 @@ from numpy import ndarray
 
 
 @njit(error_model="numpy", fastmath=False)
-def f_L2_reg(m_hat: float, q_hat: float, Σ_hat: float, reg_param: float) -> tuple:
-    m = m_hat / (Σ_hat + reg_param)
-    q = (m_hat**2 + q_hat) / (Σ_hat + reg_param) ** 2
-    sigma = 1.0 / (Σ_hat + reg_param)
-    return m, q, sigma
+def f_L2_reg(m_hat: float, q_hat: float, V_hat: float, reg_param: float) -> tuple:
+    m = m_hat / (V_hat + reg_param)
+    q = (m_hat**2 + q_hat) / (V_hat + reg_param) ** 2
+    V = 1.0 / (V_hat + reg_param)
+    return m, q, V
 
 
+# @njit(error_model="numpy", fastmath=False)
+def f_L2_regularisation_covariate(
+    m_hat: float,
+    q_hat: float,
+    V_hat: float,
+    reg_param: float,
+    Σx: ndarray,
+    Σθ: ndarray,
+) -> tuple:
+    d, _ = Σx.shape
+    H_inv = np.linalg.pinv(reg_param + V_hat * Σx)
+    m = np.trace(m_hat * Σx @ Σθ @ Σx @ H_inv) / d
+    q = np.trace((m_hat**2 * Σx @ Σθ @ Σx + q_hat * Σx) @ Σx @ H_inv @ H_inv) / d
+    V = np.trace(Σx @ H_inv) / d
+    return m, q, V
+
+
+@njit(error_model="numpy", fastmath=False)
 def f_L2_regularisation_adversarial(
     m_hat: float,
     q_hat: float,
-    Σ_hat: float,
+    V_hat: float,
     P_hat: float,
     reg_param: float,
-    Sigmadelta: ndarray,
-    Sigmax: ndarray,
-    Sigmatheta: ndarray,
+    Σx: ndarray,
+    Σθ: ndarray,
+    Σδ: ndarray,
 ) -> tuple:
-    d, _ = Sigmax.shape
-    H = reg_param + Σ_hat * Sigmax + P_hat * Sigmadelta
-    H_inv = np.linalg.pinv(H)
-    m = np.trace(m_hat * Sigmax @ Sigmatheta @ Sigmax @ H_inv) / d
-    q = (
-        np.trace(
-            (m_hat**2 * Sigmax @ Sigmatheta @ Sigmax + q_hat * Sigmax) @ Sigmax @ H_inv @ H_inv
-        )
-        / d
-    )
-    sigma = np.trace(Sigmax @ H_inv) / d
-    P = (
-        np.trace(
-            (m_hat**2 * Sigmax @ Sigmatheta @ Sigmax + q_hat * Sigmax) @ Sigmadelta @ H_inv @ H_inv
-        )
-        / d
-    )
-    return m, q, sigma, P
+    d, _ = Σx.shape
+    H_inv = np.linalg.pinv(reg_param + V_hat * Σx + P_hat * Σδ)
+    m = np.trace(m_hat * Σx @ Σθ @ Σx @ H_inv) / d
+    q = np.trace((m_hat**2 * Σx @ Σθ @ Σx + q_hat * Σx) @ Σx @ H_inv @ H_inv) / d
+    V = np.trace(Σx @ H_inv) / d
+    P = np.trace((m_hat**2 * Σx @ Σθ @ Σx + q_hat * Σx) @ Σδ @ H_inv @ H_inv) / d
+    return m, q, V, P

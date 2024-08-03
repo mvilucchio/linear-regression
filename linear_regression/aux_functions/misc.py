@@ -156,66 +156,66 @@ def classification_adversarial_error(m, q, P, eps, pstar):
 
 
 # @njit(error_model="numpy", fastmath=True)
-def estimation_error(m, q, sigma, **args):
+def estimation_error(m, q, V, **args):
     return 1 + q - 2.0 * m
 
 
 # @njit
-def angle_teacher_student(m, q, sigma, **args):
+def angle_teacher_student(m, q, V, **args):
     return np.arccos(m / np.sqrt(q)) / pi
 
 
-def margin_probit_classif(m, q, sigma, delta):
+def margin_probit_classif(m, q, V, delta):
     return (4 * m * sqrt(2 * pi**3)) / sqrt(delta + 1)
 
 
 # errors
-def gen_error(m, q, sigma, delta_in, delta_out, percentage, beta):
+def gen_error(m, q, V, delta_in, delta_out, percentage, beta):
     return q - 2 * m * (1 + (-1 + beta) * percentage) + 1 + percentage * (-1 + beta**2)
 
 
-def excess_gen_error(m, q, sigma, delta_in, delta_out, percentage, beta):
+def excess_gen_error(m, q, V, delta_in, delta_out, percentage, beta):
     gen_err_BO_alpha_inf = (1 - percentage) * percentage**2 * (1 - beta) ** 2 + percentage * (
         1 - percentage
     ) ** 2 * (beta - 1) ** 2
-    return gen_error(m, q, sigma, delta_in, delta_out, percentage, beta) - gen_err_BO_alpha_inf
+    return gen_error(m, q, V, delta_in, delta_out, percentage, beta) - gen_err_BO_alpha_inf
 
 
-def excess_gen_error_oracle_rescaling(m, q, sigma, delta_in, delta_out, percentage, beta):
+def excess_gen_error_oracle_rescaling(m, q, V, delta_in, delta_out, percentage, beta):
     oracle_norm = 1 - percentage + percentage * beta
     m_prime = oracle_norm * m / sqrt(q)
     q_prime = oracle_norm**2
 
-    return excess_gen_error(m_prime, q_prime, sigma, delta_in, delta_out, percentage, beta)
+    return excess_gen_error(m_prime, q_prime, V, delta_in, delta_out, percentage, beta)
 
 
-def estimation_error_rescaled(m, q, sigma, delta_in, delta_out, percentage, beta, norm_const):
+def estimation_error_rescaled(m, q, V, delta_in, delta_out, percentage, beta, norm_const):
     m = m / norm_const
     q = q / (norm_const**2)
 
-    return estimation_error(m, q, sigma)
+    return estimation_error(m, q, V)
 
 
-def estimation_error_oracle_rescaling(m, q, sigma, delta_in, delta_out, percentage, beta):
+def estimation_error_oracle_rescaling(m, q, V, delta_in, delta_out, percentage, beta):
     oracle_norm = 1.0  # abs(1 - percentage + percentage * beta)
     m_prime = oracle_norm * m / sqrt(q)
     q_prime = oracle_norm**2
 
-    return estimation_error(m_prime, q_prime, sigma)
+    return estimation_error(m_prime, q_prime, V)
 
 
-def gen_error_BO(m, q, sigma, delta_in, delta_out, percentage, beta):
+def gen_error_BO(m, q, V, delta_in, delta_out, percentage, beta):
     return (1 + percentage * (-1 + beta**2) - (1 + percentage * (-1 + beta)) ** 2 * q) - (
         (1 - percentage) * percentage**2 * (1 - beta) ** 2
         + percentage * (1 - percentage) ** 2 * (beta - 1) ** 2
     )
 
 
-def gen_error_BO_old(m, q, sigma, delta_in, delta_out, percentage, beta):
+def gen_error_BO_old(m, q, V, delta_in, delta_out, percentage, beta):
     q = (1 - percentage + percentage * beta) ** 2 * q
     m = (1 - percentage + percentage * beta) * m
 
-    return estimation_error(m, q, sigma, tuple())
+    return estimation_error(m, q, V, tuple())
 
 
 @vectorize("float64(float64)")
@@ -256,13 +256,13 @@ def log1pexp(x: float) -> float:
 
 
 # overlaps
-def m_overlap(m, q, sigma, **args):
+def m_overlap(m, q, V, **args):
     return m
 
 
-def q_overlap(m, q, sigma, **args):
+def q_overlap(m, q, V, **args):
     return q
 
 
-def sigma_overlap(m, q, sigma, **args):
-    return sigma
+def V_overlap(m, q, V, **args):
+    return V

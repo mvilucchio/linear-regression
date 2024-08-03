@@ -62,25 +62,25 @@ def sweep_alpha_fixed_point(
     )
     out_list = [empty(n_alpha_pts) for _ in range(n_observables)]
     # this is not needed
-    ms_qs_sigmas = empty((n_alpha_pts, 3))
+    ms_qs_Vs = empty((n_alpha_pts, 3))
 
     old_initial_cond = initial_cond_fpe
     for idx, alpha in enumerate(alphas):
         print(f"\t{alpha = }")
         f_hat_kwargs.update({"alpha": alpha})
-        ms_qs_sigmas[idx] = fixed_point_finder(
+        ms_qs_Vs[idx] = fixed_point_finder(
             f_func, f_hat_func, old_initial_cond, f_kwargs, f_hat_kwargs
         )
-        old_initial_cond = tuple(ms_qs_sigmas[idx])
-        m, q, sigma = ms_qs_sigmas[idx]
+        old_initial_cond = tuple(ms_qs_Vs[idx])
+        m, q, V = ms_qs_Vs[idx]
 
-        print(f"\t\t{m = :.3e}, {q = :.3e}, {sigma = :.3e}")
+        print(f"\t\t{m = :.3e}, {q = :.3e}, {V = :.3e}")
         for jdx, (f, f_args, update_flag) in enumerate(zip(funs, funs_args, update_funs_args)):
             if update_flag:
-                f_args.update({"m": m, "q": q, "sigma": sigma})
-                out_list[jdx][idx] = f(m, q, sigma, **f_args)
+                f_args.update({"m": m, "q": q, "V": V})
+                out_list[jdx][idx] = f(m, q, V, **f_args)
             else:
-                out_list[jdx][idx] = f(m, q, sigma, **f_args)
+                out_list[jdx][idx] = f(m, q, V, **f_args)
 
     if decreasing:
         alphas = alphas[::-1]
@@ -164,7 +164,7 @@ def sweep_alpha_optimal_lambda_fixed_point(
         (
             f_min_vals[idx],
             reg_params_opt[idx],
-            (m, q, sigma),
+            (m, q, V),
             out_values,
         ) = find_optimal_reg_param_function(
             f_func,
@@ -180,7 +180,7 @@ def sweep_alpha_optimal_lambda_fixed_point(
             min_reg_param=min_reg_param,
         )
         old_reg_param_opt = reg_params_opt[idx]
-        old_initial_cond_fpe = (m, q, sigma)
+        old_initial_cond_fpe = (m, q, V)
 
         for jdx in range(n_observables):
             funs_values[jdx][idx] = out_values[jdx]
@@ -272,7 +272,7 @@ def sweep_alpha_optimal_lambda_hub_param_fixed_point(
         (
             f_min_vals[idx],
             (reg_params_opt[idx], hub_params_opt[idx]),
-            (m, q, sigma),
+            (m, q, V),
             out_values,
         ) = find_optimal_reg_and_huber_parameter_function(
             f_func,
@@ -294,7 +294,7 @@ def sweep_alpha_optimal_lambda_hub_param_fixed_point(
 
         old_reg_param_opt = reg_params_opt[idx]
         old_hub_param_opt = hub_params_opt[idx]
-        old_initial_cond_fpe = (m, q, sigma)
+        old_initial_cond_fpe = (m, q, V)
 
         for jdx in range(n_observables):
             funs_values[jdx][idx] = out_values[jdx]
@@ -464,20 +464,20 @@ def sweep_alpha_descend_lambda(
                 continue
 
             try:
-                m, q, sigma = fixed_point_finder(
+                m, q, V = fixed_point_finder(
                     f_func,
                     f_hat_func,
                     old_initial_cond,
                     copy_f_kwargs,
                     copy_f_hat_kwargs,
                 )
-                old_initial_cond = tuple([m, q, sigma])
+                old_initial_cond = tuple([m, q, V])
 
                 if jdx == 0:
                     first_inital_cond_column = old_initial_cond
 
                 for kdx, (f, f_args) in enumerate(zip(funs, funs_args)):
-                    funs_vals[kdx][n_lambda_pts - 1 - jdx, idx] = f(m, q, sigma, *f_args)
+                    funs_vals[kdx][n_lambda_pts - 1 - jdx, idx] = f(m, q, V, *f_args)
 
             except ConvergenceError as e:
                 for kdx, (f, f_args) in enumerate(zip(funs, funs_args)):
@@ -555,16 +555,16 @@ def sweep_alpha_minimal_stable_reg_param(
             copy_f_kwargs.update({"reg_param": reg_param})
 
             try:
-                m, q, sigma = fixed_point_finder(
+                m, q, V = fixed_point_finder(
                     f_func,
                     f_hat_func,
                     old_initial_cond,
                     copy_f_kwargs,
                     copy_f_hat_kwargs,
                 )
-                old_initial_cond = tuple([m, q, sigma])
+                old_initial_cond = tuple([m, q, V])
 
-                if condition_func(m, q, sigma, **copy_f_kwargs, **copy_f_hat_kwargs) <= 0.0:
+                if condition_func(m, q, V, **copy_f_kwargs, **copy_f_hat_kwargs) <= 0.0:
                     not_converged_idx = points_per_run - 1 - jdx
                     break
 

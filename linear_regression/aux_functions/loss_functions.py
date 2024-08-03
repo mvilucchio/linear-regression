@@ -1,6 +1,12 @@
 from numba import vectorize, njit
 from math import exp, log, tanh, cosh, sqrt, pow, pi
 from numpy import log1p
+from ..utils.minimizers import brent_minimize_scalar
+from . import MAX_ITER_BRENT_MINIMIZE, TOL_BRENT_MINIMIZE
+from .likelihood_channel_functions import log_Z_out_Bayes_decorrelated_noise
+
+
+BIG_NUMBER = 50_000_000
 
 
 @vectorize("float64(float64, float64)")
@@ -78,3 +84,40 @@ def Dz_exponential_loss(y: float, z: float) -> float:
 @vectorize("float64(float64, float64)")
 def DDz_exponential_loss(y: float, z: float) -> float:
     return y**2 * exp(-y * z)
+
+
+# ----
+@njit
+def min_problem(
+    ω: float,
+    y: float,
+    z: float,
+    param: float,
+    delta_in: float,
+    delta_out: float,
+    eps: float,
+    beta: float,
+) -> float:
+    return 0.5 * (z - ω) ** 2 / param + log_Z_out_Bayes_decorrelated_noise(
+        y, ω, param, delta_in, delta_out, eps, beta
+    )
+
+
+@njit
+def optimal_loss_double_noise(
+    y: float,
+    z: float,
+    param: float,
+    delta_in: float,
+    delta_out: float,
+    eps: float,
+    beta: float,
+) -> float:
+    return -brent_minimize_scalar(
+        min_problem,
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+        (y, z, param, delta_in, delta_out, eps, beta),
+    )[0]

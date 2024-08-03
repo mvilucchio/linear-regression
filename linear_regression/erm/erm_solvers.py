@@ -34,8 +34,17 @@ from cvxpy import (
 from cvxpy import sum as cp_sum
 import jax.numpy as jnp
 import jax
+from jax import grad, vmap, hessian, jit
 from numpy.random import default_rng
-from ..erm import GTOL_MINIMIZE, MAX_ITER_MINIMIZE
+from ..erm import (
+    GTOL_MINIMIZE,
+    MAX_ITER_MINIMIZE,
+    MAX_ITER_PDG,
+    STEP_BLOCK_PDG,
+    STEP_SIZE_PDG,
+    TOL_PDG,
+    TEST_ITERS_PDG,
+)
 
 rng = default_rng()
 
@@ -71,7 +80,7 @@ def find_coefficients_L1(ys, xs, reg_param):
     return w.value
 
 
-@jax.jit
+@jit
 def _loss_Huber(w, xs_norm, ys, reg_param, a):
     target = xs_norm @ w
     abs_diff = jnp.abs(target - ys)
@@ -80,8 +89,8 @@ def _loss_Huber(w, xs_norm, ys, reg_param, a):
     ) + 0.5 * reg_param * jnp.dot(w, w)
 
 
-_grad_loss_Huber = jax.jit(jax.grad(_loss_Huber))
-_hess_loss_Huber = jax.jit(jax.hessian(_loss_Huber))
+_grad_loss_Huber = jit(grad(_loss_Huber))
+_hess_loss_Huber = jit(hessian(_loss_Huber))
 
 
 # the reason why we don't use the one of sklearn is because it has strange bounds on a
@@ -163,17 +172,17 @@ def find_coefficients_vanilla_GD(
 
 
 # -----------------------------------
-@jax.jit
+@jit
 def linear_classif_loss(x, y, w):
     prediction = jnp.dot(x, w)
     return -y * prediction
 
 
-vec_linear_classif_loss = jax.jit(jax.vmap(linear_classif_loss, in_axes=(0, 0, None)))
+vec_linear_classif_loss = jit(vmap(linear_classif_loss, in_axes=(0, 0, None)))
 
-grad_linear_classif_loss = jax.jit(jax.grad(linear_classif_loss, argnums=0))
+grad_linear_classif_loss = jit(grad(linear_classif_loss, argnums=0))
 
-vec_grad_linear_classif_loss = jax.jit(jax.vmap(grad_linear_classif_loss, in_axes=(0, 0, None)))
+vec_grad_linear_classif_loss = jit(vmap(grad_linear_classif_loss, in_axes=(0, 0, None)))
 
 
 # ---------------------------------------------------------------------------- #
@@ -209,7 +218,7 @@ def find_coefficients_Logistic(ys, xs, reg_param):
 
 
 # --------------------------- adversarial training --------------------------- #
-@jax.jit
+@jit
 def _loss_Logistic_adv(
     w, xs_norm, ys, reg_param: float, ε: float, reg_order: float, pstar: float, d: int
 ):
@@ -224,16 +233,16 @@ def _loss_Logistic_adv(
     return loss
 
 
-_grad_loss_Logistic_adv = jax.jit(jax.grad(_loss_Logistic_adv))
-_hess_loss_Logistic_adv = jax.jit(jax.hessian(_loss_Logistic_adv))
+_grad_loss_Logistic_adv = jit(grad(_loss_Logistic_adv))
+_hess_loss_Logistic_adv = jit(hessian(_loss_Logistic_adv))
 
 
 def find_coefficients_Logistic_adv(
-    ys, xs, reg_param: float, ε: float, reg_order: float, pstar: float, wstar: ndarray
+    ys, xs, reg_param: float, ε: float, reg_order: float, pstar: float, initial_w: ndarray
 ):
     _, d = xs.shape
     # w = rng.standard_normal((d,), float32)  # normal(loc=0.0, scale=1.0, size=(d,))
-    w = wstar.copy() + rng.standard_normal((d,), float32)
+    w = initial_w.copy() + rng.standard_normal((d,), float32)
     xs_norm = divide(xs, sqrt(d))
 
     opt_res = minimize(
@@ -254,8 +263,8 @@ def find_coefficients_Logistic_adv(
     return opt_res.x
 
 
-# ------------------------------ sigmadeltacase ------------------------------ #
-@jax.jit
+# ------------------------------ Vdeltacase ------------------------------ #
+@jit
 def _loss_Logistic_adv_Sigmadelta(w, xs_norm, ys, reg_param: float, ε: float, Sigmadelta, d: int):
     loss = jnp.sum(
         jnp.log1p(
@@ -267,8 +276,8 @@ def _loss_Logistic_adv_Sigmadelta(w, xs_norm, ys, reg_param: float, ε: float, S
     return loss
 
 
-_grad_loss_Logistic_adv_Sigmadelta = jax.jit(jax.grad(_loss_Logistic_adv_Sigmadelta))
-_hess_loss_Logistic_adv_Sigmadelta = jax.jit(jax.hessian(_loss_Logistic_adv_Sigmadelta))
+_grad_loss_Logistic_adv_Sigmadelta = jit(grad(_loss_Logistic_adv_Sigmadelta))
+_hess_loss_Logistic_adv_Sigmadelta = jit(hessian(_loss_Logistic_adv_Sigmadelta))
 
 
 def find_coefficients_Logistic_adv_Sigmadelta(
@@ -297,17 +306,15 @@ def find_coefficients_Logistic_adv_Sigmadelta(
 
 
 # ------------------------------ approximate L1 ------------------------------ #
-@jax.jit
+@jit
 def approximalte_L1_regularsation(x, a):
     return (jnp.log(1 + jnp.exp(a * x)) + jnp.log(1 + jnp.exp(-a * x))) / a
 
 
-v_approximalte_L1_regularsation = jax.jit(
-    jax.vmap(approximalte_L1_regularsation, in_axes=(0, None))
-)
+v_approximalte_L1_regularsation = jit(vmap(approximalte_L1_regularsation, in_axes=(0, None)))
 
 
-@jax.jit
+@jit
 def _loss_Logistic_adv_approx_L1(w, xs_norm, ys, reg_param: float, ε: float, pstar: float, d: int):
     loss = (
         jnp.sum(
@@ -323,8 +330,8 @@ def _loss_Logistic_adv_approx_L1(w, xs_norm, ys, reg_param: float, ε: float, ps
     return loss
 
 
-_grad_loss_Logistic_approx_L1 = jax.jit(jax.grad(_loss_Logistic_adv_approx_L1))
-_hess_loss_Logistic_approx_L1 = jax.jit(jax.hessian(_loss_Logistic_adv_approx_L1))
+_grad_loss_Logistic_approx_L1 = jit(grad(_loss_Logistic_adv_approx_L1))
+_hess_loss_Logistic_approx_L1 = jit(hessian(_loss_Logistic_adv_approx_L1))
 
 
 def find_coefficients_Logistic_approx_L1(
@@ -414,89 +421,172 @@ def find_adversarial_perturbation_RandomFeatures_space(
     problem.solve()
 
     return -ys[:, None] * np.tile(delta.value, (len(ys), 1))
-    # return delta.value
+
+
+def find_adversarial_perturbation_NLRF(
+    ys: ndarray,
+    cs: ndarray,
+    w: ndarray,
+    F: ndarray,
+    wstar: ndarray,
+    ε: float,
+    p: float,
+    step_size: float = STEP_SIZE_PDG,
+    abs_tol: float = TOL_PDG,
+    step_block: int = STEP_BLOCK_PDG,
+    max_iterations: int = MAX_ITER_PDG,
+    adv_pert: ndarray = None,
+    test_iters: int = TEST_ITERS_PDG,
+):
+    if adv_pert is None:
+        adv_pert = jnp.zeros_like(cs)
+
+    assert cs.shape == adv_pert.shape
+
+    _, d = cs.shape
+
+    # losses = []
+    for i in range(max_iterations):
+        # losses.append([])
+        for j in range(step_block):
+            # losses[i].append(vec_NLRF_data_perturb_loss(adv_pert, xs, ys, w, F, d))
+            adv_pert = PGA_step_NLRF(adv_pert, cs, ys, w, wstar, F, d, step_size, ε, p)
+
+        all_current_loss_val = vec_NLRF_data_perturb_loss(adv_pert, cs, ys, w, F, d)
+
+        tmp_adv_pert = adv_pert.copy()
+
+        for _ in range(test_iters):
+            tmp_adv_pert = PGA_step_NLRF(tmp_adv_pert, cs, ys, w, wstar, F, d, step_size, ε, p)
+
+        all_temp_loss = vec_NLRF_data_perturb_loss(tmp_adv_pert, cs, ys, w, F, d)
+
+        if jnp.max(jnp.abs(all_current_loss_val - all_temp_loss)) <= abs_tol:
+            break
+
+    return adv_pert  # , losses
 
 
 # ---------------------------------------------------------------------------- #
 #                          Projected Gradient Descent                          #
 # ---------------------------------------------------------------------------- #
-@jax.jit
-def total_loss_logistic(w, Xs, ys, reg_param):
-    ys = ys.reshape(-1, 1) if ys.ndim == 1 else ys
-    scores = jnp.matmul(Xs, w)
-    loss_part = jnp.sum(jnp.log(1 + jnp.exp(-ys * scores)))
-    reg_part = 0.5 * reg_param * jnp.dot(w, w)
-    return loss_part + reg_part
+
+# ------------------------ non-linear random features ------------------------ #
 
 
-@jax.jit
-def linear_classif_loss(x, y, w):
-    return -y * jnp.dot(x, w)
+# @jit
+# def linear_NLRF_data_perturb_loss(δ, c, y, w, F, d: int):
+#     return -y * jnp.dot(jnp.tanh((c + δ) @ F / jnp.sqrt(d)), w)
 
 
-vec_linear_classif_loss = jax.jit(jax.vmap(linear_classif_loss, in_axes=(0, 0, None)))
-grad_linear_classif_loss = jax.jit(jax.grad(linear_classif_loss, argnums=0))
-vec_grad_linear_classif_loss = jax.jit(jax.vmap(grad_linear_classif_loss, in_axes=(0, 0, None)))
+@jit
+def linear_NLRF_data_perturb_loss(δ, c, y, w, F, d: int, activ_fun):
+    return -y * jnp.dot(activ_fun((c + δ) @ F / jnp.sqrt(d)), w)
 
 
-@jax.jit
+@jit
+def vec_NLRF_data_perturb_loss(δs, cs, ys, w, F, d: int):
+    return -ys * jnp.dot(jnp.tanh(((cs + δs) @ F) / jnp.sqrt(d)), w)
+
+
+grad_NLRF_data_perturb = jit(grad(linear_NLRF_data_perturb_loss, argnums=0))
+
+vec_grad_NLRF_data_perturb = jit(vmap(grad_NLRF_data_perturb, in_axes=(0, 0, 0, None, None, None)))
+
+
+@jit
 def then_func(ops):
     x, ε, norm_x_projected = ops
     return ε * x / norm_x_projected
 
 
-@jax.jit
+@jit
 def else_func(ops):
     return ops[0]
 
 
-# jitted_norm = jax.jit(jnp.linalg.norm, static_argnums=["ord"])
+def project_and_normalize(z, wstar, ε, p):
+    z -= jnp.dot(z, wstar) * wstar / jnp.dot(wstar, wstar)
+    norm_x_projected = jnp.sum(jnp.abs(z) ** p) ** (1 / p)
+
+    return jax.lax.cond(norm_x_projected > ε, then_func, else_func, (z, ε, norm_x_projected))
 
 
-@jax.jit
-def project_and_normalize(x, wstar, ε, p):
-    x -= jnp.dot(x, wstar) * wstar / jnp.dot(wstar, wstar)
-    norm_x_projected = jnp.sum(jnp.abs(x) ** p) ** (1 / p)
-    # norm_x_projected = jitted_norm(x, ord=p)
-
-    return jax.lax.cond(norm_x_projected > ε, then_func, else_func, (x, ε, norm_x_projected))
+vec_project_and_normalize = jit(vmap(project_and_normalize, in_axes=(0, None, None, None)))
 
 
-vec_project_and_normalize = jax.jit(jax.vmap(project_and_normalize, in_axes=(0, None, None, None)))
+# @jit
+def PGA_step_NLRF(δs, xs, ys, w, wstar, F, d: int, step_size: float, ε: float, p):
+    g = vec_grad_NLRF_data_perturb(δs, xs, ys, w, F, d)
+    return vec_project_and_normalize(δs + step_size * g, wstar, ε, p)
 
 
-@jax.jit
-def projected_GA_step_jit(vs, ys, w, wstar, step_size, ε, p):
-    g = vec_grad_linear_classif_loss(vs, ys, w)
-    return vec_project_and_normalize(vs + step_size * g, wstar, ε, p)
+# -------------------------------- linear loss ------------------------------- #
+# @jit
+# def total_loss_logistic(w, Xs, ys, reg_param):
+#     ys = ys.reshape(-1, 1) if ys.ndim == 1 else ys
+#     scores = jnp.matmul(Xs, w)
+#     loss_part = jnp.sum(jnp.log(1 + jnp.exp(-ys * scores)))
+#     reg_part = 0.5 * reg_param * jnp.dot(w, w)
+#     return loss_part + reg_part
 
 
-def projected_GA(ys, w, wstar, step_size, n_steps, ε, p, adv_perturbation=None):
-    if adv_perturbation is None:
-        adv_perturbation = jnp.zeros((len(ys), len(w)))
-
-    for _ in range(n_steps):
-        adv_perturbation = projected_GA_step_jit(adv_perturbation, ys, w, wstar, step_size, ε, p)
-    return adv_perturbation
+# @jit
+# def linear_classif_loss(x, y, w):
+#     return -y * jnp.dot(x, w)
 
 
-def check_if_additional_step_improves(adv_perturbation, ys, w, ε, p):
-    loss_before = linear_classif_loss(adv_perturbation, ys, w)
-    adv_perturbation_after = projected_GA_step_jit(adv_perturbation, ys, w, ε, p)
-    loss_after = linear_classif_loss(adv_perturbation_after, ys, w)
-    return loss_after < loss_before
+# vec_linear_classif_loss = jit(vmap(linear_classif_loss, in_axes=(0, 0, None)))
+# grad_linear_classif_loss = jit(grad(linear_classif_loss, argnums=0))
+# vec_grad_linear_classif_loss = jit(vmap(grad_linear_classif_loss, in_axes=(0, 0, None)))
 
 
-def projected_GA_untill_convergence(
-    ys, w, wstar, step_size, ε, p, adv_perturbation=None, step_block=100
-):
-    if adv_perturbation is None:
-        adv_perturbation = jnp.zeros((len(ys), len(w)))
+# # jitted_norm = jit(jnp.linalg.norm, static_argnums=["ord"])
 
-    while not check_if_additional_step_improves(adv_perturbation, ys, w, ε, p):
-        for _ in range(step_block):
-            adv_perturbation = projected_GA_step_jit(
-                adv_perturbation, ys, w, wstar, step_size, ε, p
-            )
 
-    return adv_perturbation
+# @jit
+# def project_and_normalize(x, wstar, ε, p):
+#     x -= jnp.dot(x, wstar) * wstar / jnp.dot(wstar, wstar)
+#     norm_x_projected = jnp.sum(jnp.abs(x) ** p) ** (1 / p)
+#     # norm_x_projected = jitted_norm(x, ord=p)
+
+#     return jax.lax.cond(norm_x_projected > ε, then_func, else_func, (x, ε, norm_x_projected))
+
+
+# vec_project_and_normalize = jit(vmap(project_and_normalize, in_axes=(0, None, None, None)))
+
+
+# @jit
+# def PGA_step_NLRF(vs, ys, w, wstar, step_size, ε, p):
+#     g = vec_grad_linear_classif_loss(vs, ys, w)
+#     return vec_project_and_normalize(vs + step_size * g, wstar, ε, p)
+
+
+# # THERE IS A PROBLEM HERE IN THE IMPLEMENTATION
+# def projected_GA(ys, w, wstar, step_size, n_steps, ε, p, adv_perturbation=None):
+#     if adv_perturbation is None:
+#         adv_perturbation = jnp.zeros((len(ys), len(w)))
+
+#     for _ in range(n_steps):
+#         adv_perturbation = PGA_step_NLRF(adv_perturbation, ys, w, wstar, step_size, ε, p)
+#     return adv_perturbation
+
+
+# def check_if_additional_step_improves(adv_perturbation, ys, w, ε, p):
+#     loss_before = linear_classif_loss(adv_perturbation, ys, w)
+#     adv_perturbation_after = PGA_step_NLRF(adv_perturbation, ys, w, ε, p)
+#     loss_after = linear_classif_loss(adv_perturbation_after, ys, w)
+#     return loss_after < loss_before
+
+
+# def projected_GA_untill_convergence(
+#     ys, w, wstar, step_size, ε, p, adv_perturbation=None, step_block=100
+# ):
+#     if adv_perturbation is None:
+#         adv_perturbation = jnp.zeros((len(ys), len(w)))
+
+#     while not check_if_additional_step_improves(adv_perturbation, ys, w, ε, p):
+#         for _ in range(step_block):
+#             adv_perturbation = PGA_step_NLRF(adv_perturbation, ys, w, wstar, step_size, ε, p)
+
+#     return adv_perturbation

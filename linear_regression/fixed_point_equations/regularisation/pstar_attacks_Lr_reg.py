@@ -22,14 +22,14 @@ def m_integral_gaussian_weights_Lr_reg_Lp_attack(
     ξ: float,
     q_hat: float,
     m_hat: float,
-    Σ_hat: float,
+    V_hat: float,
     P_hat: float,
     reg_order: float,
     reg_param: float,
     pstar: float,
 ) -> float:
     η_hat = m_hat**2 / q_hat
-    proximal = proximal_sum_absolute(sqrt(q_hat) * ξ, Σ_hat, reg_param, reg_order, P_hat, pstar)
+    proximal = proximal_sum_absolute(sqrt(q_hat) * ξ, V_hat, reg_param, reg_order, P_hat, pstar)
     return (
         gauss_Z_w_Bayes_gaussian_prior(ξ, m_hat, q_hat, 0, 1)
         * f_w_Bayes_gaussian_prior(sqrt(η_hat) * ξ, η_hat, 0, 1)
@@ -42,28 +42,28 @@ def q_integral_gaussian_weights_Lr_reg_Lp_attack(
     ξ: float,
     q_hat: float,
     m_hat: float,
-    Σ_hat: float,
+    V_hat: float,
     P_hat: float,
     reg_order: float,
     reg_param: float,
     pstar: float,
 ) -> float:
-    proximal = proximal_sum_absolute(sqrt(q_hat) * ξ, Σ_hat, reg_param, reg_order, P_hat, pstar)
+    proximal = proximal_sum_absolute(sqrt(q_hat) * ξ, V_hat, reg_param, reg_order, P_hat, pstar)
     return gauss_Z_w_Bayes_gaussian_prior(ξ, m_hat, q_hat, 0, 1) * (proximal**2)
 
 
 @njit(error_model="numpy", fastmath=False)
-def Σ_integral_gaussian_weights_Lr_reg_Lp_attack(
+def V_integral_gaussian_weights_Lr_reg_Lp_attack(
     ξ: float,
     q_hat: float,
     m_hat: float,
-    Σ_hat: float,
+    V_hat: float,
     P_hat: float,
     reg_order: float,
     reg_param: float,
     pstar: float,
 ) -> float:
-    DƔ_prox = DƔ_proximal_sum_absolute(sqrt(q_hat) * ξ, Σ_hat, reg_param, reg_order, P_hat, pstar)
+    DƔ_prox = DƔ_proximal_sum_absolute(sqrt(q_hat) * ξ, V_hat, reg_param, reg_order, P_hat, pstar)
     return gauss_Z_w_Bayes_gaussian_prior(ξ, m_hat, q_hat, 0, 1) * DƔ_prox
 
 
@@ -72,14 +72,14 @@ def P_integral_gaussian_weights_Lr_reg_Lp_attack(
     ξ: float,
     q_hat: float,
     m_hat: float,
-    Σ_hat: float,
+    V_hat: float,
     P_hat: float,
     reg_order: float,
     reg_param: float,
     pstar: float,
 ) -> float:
     DPhat_moreau = Dlambdaq_moreau_loss_sum_absolute(
-        sqrt(q_hat) * ξ, Σ_hat, reg_param, reg_order, P_hat, pstar
+        sqrt(q_hat) * ξ, V_hat, reg_param, reg_order, P_hat, pstar
     )
     return gauss_Z_w_Bayes_gaussian_prior(ξ, m_hat, q_hat, 0, 1) * DPhat_moreau
 
@@ -88,7 +88,7 @@ def P_integral_gaussian_weights_Lr_reg_Lp_attack(
 def f_Lr_regularisation_Lpstar_attack(
     m_hat: float,
     q_hat: float,
-    Σ_hat: float,
+    V_hat: float,
     P_hat: float,
     reg_order: float,
     reg_param: float,
@@ -112,7 +112,7 @@ def f_Lr_regularisation_Lpstar_attack(
             m_integral_gaussian_weights_Lr_reg_Lp_attack,
             domain[0],
             domain[1],
-            args=(q_hat, m_hat, Σ_hat, P_hat, reg_order, reg_param, pstar),
+            args=(q_hat, m_hat, V_hat, P_hat, reg_order, reg_param, pstar),
         )[0]
     m = int_value_m
 
@@ -122,19 +122,19 @@ def f_Lr_regularisation_Lpstar_attack(
             q_integral_gaussian_weights_Lr_reg_Lp_attack,
             domain[0],
             domain[1],
-            args=(q_hat, m_hat, Σ_hat, P_hat, reg_order, reg_param, pstar),
+            args=(q_hat, m_hat, V_hat, P_hat, reg_order, reg_param, pstar),
         )[0]
     q = int_value_q
 
-    int_value_Σ = 0.0
+    int_value_V = 0.0
     for domain in domains:
-        int_value_Σ += quad(
-            Σ_integral_gaussian_weights_Lr_reg_Lp_attack,
+        int_value_V += quad(
+            V_integral_gaussian_weights_Lr_reg_Lp_attack,
             domain[0],
             domain[1],
-            args=(q_hat, m_hat, Σ_hat, P_hat, reg_order, reg_param, pstar),
+            args=(q_hat, m_hat, V_hat, P_hat, reg_order, reg_param, pstar),
         )[0]
-    Σ = int_value_Σ
+    V = int_value_V
 
     int_value_P = 0.0
     for domain in domains:
@@ -142,8 +142,8 @@ def f_Lr_regularisation_Lpstar_attack(
             P_integral_gaussian_weights_Lr_reg_Lp_attack,
             domain[0],
             domain[1],
-            args=(q_hat, m_hat, Σ_hat, P_hat, reg_order, reg_param, pstar),
+            args=(q_hat, m_hat, V_hat, P_hat, reg_order, reg_param, pstar),
         )[0]
     P = int_value_P
 
-    return m, q, Σ, P
+    return m, q, V, P

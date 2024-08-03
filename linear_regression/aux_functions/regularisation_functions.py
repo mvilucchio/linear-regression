@@ -1,7 +1,10 @@
 from numba import vectorize, njit
 from numpy import sign as np_sign
-from math import exp, log, tanh, cosh, sqrt, pow, pi
-from numpy import log1p
+from math import exp, log, tanh, cosh, sqrt, pow
+from ..utils.minimizers import brent_minimize_scalar
+from . import MAX_ITER_BRENT_MINIMIZE, TOL_BRENT_MINIMIZE
+
+BIG_NUMBER = 50_000_000
 
 
 @vectorize("float64(float64, float64, float64)")
@@ -35,3 +38,19 @@ def DxDreg_param_power_regularisation(x: float, alpha: float, reg_param: float) 
 @vectorize("float64(float64, float64, float64)")
 def Dreg_param_power_regularisation(x: float, alpha: float, reg_param: float) -> float:
     return pow(abs(x), alpha)
+
+
+# ----
+def min_problem(ω: float, y: float, z: float, q: float) -> float:
+    return
+
+
+def optimal_loss_double_noise(y: float, z: float, param: float) -> float:
+    return -brent_minimize_scalar(
+        min_problem,
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+        (y, z, param),
+    )[0]

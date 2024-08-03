@@ -54,13 +54,13 @@ def sweep_q_fixed_point_proj_denoiser(
     )
 
     out_list = [empty(n_q_pts) for _ in range(n_observables)]
-    ms_qs_sigmas = empty((n_q_pts, 3))
+    ms_qs_Vs = empty((n_q_pts, 3))
 
     old_initial_cond_fpe = initial_cond_fpe
     for idx, q in enumerate(qs):
         # print(f"\tq = {q}")
         f_kwargs.update({"q_fixed": q})
-        ms_qs_sigmas[idx] = fixed_point_finder_loser(
+        ms_qs_Vs[idx] = fixed_point_finder_loser(
             f_projection_denoising,
             f_hat_func,
             old_initial_cond_fpe,
@@ -68,20 +68,20 @@ def sweep_q_fixed_point_proj_denoiser(
             f_hat_kwargs,
             control_variate=(True, True, True),
         )
-        old_initial_cond_fpe = ms_qs_sigmas[idx]
-        m, q, sigma = ms_qs_sigmas[idx]
-        # print(f"\tm = {m}, q = {q}, sigma = {sigma}")
+        old_initial_cond_fpe = ms_qs_Vs[idx]
+        m, q, V = ms_qs_Vs[idx]
+        # print(f"\tm = {m}, q = {q}, V = {V}")
 
         for jdx, (f, f_args, update_f_args) in enumerate(zip(funs, funs_args, update_funs_args)):
             if update_f_args:
                 f_kwargs.update(f_args)
-                out_list[jdx][idx] = f(m, q, sigma, **f_kwargs)
+                out_list[jdx][idx] = f(m, q, V, **f_kwargs)
             else:
-                out_list[jdx][idx] = f(m, q, sigma, **f_args)
+                out_list[jdx][idx] = f(m, q, V, **f_args)
 
     if decreasing:
         qs = qs[::-1]
-        ms_qs_sigmas = ms_qs_sigmas[::-1]
+        ms_qs_Vs = ms_qs_Vs[::-1]
         for idx in range(n_observables):
             out_list[idx] = out_list[idx][::-1]
 

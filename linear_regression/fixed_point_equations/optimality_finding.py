@@ -36,14 +36,14 @@ def find_optimal_reg_param_function(
     def minimize_fun(reg_param):
         copy_f_kwargs.update({"reg_param": float(reg_param)})
         print("\t\tλ = {:.5f}".format(float(reg_param)))
-        m, q, sigma = fixed_point_finder(
+        m, q, V = fixed_point_finder(
             f_func,
             f_hat_func,
             initial_condition=initial_cond_fpe,
             f_kwargs=copy_f_kwargs,
             f_hat_kwargs=f_hat_kwargs,
         )
-        return f_min(m, q, sigma, **f_min_args)
+        return f_min(m, q, V, **f_min_args)
 
     bnds = [(min_reg_param, None)]
     obj = minimize(
@@ -60,7 +60,7 @@ def find_optimal_reg_param_function(
 
         copy_f_kwargs.update({"reg_param": float(reg_param_opt)})
         out_values = empty(n_observables)
-        m, q, sigma = fixed_point_finder(
+        m, q, V = fixed_point_finder(
             f_func,
             f_hat_func,
             initial_condition=initial_cond_fpe,
@@ -69,9 +69,9 @@ def find_optimal_reg_param_function(
         )
 
         for idx, (f, f_args) in enumerate(zip(funs, funs_args)):
-            out_values[idx] = f(m, q, sigma, *f_args)
+            out_values[idx] = f(m, q, V, *f_args)
 
-        return fun_min_val, reg_param_opt, (m, q, sigma), out_values
+        return fun_min_val, reg_param_opt, (m, q, V), out_values
     else:
         raise MinimizationError("find_optimal_reg_param_function", initial_guess_reg_param)
 
@@ -104,14 +104,14 @@ def find_optimal_reg_and_huber_parameter_function(
         copy_f_kwargs.update({"reg_param": x[0]})
         copy_f_hat_kwargs.update({"a": x[1]})
 
-        m, q, sigma = fixed_point_finder(
+        m, q, V = fixed_point_finder(
             f_func,
             f_hat_func,
             initial_condition=initial_cond_fpe,
             f_kwargs=copy_f_kwargs,
             f_hat_kwargs=copy_f_hat_kwargs,
         )
-        return f_min(m, q, sigma, **f_min_args)
+        return f_min(m, q, V, **f_min_args)
 
     bnds = [(min_reg_param, None), (min_huber_param, None)]
     obj = minimize(
@@ -132,7 +132,7 @@ def find_optimal_reg_and_huber_parameter_function(
         copy_f_kwargs.update({"reg_param": reg_param_opt})
         copy_f_hat_kwargs.update({"a": a_opt})
         out_values = empty(n_observables)
-        m, q, sigma = fixed_point_finder(
+        m, q, V = fixed_point_finder(
             f_func,
             f_hat_func,
             initial_condition=initial_cond_fpe,
@@ -141,9 +141,9 @@ def find_optimal_reg_and_huber_parameter_function(
         )
 
         for idx, (f, f_args) in enumerate(zip(funs, funs_args)):
-            out_values[idx] = f(m, q, sigma, *f_args)
+            out_values[idx] = f(m, q, V, *f_args)
 
-        return fun_min_val, (reg_param_opt, a_opt), (m, q, sigma), out_values
+        return fun_min_val, (reg_param_opt, a_opt), (m, q, V), out_values
     else:
         raise MinimizationError(
             "find_optimal_reg_and_huber_parameter_function", initial_guess_reg_and_huber_param

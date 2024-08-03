@@ -5,47 +5,46 @@ from numpy import sum
 
 # ------------------------------ gaussian prior ------------------------------ #
 @vectorize("float64(float64, float64, float64, float64)")
-def Z_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, sigma: float) -> float:
+def Z_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, V: float) -> float:
     return exp(
-        (sigma * gamma**2 + 2 * gamma * mu - Lambda * mu**2) / (2 * (Lambda * sigma + 1))
-    ) / sqrt(Lambda * sigma + 1)
+        (V * gamma**2 + 2 * gamma * mu - Lambda * mu**2) / (2 * (Lambda * V + 1))
+    ) / sqrt(Lambda * V + 1)
 
 
 @vectorize("float64(float64, float64, float64, float64)")
-def DZ_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, sigma: float) -> float:
+def DZ_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, V: float) -> float:
     return (
-        exp((2 * gamma * mu - Lambda * mu**2 + gamma**2 * sigma) / (2 + 2 * Lambda * sigma))
-        * (mu + gamma * sigma)
-    ) / (1 + Lambda * sigma) ** 1.5
+        exp((2 * gamma * mu - Lambda * mu**2 + gamma**2 * V) / (2 + 2 * Lambda * V))
+        * (mu + gamma * V)
+    ) / (1 + Lambda * V) ** 1.5
 
 
 @vectorize("float64(float64, float64, float64, float64)")
-def f_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, sigma: float) -> float:
-    return (gamma * sigma + mu) / (1 + sigma * Lambda)
+def f_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, V: float) -> float:
+    return (gamma * V + mu) / (1 + V * Lambda)
 
 
 @vectorize("float64(float64, float64, float64, float64)")
-def Df_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, sigma: float) -> float:
-    return sigma / (1 + sigma * Lambda)
+def Df_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, V: float) -> float:
+    return V / (1 + V * Lambda)
 
 
-def log_Z_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, sigma: float) -> float:
-    return (sigma * gamma**2 + 2 * gamma * mu - Lambda * mu**2) / (
-        2 * (Lambda * sigma + 1)
-    ) - 0.5 * log(Lambda * sigma + 1)
+def log_Z_w_Bayes_gaussian_prior(gamma: float, Lambda: float, mu: float, V: float) -> float:
+    return (V * gamma**2 + 2 * gamma * mu - Lambda * mu**2) / (
+        2 * (Lambda * V + 1)
+    ) - 0.5 * log(Lambda * V + 1)
 
 
 # ----------------------------
 @vectorize("float64(float64, float64, float64, float64, float64)")
 def gauss_Z_w_Bayes_gaussian_prior(
-    ξ: float, m_hat: float, q_hat: float, mu: float, sigma: float
+    ξ: float, m_hat: float, q_hat: float, mu: float, V: float
 ) -> float:
     η_hat = m_hat**2 / q_hat
     return exp(
         -0.5 * ξ**2
-        + (sigma * η_hat * ξ**2 + 2 * sqrt(η_hat) * ξ * mu - η_hat * mu**2)
-        / (2 * (η_hat * sigma + 1))
-    ) / sqrt(2 * pi * (η_hat * sigma + 1))
+        + (V * η_hat * ξ**2 + 2 * sqrt(η_hat) * ξ * mu - η_hat * mu**2) / (2 * (η_hat * V + 1))
+    ) / sqrt(2 * pi * (η_hat * V + 1))
 
 
 # ---------------------------- sparse binary prior --------------------------- #
@@ -73,58 +72,47 @@ def Df_w_Bayes_sparse_binary_weights(gamma: float, Lambda: float, rho: float) ->
 
 @vectorize("float64(float64, float64, float64, float64, float64)")
 def Z_w_Bayes_Gauss_Bernoulli_weights(
-    gamma: float, Lambda: float, rho: float, mu: float, sigma: float
+    gamma: float, Lambda: float, rho: float, mu: float, V: float
 ) -> float:
     return (
         rho
-        * exp((2 * gamma * mu - Lambda * mu**2 + gamma**2 * sigma) / (2 + 2 * Lambda * sigma))
-        / sqrt(1 + Lambda * sigma)
+        * exp((2 * gamma * mu - Lambda * mu**2 + gamma**2 * V) / (2 + 2 * Lambda * V))
+        / sqrt(1 + Lambda * V)
     )
 
 
 @vectorize("float64(float64, float64, float64, float64, float64)")
 def f_w_Bayes_Gauss_Bernoulli_weights(
-    gamma: float, Lambda: float, rho: float, mu: float, sigma: float
+    gamma: float, Lambda: float, rho: float, mu: float, V: float
 ) -> float:
-    return (
-        exp((gamma * (2 * mu + gamma * sigma)) / (2 + 2 * Lambda * sigma))
-        * rho
-        * (mu + gamma * sigma)
-    ) / (
-        (1 + Lambda * sigma)
+    return (exp((gamma * (2 * mu + gamma * V)) / (2 + 2 * Lambda * V)) * rho * (mu + gamma * V)) / (
+        (1 + Lambda * V)
         * (
-            exp((gamma * (2 * mu + gamma * sigma)) / (2 + 2 * Lambda * sigma)) * rho
-            - exp((Lambda * mu**2) / (2 + 2 * Lambda * sigma))
-            * (-1 + rho)
-            * sqrt(1 + Lambda * sigma)
+            exp((gamma * (2 * mu + gamma * V)) / (2 + 2 * Lambda * V)) * rho
+            - exp((Lambda * mu**2) / (2 + 2 * Lambda * V)) * (-1 + rho) * sqrt(1 + Lambda * V)
         )
     )
 
 
 @vectorize("float64(float64, float64, float64, float64, float64)")
 def Df_w_Bayes_Gauss_Bernoulli_weights(
-    gamma: float, Lambda: float, rho: float, mu: float, sigma: float
+    gamma: float, Lambda: float, rho: float, mu: float, V: float
 ) -> float:
     return (
-        exp((gamma * (2 * mu + gamma * sigma)) / (2 + 2 * Lambda * sigma))
+        exp((gamma * (2 * mu + gamma * V)) / (2 + 2 * Lambda * V))
         * rho
         * (
-            exp((gamma * (2 * mu + gamma * sigma)) / (2 + 2 * Lambda * sigma))
-            * rho
-            * sigma
-            * (1 + Lambda * sigma)
-            - exp((Lambda * mu**2) / (2 + 2 * Lambda * sigma))
+            exp((gamma * (2 * mu + gamma * V)) / (2 + 2 * Lambda * V)) * rho * V * (1 + Lambda * V)
+            - exp((Lambda * mu**2) / (2 + 2 * Lambda * V))
             * (-1 + rho)
-            * sqrt(1 + Lambda * sigma)
-            * (mu**2 + sigma + 2 * gamma * mu * sigma + (gamma**2 + Lambda) * sigma**2)
+            * sqrt(1 + Lambda * V)
+            * (mu**2 + V + 2 * gamma * mu * V + (gamma**2 + Lambda) * V**2)
         )
     ) / (
-        (1 + Lambda * sigma) ** 2
+        (1 + Lambda * V) ** 2
         * (
-            exp((gamma * (2 * mu + gamma * sigma)) / (2 + 2 * Lambda * sigma)) * rho
-            - exp((Lambda * mu**2) / (2 + 2 * Lambda * sigma))
-            * (-1 + rho)
-            * sqrt(1 + Lambda * sigma)
+            exp((gamma * (2 * mu + gamma * V)) / (2 + 2 * Lambda * V)) * rho
+            - exp((Lambda * mu**2) / (2 + 2 * Lambda * V)) * (-1 + rho) * sqrt(1 + Lambda * V)
         )
         ** 2
     )

@@ -133,7 +133,7 @@ def sweep_eps_delta_out_optimal_lambda_fixed_point(
         (
             f_min_vals[it.multi_index],
             reg_params_opt[it.multi_index],
-            (m, q, sigma),
+            (m, q, V),
             out_values,
         ) = find_optimal_reg_param_function(
             f_func,
@@ -150,11 +150,11 @@ def sweep_eps_delta_out_optimal_lambda_fixed_point(
         )
 
         old_reg_param_opt = reg_params_opt[it.multi_index]
-        old_initial_cond_fpe = (m, q, sigma)
+        old_initial_cond_fpe = (m, q, V)
 
         if it.multi_index[0] == 0:
             old_reg_param_opt_begin_delta_sweep = reg_params_opt[it.multi_index]
-            old_initial_cond_fpe_begin_delta_sweep = (m, q, sigma)
+            old_initial_cond_fpe_begin_delta_sweep = (m, q, V)
 
         for kdx in range(n_observables):
             funs_values[kdx][it.multi_index] = out_values[kdx]
@@ -311,7 +311,7 @@ def sweep_eps_delta_out_optimal_lambda_hub_param_fixed_point(
         (
             f_min_vals[it.multi_index],
             (reg_params_opt[it.multi_index], huber_params_opt[it.multi_index]),
-            (m, q, sigma),
+            (m, q, V),
             out_values,
         ) = find_optimal_reg_and_huber_parameter_function(
             f_func,
@@ -331,11 +331,11 @@ def sweep_eps_delta_out_optimal_lambda_hub_param_fixed_point(
         if it.multi_index[0] == 0:
             old_reg_param_opt_begin_delta_sweep = reg_params_opt[it.multi_index]
             old_huber_param_opt_begin_delta_sweep = huber_params_opt[it.multi_index]
-            old_initial_cond_fpe_begin_delta_sweep = (m, q, sigma)
+            old_initial_cond_fpe_begin_delta_sweep = (m, q, V)
 
         old_reg_param_opt = reg_params_opt[it.multi_index]
         old_huber_param_opt = huber_params_opt[it.multi_index]
-        old_initial_cond_fpe = (m, q, sigma)
+        old_initial_cond_fpe = (m, q, V)
 
         for kdx in range(n_observables):
             funs_values[kdx][it.multi_index] = out_values[kdx]

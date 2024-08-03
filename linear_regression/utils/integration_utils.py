@@ -439,8 +439,8 @@ def domains_sep_hyperboles_above(square_borders, hyp, arg_hyp):
     return domain_x, domain_y
 
 
-def line_borders_hinge_inside(m, q, Σ):
-    test_value_1 = (1 - Σ) / sqrt(q)
+def line_borders_hinge_inside(m, q, V):
+    test_value_1 = (1 - V) / sqrt(q)
 
     if test_value_1 > -BIG_NUMBER:
         return [(1, [test_value_1, 1 / sqrt(q)]), (-1, [-1 / sqrt(q), -test_value_1])]
@@ -448,8 +448,8 @@ def line_borders_hinge_inside(m, q, Σ):
         return [(1, [-BIG_NUMBER, 1 / sqrt(q)]), (-1, [-1 / sqrt(q), BIG_NUMBER])]
 
 
-def line_borders_hinge_above(m, q, Σ):
-    test_value_1 = (1 - Σ) / sqrt(q)
+def line_borders_hinge_above(m, q, V):
+    test_value_1 = (1 - V) / sqrt(q)
 
     if test_value_1 > -BIG_NUMBER:
         return [(1, [-BIG_NUMBER, test_value_1]), (-1, [-test_value_1, BIG_NUMBER])]

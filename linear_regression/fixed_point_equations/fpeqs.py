@@ -162,24 +162,24 @@ def fixed_point_finder_old(
     min_iter: int = MIN_ITER_FPE,
     max_iter: int = MAX_ITER_FPE,
 ):
-    m, q, sigma = initial_condition[0], initial_condition[1], initial_condition[2]
+    m, q, V = initial_condition[0], initial_condition[1], initial_condition[2]
     err = 1.0
     iter_nb = 0
     while err > abs_tol or iter_nb < min_iter:
-        m_hat, q_hat, Σ_hat = f_hat_func(m, q, sigma, **f_hat_kwargs)
-        new_m, new_q, new_sigma = f_func(m_hat, q_hat, Σ_hat, **f_kwargs)
+        m_hat, q_hat, V_hat = f_hat_func(m, q, V, **f_hat_kwargs)
+        new_m, new_q, new_V = f_func(m_hat, q_hat, V_hat, **f_kwargs)
 
-        err = max([abs(new_m - m), abs(new_q - q), abs(new_sigma - sigma)])
+        err = max([abs(new_m - m), abs(new_q - q), abs(new_V - V)])
 
         m = damped_update(new_m, m, BLEND_FPE)
         q = damped_update(new_q, q, BLEND_FPE)
-        sigma = damped_update(new_sigma, sigma, BLEND_FPE)
+        V = damped_update(new_V, V, BLEND_FPE)
 
         iter_nb += 1
         if iter_nb > max_iter:
             raise ConvergenceError("fixed_point_finder", iter_nb)
 
-    return m, q, sigma
+    return m, q, V
 
 
 def fixed_point_finder_adversiaral(
@@ -193,7 +193,7 @@ def fixed_point_finder_adversiaral(
     max_iter: int = MAX_ITER_FPE,
     verbose: bool = False,
 ):
-    m, q, sigma, P = (
+    m, q, V, P = (
         initial_condition[0],
         initial_condition[1],
         initial_condition[2],
@@ -204,35 +204,35 @@ def fixed_point_finder_adversiaral(
 
     if verbose:
         print(f"Fixed point Finder Adversarial called with:")
-        print(f"Initial conditions m = {m:.3e}, q = {q:.3e}, sigma = {sigma:.3e}, P = {P:.3e}")
+        print(f"Initial conditions m = {m:.3e}, q = {q:.3e}, V = {V:.3e}, P = {P:.3e}")
         print(f"Parameters f_func = {f_func}, f_hat_func = {f_hat_func}")
 
     while err > abs_tol or iter_nb < min_iter:
-        m_hat, q_hat, Σ_hat, P_hat = f_hat_func(m, q, sigma, P, **f_hat_kwargs)
+        m_hat, q_hat, V_hat, P_hat = f_hat_func(m, q, V, P, **f_hat_kwargs)
 
         if verbose and iter_nb % PRINT_EVERY == 0:
             print(
-                f"m_hat = {m_hat:.3e}, q_hat = {q_hat:.3e}, Σ_hat = {Σ_hat:.3e}, P_hat = {P_hat:.3e}"
+                f"m_hat = {m_hat:.3e}, q_hat = {q_hat:.3e}, V_hat = {V_hat:.3e}, P_hat = {P_hat:.3e}"
             )
 
-        new_m, new_q, new_sigma, new_P = f_func(m_hat, q_hat, Σ_hat, P_hat, **f_kwargs)
+        new_m, new_q, new_V, new_P = f_func(m_hat, q_hat, V_hat, P_hat, **f_kwargs)
 
         err = max(
             [
                 abs((new_m - m)),
                 abs((new_q - q)),
-                abs((new_sigma - sigma)),
+                abs((new_V - V)),
                 abs((new_P - P)),
             ]
         )
 
         m = damped_update(new_m, m, BLEND_FPE)
         q = damped_update(new_q, q, BLEND_FPE)
-        sigma = damped_update(new_sigma, sigma, BLEND_FPE)
+        V = damped_update(new_V, V, BLEND_FPE)
         P = damped_update(new_P, P, BLEND_FPE)
 
         if verbose and iter_nb % PRINT_EVERY == 0:
-            print(f"m = {m:.3e}, q = {q:.3e}, sigma = {sigma:.3e}, P = {P:.3e}")
+            print(f"m = {m:.3e}, q = {q:.3e}, V = {V:.3e}, P = {P:.3e}")
             print(f"err = {err:.3e}")
 
         iter_nb += 1
@@ -241,9 +241,9 @@ def fixed_point_finder_adversiaral(
 
     if verbose:
         print(f"Fixed point Finder Adversarial finished with:")
-        print(f"Final conditions m = {m:.3e}, q = {q:.3e}, sigma = {sigma:.3e}, P = {P:.3e}")
+        print(f"Final conditions m = {m:.3e}, q = {q:.3e}, V = {V:.3e}, P = {P:.3e}")
 
-    return m, q, sigma, P
+    return m, q, V, P
 
 
 def fixed_point_finder_loser(
@@ -258,12 +258,12 @@ def fixed_point_finder_loser(
     max_iter: int = MAX_ITER_FPE,
     control_variate: tuple[bool, bool, bool] = (True, True, True),
 ):
-    m, q, sigma = initial_condition[0], initial_condition[1], initial_condition[2]
+    m, q, V = initial_condition[0], initial_condition[1], initial_condition[2]
     err = 1.0
     iter_nb = 0
     while err > abs_tol or iter_nb < min_iter:
-        m_hat, q_hat, Σ_hat = f_hat_func(m, q, sigma, **f_hat_kwargs)
-        new_m, new_q, new_sigma = f_func(m_hat, q_hat, Σ_hat, **f_kwargs)
+        m_hat, q_hat, V_hat = f_hat_func(m, q, V, **f_hat_kwargs)
+        new_m, new_q, new_V = f_func(m_hat, q_hat, V_hat, **f_kwargs)
 
         errs = list()
         if control_variate[0]:
@@ -271,25 +271,25 @@ def fixed_point_finder_loser(
         if control_variate[1]:
             errs.append(abs(new_q - q))
         if control_variate[2]:
-            errs.append(abs(new_sigma - sigma))
+            errs.append(abs(new_V - V))
 
         err = max(errs)
 
         m = damped_update(new_m, m, BLEND_FPE)
         q = damped_update(new_q, q, BLEND_FPE)
-        sigma = damped_update(new_sigma, sigma, BLEND_FPE)
+        V = damped_update(new_V, V, BLEND_FPE)
 
         iter_nb += 1
         if iter_nb > max_iter:
             raise ConvergenceError("fixed_point_finder", iter_nb)
 
     # print(
-    #     "\t\t\tm = {:.1e} Δm = {:.1e} q = {:.1e} Δq = {:.1e} Σ = {:.1e} ΔΣ = {:.1e} ".format(
-    #         m, abs(new_m - m), q, abs(new_q - q), sigma, abs(new_sigma - sigma)
+    #     "\t\t\tm = {:.1e} Δm = {:.1e} q = {:.1e} Δq = {:.1e} V = {:.1e} ΔV = {:.1e} ".format(
+    #         m, abs(new_m - m), q, abs(new_q - q), V, abs(new_V - V)
     #     )
     # )
 
-    return m, q, sigma
+    return m, q, V
 
 
 # implementation of the same as fixed_point_finder but using Anderson acceleration for the fixed point equation
@@ -303,7 +303,7 @@ def fixed_point_finder_loser(
 #     min_iter: int = MIN_ITER_FPE,
 #     max_iter: int = MAX_ITER_FPE,
 # ):
-#     m, q, sigma = initial_condition[0], initial_condition[1], initial_condition[2]
+#     m, q, V = initial_condition[0], initial_condition[1], initial_condition[2]
 #     err = 1.0
 #     iter_nb = 0
 #     for idx in range(max_iter):
@@ -314,7 +314,7 @@ def fixed_point_finder_loser(
 #         if iter_nb > min_iter:
 #             raise ConvergenceError("anderson_fixed_point_finder", iter_nb)
 
-#     return m, q, sigma
+#     return m, q, V
 
 
 def plateau_fixed_point_finder(

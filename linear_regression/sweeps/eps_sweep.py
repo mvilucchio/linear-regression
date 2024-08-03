@@ -72,18 +72,18 @@ def sweep_eps_fixed_point(
     for idx, eps in enumerate(epsilons):
         copy_f_hat_kwargs.update({"percentage": eps})
 
-        m, q, sigma = fixed_point_finder(
+        m, q, V = fixed_point_finder(
             f_func, f_hat_func, old_initial_cond, f_kwargs, copy_f_hat_kwargs
         )
 
-        old_initial_cond = tuple([m, q, sigma])
+        old_initial_cond = tuple([m, q, V])
 
         for jdx, (f, f_args, update_flag) in enumerate(zip(funs, funs_args, update_funs_args)):
             if update_flag:
                 f_args.update({"percentage": float(eps)})
-                out_list[jdx][idx] = f(m, q, sigma, **f_args)
+                out_list[jdx][idx] = f(m, q, V, **f_args)
             else:
-                out_list[jdx][idx] = f(m, q, sigma, **f_args)
+                out_list[jdx][idx] = f(m, q, V, **f_args)
 
     if decreasing:
         epsilons = epsilons[::-1]
@@ -171,7 +171,7 @@ def sweep_eps_optimal_lambda_fixed_point(
         (
             f_min_vals[idx],
             reg_params_opt[idx],
-            (m, q, sigma),
+            (m, q, V),
             out_values,
         ) = find_optimal_reg_param_function(
             f_func,
@@ -187,7 +187,7 @@ def sweep_eps_optimal_lambda_fixed_point(
             min_reg_param=min_reg_param,
         )
         old_reg_param_opt = reg_params_opt[idx]
-        old_initial_cond_fpe = (m, q, sigma)
+        old_initial_cond_fpe = (m, q, V)
 
         for jdx in range(n_observables):
             funs_values[jdx][idx] = out_values[jdx]
@@ -283,7 +283,7 @@ def sweep_eps_optimal_lambda_hub_param_fixed_point(
         (
             f_min_vals[idx],
             (reg_params_opt[idx], hub_params_opt[idx]),
-            (m, q, sigma),
+            (m, q, V),
             out_values,
         ) = find_optimal_reg_and_huber_parameter_function(
             f_func,
@@ -302,7 +302,7 @@ def sweep_eps_optimal_lambda_hub_param_fixed_point(
 
         old_reg_param_opt = reg_params_opt[idx]
         old_hub_param_opt = hub_params_opt[idx]
-        old_initial_cond_fpe = (m, q, sigma)
+        old_initial_cond_fpe = (m, q, V)
 
         for jdx in range(n_observables):
             funs_values[jdx][idx] = out_values[jdx]

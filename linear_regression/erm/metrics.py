@@ -61,6 +61,39 @@ def percentage_flipped_labels_estim(
     return mean(sign(xs @ w) != sign(xs_pertubed @ w))
 
 
+def percentage_flipped_labels_NLRF(
+    ys,
+    xs,
+    w,
+    wstar,
+    xs_pertubed,
+    projection_matrix=None,
+    non_linearity: callable = None,
+):
+    _, d = xs.shape
+    return mean(
+        sign(non_linearity(xs @ projection_matrix / sqrt(d)) @ w)
+        != sign(non_linearity(xs_pertubed @ projection_matrix / sqrt(d)) @ w)
+    )
+
+
+def percentage_flipped_labels_estim_nonlinear(
+    ys,
+    xs,
+    w,
+    wstar,
+    xs_pertubed,
+    hidden_model=False,
+    projection_matrix=None,
+):
+    if hidden_model:
+        if projection_matrix is None:
+            raise ValueError("Hidden model requires projection matrix")
+        return mean(sign(xs @ projection_matrix @ w) != sign(xs_pertubed @ projection_matrix @ w))
+
+    return mean(sign(xs @ w) != sign(xs_pertubed @ w))
+
+
 # Overlaps Estimation
 
 
