@@ -42,7 +42,7 @@ log_x = np.log10(ds)
 log_y = np.log10(min_val_mean)
 log_y_err = min_val_std / (min_val_mean * np.log(10))
 
-popt, pcov = curve_fit(linear_fit, log_x, log_y, sigma=log_y_err, absolute_sigma=True)
+popt, pcov = curve_fit(linear_fit, log_x, log_y, V=log_y_err, absolute_V=True)
 a, b = popt
 a_err, b_err = np.sqrt(np.diag(pcov))
 
