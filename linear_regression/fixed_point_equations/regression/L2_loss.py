@@ -48,7 +48,7 @@ def order_parameters_ridge(alpha, reg_param, delta_in, delta_out, percentage, be
 @njit(error_model="numpy", fastmath=True)
 def f_hat_L2_single_noise(m, q, V, alpha, delta):
     m_hat = alpha / (1 + V)
-    q_hat = alpha * (1 + q + delta - 2 * abs(m)) / ((1 + V) ** 2)
+    q_hat = alpha * (1 + q + delta - 2 * m) / ((1 + V) ** 2)
     V_hat = alpha / (1 + V)
     return m_hat, q_hat, V_hat
 

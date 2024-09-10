@@ -115,18 +115,27 @@ def multivariate_gaussian(x: ndarray, mean: ndarray, cov: ndarray) -> float:
     return exp(exponent) * normalization
 
 
-@vectorize("float64(float64, float64, float64)")
+# @vectorize("float64(float64, float64, float64)")
+# def damped_update(new, old, damping):
+#     """
+#     Damped update of old value with new value.
+#     the opertation that is performed is:
+#     damping * new + (1 - damping) * old
+#     """
+#     return damping * new + (1 - damping) * old
+
+
+@njit(error_model="numpy", fastmath=False)
 def damped_update(new, old, damping):
-    """
-    Damped update of old value with new value.
-    the opertation that is performed is:
-    damping * new + (1 - damping) * old
-    """
-    return damping * new + (1 - damping) * old
+    res = []
+    for i in range(len(new)):
+        res.append(damping * new[i] + (1 - damping) * old[i])
+    return res
 
 
 @njit(error_model="numpy", fastmath=False)
 def max_difference(x, y):
+    # print(x, type(x), y, type(y))
     max = -inf
     for i in range(len(x)):
         diff = abs(x[i] - y[i])

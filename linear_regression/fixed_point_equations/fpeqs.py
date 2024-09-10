@@ -54,7 +54,7 @@ def fixed_point_finder(
 
         err = error_function(new_x, x)
 
-        x = update_function(new_x, x, *args_update_function)
+        x = tuple(update_function(new_x, x, *args_update_function))
 
         iter_nb += 1
 
