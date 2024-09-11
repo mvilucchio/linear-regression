@@ -13,15 +13,10 @@ from mpi4py import MPI
 from itertools import product
 import os
 
-alpha_min, alpha_max, n_alpha_pts = 0.001, 100, 200
-reg_orders = [
-    1,
-    2,
-    3,
-    4,
-]
+alpha_min, alpha_max, n_alpha_pts = 0.005, 100, 500
+reg_orders = [1, 2, 3]
 epss = [0.1, 0.2, 0.3]
-reg_params = [1e-1, 1e-2, 1e-3]
+reg_params = [1e-1, 1e-2]
 pstars = [1, 2, 3]
 
 pairs = list(product(epss, reg_params, reg_orders, pstars))
@@ -74,8 +69,9 @@ else:
     initial_condition = (m, q, V, P)
 
 for jprime, alpha in enumerate(alphas):
-    j = jprime
-    # print("\033[91m" + f"SE {reg_order = }, {alpha = :.3e}" + "\033[0m")
+    # j = jprime
+    j = n_alpha_pts - jprime - 1
+    print("\033[91m" + f"SE {reg_order = }, {alpha = :.3e}" + "\033[0m")
 
     f_kwargs = {"reg_param": reg_param, "reg_order": reg_order, "pstar": 1}
     f_hat_kwargs = {"alpha": alpha, "eps_t": eps_t}
@@ -86,10 +82,10 @@ for jprime, alpha in enumerate(alphas):
         initial_condition,
         f_kwargs,
         f_hat_kwargs,
-        abs_tol=1e-7,
+        abs_tol=1e-6,
         min_iter=10,
         args_update_function=(0.4,),
-        max_iter=1_000_000,
+        max_iter=10_000_000,
     )
 
     initial_condition = (ms_found[j], qs_found[j], Vs_found[j], Ps_found[j])

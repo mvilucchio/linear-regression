@@ -62,7 +62,9 @@ def fixed_point_finder(
             print_status_fixed_point(iter_nb, x, err)
 
         if iter_nb > max_iter:
-            raise ConvergenceError("fixed_point_finder", iter_nb)
+            raise ConvergenceError(
+                f"fixed_point_finder with {f_kwargs} and {f_hat_kwargs}", iter_nb
+            )
 
     if verbose:
         print("Final result fixed_point_finder: ", end="")
