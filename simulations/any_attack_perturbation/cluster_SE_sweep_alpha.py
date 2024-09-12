@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.aux_functions.misc import classification_adversarial_error
@@ -13,9 +12,9 @@ from mpi4py import MPI
 from itertools import product
 import os
 
-alpha_min, alpha_max, n_alpha_pts = 0.005, 100, 500
-reg_orders = [1, 2, 3]
+alpha_min, alpha_max, n_alpha_pts = 0.005, 1, 300
 epss = [0.1, 0.2, 0.3]
+reg_orders = [1, 2, 3]
 reg_params = [1e-1, 1e-2]
 pstars = [1, 2, 3]
 
@@ -29,12 +28,12 @@ assert len(pairs) >= size
 eps_t, reg_param, reg_order, pstar = pairs[rank]
 eps_g = eps_t
 
-data_folder_SE = "./data/SE_any_norm"
+data_folder_SE = "./data/SE_alpha_sweep"
 
 if not exists(data_folder_SE):
     os.makedirs(data_folder_SE)
 
-file_name = f"SE_data_pstar_{pstar}_reg_order_{{}}_pstar_{pstar}_alpha_{alpha_min:.3f}_{alpha_max:.3f}_reg_param_{reg_param:.1e}_eps_t_g_{eps_t:.1e}_{eps_g:.1e}.csv"
+file_name = f"SE_alpha_sweep_pstar_{pstar}_reg_order_{reg_order}_alpha_{alpha_min:.3f}_{alpha_max:.3f}_reg_param_{reg_param:.1e}_eps_{eps_t:.1e}.csv"
 
 alphas = np.logspace(np.log10(alpha_min), np.log10(alpha_max), n_alpha_pts)
 
@@ -68,12 +67,12 @@ else:
     m, q, V, P = (0.6604, 13.959, 25767.13, 1.364)
     initial_condition = (m, q, V, P)
 
-for jprime, alpha in enumerate(alphas):
-    # j = jprime
-    j = n_alpha_pts - jprime - 1
-    print("\033[91m" + f"SE {reg_order = }, {alpha = :.3e}" + "\033[0m")
+print(f"Starting the sweep for {reg_order = }, {reg_param = }, {pstar = }, {eps_t = }")
 
-    f_kwargs = {"reg_param": reg_param, "reg_order": reg_order, "pstar": 1}
+for jprime, alpha in enumerate(reversed(alphas)):
+    j = n_alpha_pts - jprime - 1
+
+    f_kwargs = {"reg_param": reg_param, "reg_order": reg_order, "pstar": pstar}
     f_hat_kwargs = {"alpha": alpha, "eps_t": eps_t}
 
     ms_found[j], qs_found[j], Vs_found[j], Ps_found[j] = fixed_point_finder(
@@ -96,6 +95,9 @@ for jprime, alpha in enumerate(alphas):
     )
     gen_errors_se[j] = np.arccos(ms_found[j] / np.sqrt(qs_found[j])) / np.pi
 
+print(f"Finished the sweep for {reg_order = }, {reg_param = }, {pstar = }, {eps_t = }")
+
+# Save data
 data = {
     "alpha": alphas,
     "m": ms_found,
@@ -111,11 +113,11 @@ data = {
     "generalisation_error": gen_errors_se,
 }
 
-with open(join(data_folder_SE, file_name.format(reg_order)), "wb") as f:
+with open(join(data_folder_SE, file_name), "wb") as f:
     data_array = np.column_stack([data[key] for key in data.keys()])
     header = ",".join(data.keys())
     np.savetxt(
-        join(data_folder_SE, file_name.format(reg_order)),
+        join(data_folder_SE, file_name),
         data_array,
         header=header,
         delimiter=",",

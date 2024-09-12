@@ -27,12 +27,12 @@ assert len(pairs) >= size
 
 alpha, reg_param, reg_order, pstar = pairs[rank]
 
-data_folder_SE = "./data/SE_any_norm"
+data_folder_SE = "./data/SE_eps_sweep"
 
 if not exists(data_folder_SE):
     os.makedirs(data_folder_SE)
 
-file_name = f"SE_data_eps_sweep_pstar_{pstar}_reg_order_{{}}_pstar_{pstar}_alpha_{alpha:.3f}_reg_param_{reg_param:.1e}_eps_{{}}_{{}}.csv"
+file_name = f"SE_eps_sweep_pstar_{pstar}_reg_order_{reg_order}_alpha_{alpha:.3f}_reg_param_{reg_param:.1e}_eps_{eps_min:.2f}_{eps_max:.2f}.csv"
 
 epss = np.linspace(eps_min, eps_max, n_eps_pts)
 
@@ -72,9 +72,8 @@ print(
 
 for jprime, eps in enumerate(epss):
     j = jprime
-    # j = n_eps_pts - jprime - 1
 
-    f_kwargs = {"reg_param": reg_param, "reg_order": reg_order, "pstar": 1}
+    f_kwargs = {"reg_param": reg_param, "reg_order": reg_order, "pstar": pstar}
     f_hat_kwargs = {"alpha": alpha, "eps_t": eps}
 
     ms_found[j], qs_found[j], Vs_found[j], Ps_found[j] = fixed_point_finder(
@@ -101,6 +100,7 @@ print(
     f"Finished the sweep for alpha = {alpha}, reg_param = {reg_param}, reg_order = {reg_order}, pstar = {pstar}"
 )
 
+# Save the data
 data = {
     "eps": epss,
     "m": ms_found,
@@ -116,11 +116,11 @@ data = {
     "generalisation_error": gen_errors_se,
 }
 
-with open(join(data_folder_SE, file_name.format(reg_order)), "wb") as f:
+with open(join(data_folder_SE, file_name), "wb") as f:
     data_array = np.column_stack([data[key] for key in data.keys()])
     header = ",".join(data.keys())
     np.savetxt(
-        join(data_folder_SE, file_name.format(reg_order)),
+        join(data_folder_SE),
         data_array,
         header=header,
         delimiter=",",
