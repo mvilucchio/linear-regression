@@ -33,7 +33,7 @@ data_folder_SE = "./data/SE_reg_order_sweep"
 if not exists(data_folder_SE):
     os.makedirs(data_folder_SE)
 
-file_name = f"SE_eps_sweep_pstar_{pstar}_reg_order_{reg_order_min:.1f}_{reg_order_max:.1f}_alpha_{alpha:.3f}_reg_param_{reg_param:.1e}_eps_{eps_t:.2f}.csv"
+file_name = f"SE_reg_order_sweep_pstar_{pstar}_reg_order_{reg_order_min:.1f}_{reg_order_max:.1f}_alpha_{alpha:.3f}_reg_param_{reg_param:.1e}_eps_{eps_t:.2f}.csv"
 
 reg_orders = np.linspace(reg_order_min, reg_order_max, n_reg_orders)
 
@@ -104,13 +104,13 @@ data = {
     "generalisation_error": gen_errors_se,
 }
 
-with open(join(data_folder_SE, file_name), "wb") as f:
-    data_array = np.column_stack([data[key] for key in data.keys()])
-    header = ",".join(data.keys())
-    np.savetxt(
-        join(data_folder_SE),
-        data_array,
-        header=header,
-        delimiter=",",
-        comments="",
-    )
+
+data_array = np.column_stack([data[key] for key in data.keys()])
+header = ",".join(data.keys())
+np.savetxt(
+    join(data_folder_SE, file_name),
+    data_array,
+    header=header,
+    delimiter=",",
+    comments="",
+)

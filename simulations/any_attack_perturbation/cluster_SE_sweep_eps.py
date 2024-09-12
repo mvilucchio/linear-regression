@@ -116,13 +116,13 @@ data = {
     "generalisation_error": gen_errors_se,
 }
 
-with open(join(data_folder_SE, file_name), "wb") as f:
-    data_array = np.column_stack([data[key] for key in data.keys()])
-    header = ",".join(data.keys())
-    np.savetxt(
-        join(data_folder_SE),
-        data_array,
-        header=header,
-        delimiter=",",
-        comments="",
-    )
+
+data_array = np.column_stack([data[key] for key in data.keys()])
+header = ",".join(data.keys())
+np.savetxt(
+    join(data_folder_SE, file_name),
+    data_array,
+    header=header,
+    delimiter=",",
+    comments="",
+)
