@@ -38,13 +38,13 @@ def log_log_linear_fit(x, y, base=10, return_points=False, extend_percent=0.1):
         return m, coefficient
 
 
-alpha_min, alpha_max, n_alpha_pts = 0.01, 1, 200
-reg_orders = [1, 2, 3, 4]
+alpha_min, alpha_max, n_alpha_pts = 0.005, 1, 250
+reg_orders = [1, 2, 3]
 eps_t = 0.3
 eps_g = eps_t
-reg_param = 1e-2
+reg_param = 1e-3
 pstar = 1
-alpha_cutoff = 0.01
+alpha_cutoff = 0.008
 
 run_experiments = True
 
@@ -67,6 +67,9 @@ if __name__ == "__main__":
             Phats_found = np.empty((n_alpha_pts,))
             Vhats_found = np.empty((n_alpha_pts,))
 
+            gen_error_found = np.empty((n_alpha_pts,))
+            adversarial_error_found = np.empty((n_alpha_pts,))
+
             if reg_order == 1:
                 m, q, V, P = (4.809, 61.102, 318.050, 4.514)
                 initial_condition = (m, q, V, P)
@@ -88,7 +91,9 @@ if __name__ == "__main__":
                 j = n_alpha_pts - jprime - 1
                 print("\033[91m" + f"SE {reg_order = }, {alpha = :.3e}" + "\033[0m")
 
-                f_kwargs = {"reg_param": reg_param, "reg_order": reg_order, "pstar": 1}
+                print(f"Initial condition: {initial_condition}")
+
+                f_kwargs = {"reg_param": reg_param, "reg_order": reg_order, "pstar": pstar}
                 f_hat_kwargs = {"alpha": alpha, "eps_t": eps_t}
 
                 ms_found[j], qs_found[j], Vs_found[j], Ps_found[j] = fixed_point_finder(
@@ -99,7 +104,7 @@ if __name__ == "__main__":
                     f_hat_kwargs,
                     abs_tol=1e-6,
                     min_iter=10,
-                    args_update_function=(0.2,),
+                    args_update_function=(0.05,),
                 )
 
                 if jprime == 0:
@@ -108,6 +113,11 @@ if __name__ == "__main__":
 
                 initial_condition = (ms_found[j], qs_found[j], Vs_found[j], Ps_found[j])
 
+                gen_error_found[j] = np.arccos(ms_found[j] / np.sqrt(qs_found[j])) / np.pi
+                adversarial_error_found[j] = classification_adversarial_error(
+                    ms_found[j], qs_found[j], Ps_found[j], eps_g, pstar
+                )
+
                 mhats_found[j], qhats_found[j], Vhats_found[j], Phats_found[j] = (
                     f_hat_Logistic_no_noise_Linf_adv_classif(
                         ms_found[j], qs_found[j], Vs_found[j], Ps_found[j], eps_t, alpha
@@ -115,30 +125,28 @@ if __name__ == "__main__":
                 )
 
             data = {
-                "alphas": alphas_se,
-                "ms_found": ms_found,
-                "qs_found": qs_found,
-                "Vs_found": Vs_found,
-                "Ps_found": Ps_found,
-                "mhats_found": mhats_found,
-                "qhats_found": qhats_found,
-                "Vhats_found": Vhats_found,
-                "Phats_found": Phats_found,
+                "alpha": alphas_se,
+                "m": ms_found,
+                "q": qs_found,
+                "V": Vs_found,
+                "P": Ps_found,
+                "mhat": mhats_found,
+                "qhat": qhats_found,
+                "Vhat": Vhats_found,
+                "Phat": Phats_found,
+                "gen_error": gen_error_found,
+                "adversarial_error": adversarial_error_found,
             }
 
-            with open(join(data_folder, file_name.format(reg_order)), "rb") as f:
-                # Create the array from the data in the order of the keys
-                data_array = np.column_stack([data[key] for key in data.keys()])
-                # Create the header for the csv file
-                header = ",".join(data.keys())
-                # Save the file using np.savetxt
-                np.savetxt(
-                    join(data_folder, file_name.format(reg_order)),
-                    data_array,
-                    delimiter=",",
-                    header=header,
-                    comments="",
-                )
+            data_array = np.column_stack([data[key] for key in data.keys()])
+            header = ",".join(data.keys())
+            np.savetxt(
+                join(data_folder, file_name.format(reg_order)),
+                data_array,
+                delimiter=",",
+                header=header,
+                comments="",
+            )
 
     plt.figure(figsize=(10, 2.5 * len(reg_orders)))
     for i, reg_order in enumerate(reg_orders):
@@ -149,13 +157,19 @@ if __name__ == "__main__":
 
         ms_se = data_se[:, 1]
         qs_se = data_se[:, 2]
-        ps_se = data_se[:, 3]
-        Vs_se = data_se[:, 4]
+        Vs_se = data_se[:, 3]
+        ps_se = data_se[:, 4]
 
         mhats_se = data_se[:, 5]
         qhats_se = data_se[:, 6]
-        phats_se = data_se[:, 7]
-        Vhats_se = data_se[:, 8]
+        Vhats_se = data_se[:, 7]
+        phats_se = data_se[:, 8]
+
+        adversarial_error = [
+            classification_adversarial_error(m, q, p, eps_g, pstar)
+            for m, q, p in zip(ms_se, qs_se, ps_se)
+        ]
+        generalisation_error = [np.arccos(m / np.sqrt(q)) / np.pi for m, q in zip(ms_se, qs_se)]
 
         overlaps_se = [ms_se, qs_se, ps_se, Vs_se, ms_se / np.sqrt(qs_se)]
         overlaps_hats_se = [mhats_se, qhats_se, phats_se, Vhats_se]
@@ -171,19 +185,31 @@ if __name__ == "__main__":
                 linestyle="-",
                 color=f"C{j}",
                 alpha=0.5,
-                label=names[j],
+                # label=names[j],
             )
-            # ones_to_keep = np.where(alphas_se < alpha_cutoff)
-            # m, c, (x_lin, y_lin) = log_log_linear_fit(
-            #     alphas_se[ones_to_keep], ov[ones_to_keep], return_points=True
-            # )
-            # plt.plot(
-            #     x_lin,
-            #     y_lin,
-            #     linestyle="--",
-            #     color=f"C{j}",
-            #     label=f"{names[j]} {c:.1f} $\\alpha^{{{m:.2f}}}$",
-            # )
+            ones_to_keep = np.where(alphas_se < alpha_cutoff)
+            m, c, (x_lin, y_lin) = log_log_linear_fit(
+                alphas_se[ones_to_keep], ov[ones_to_keep], return_points=True
+            )
+            plt.plot(
+                x_lin,
+                y_lin,
+                linestyle="--",
+                color=f"C{j}",
+                label=f"{names[j]} {c:.1f} $\\alpha^{{{m:.2f}}}$",
+            )
+        # plt.plot(
+        #     alphas_se,
+        #     adversarial_error,
+        #     linestyle="--",
+        #     color="black",
+        # )
+        # plt.plot(
+        #     alphas_se,
+        #     generalisation_error,
+        #     linestyle="--",
+        #     color="black",
+        # )
 
         plt.subplot(len(reg_orders), 2, i * 2 + 2)
         for j, hat_ov in enumerate(overlaps_hats_se):
@@ -193,19 +219,19 @@ if __name__ == "__main__":
                 linestyle="-",
                 color=f"C{j}",
                 alpha=0.5,
-                label=names_hat[j],
+                # label=names_hat[j],
             )
-            # ones_to_keep = np.where(alphas_se < alpha_cutoff)
-            # m, c, (x_lin, y_lin) = log_log_linear_fit(
-            #     alphas_se[ones_to_keep], hat_ov[ones_to_keep], return_points=True
-            # )
-            # plt.plot(
-            #     x_lin,
-            #     y_lin,
-            #     linestyle="--",
-            #     color=f"C{j}",
-            #     label=f"{names_hat[j]} {c:.1f} $\\alpha^{{{m:.2f}}}$",
-            # )
+            ones_to_keep = np.where(alphas_se < alpha_cutoff)
+            m, c, (x_lin, y_lin) = log_log_linear_fit(
+                alphas_se[ones_to_keep], hat_ov[ones_to_keep], return_points=True
+            )
+            plt.plot(
+                x_lin,
+                y_lin,
+                linestyle="--",
+                color=f"C{j}",
+                label=f"{names_hat[j]} {c:.1f} $\\alpha^{{{m:.2f}}}$",
+            )
 
         names = [f"Non Hat reg_order = {reg_order:.1f}", f"Hat reg_order = {reg_order:.1f}"]
         limits = [[0.2, 0.5], [0.2, 0.5]]

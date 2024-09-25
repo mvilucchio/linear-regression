@@ -8,18 +8,18 @@ from linear_regression.fixed_point_equations.regularisation.pstar_attacks_Lr_reg
 from linear_regression.fixed_point_equations.classification.Adv_train_p_norm import (
     f_hat_Logistic_no_noise_Linf_adv_classif,
 )
-import pickle
 from os.path import join, exists
 
+IMGS_FOLDER = "./imgs"
 
-alpha_min, alpha_max, n_alpha_pts = 0.05, 1, 50
+alpha_min, alpha_max, n_alpha_pts = 0.008, 1, 200
 reg_orders = [1, 2, 3]
 eps_t = 0.3
 eps_g = eps_t
-reg_param = 1e-2
+reg_param = 1e-3
 pstar = 1
 
-run_experiments = False
+run_experiments = True
 
 data_folder = "./data/SE_any_norm"
 
@@ -56,12 +56,14 @@ if __name__ == "__main__":
                 initial_condition = (m, q, V, P)
 
             for jprime, alpha in enumerate(reversed(alphas_se)):
-                j = jprime
+                # j = jprime
                 j = n_alpha_pts - jprime - 1
                 print("\033[91m" + f"SE {reg_order = }, {alpha = :.3e}" + "\033[0m")
 
                 f_kwargs = {"reg_param": reg_param, "reg_order": reg_order, "pstar": 1}
                 f_hat_kwargs = {"alpha": alpha, "eps_t": eps_t}
+
+                print(f"Initial condition: {initial_condition}")
 
                 ms_found[j], qs_found[j], Vs_found[j], Ps_found[j] = fixed_point_finder(
                     f_Lr_regularisation_Lpstar_attack,
@@ -69,8 +71,9 @@ if __name__ == "__main__":
                     initial_condition,
                     f_kwargs,
                     f_hat_kwargs,
-                    abs_tol=1e-7,
+                    abs_tol=1e-6,
                     min_iter=10,
+                    args_update_function=(0.2,),
                 )
 
                 initial_condition = (ms_found[j], qs_found[j], Vs_found[j], Ps_found[j])
@@ -149,7 +152,7 @@ if __name__ == "__main__":
         )
 
     names = ["$E_{\\mathrm{gen}}$", "$E_{\\mathrm{adv}}$", "$E_{\\mathrm{bnd}}$"]
-    limits = [[0.2, 0.5], [0.2, 0.5], [0.4, 5], [0.4, 50], [0.1, 5], [0, 5e2]]
+    limits = [[0.2, 0.5], [0.2, 0.5], [0.4, 5]]
     for i, (nn, lms) in enumerate(zip(names, limits)):
         plt.subplot(1, 3, i + 1)
         plt.xlabel(r"$\alpha$")
