@@ -11,23 +11,18 @@ from os.path import join, exists
 from mpi4py import MPI
 from itertools import product
 import os
-from scipy.optimize import minimize
+from scipy.optimize import minimize_scalar
 
-XATOL = 1e-7
-FATOL = 1e-7
-MIN_REG_PARAM = 1e-7
+XATOL = 1e-8
+MIN_REG_PARAM = 1e-6
 
-reg_order_min, reg_order_max, n_reg_orders = 1, 3, 50
-epss = [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
-# epss = [0.1]
+reg_order_min, reg_order_max, n_reg_orders = 1, 3, 100
+epss = [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
 alpha = [0.01, 0.1, 1.0]
 pstar = 1
 
 size = MPI.COMM_WORLD.Get_size()
 rank = MPI.COMM_WORLD.Get_rank()
-
-# size = 1
-# rank = 0
 
 pairs = list(product(epss, alpha))
 
@@ -61,24 +56,31 @@ estim_errors_se = np.empty((n_reg_orders,))
 adversarial_errors_found = np.empty((n_reg_orders,))
 gen_errors_se = np.empty((n_reg_orders,))
 
-m, q, V, P = (0.348751, 9.11468, 270.038, 0.615440)
-reg_param_init = 1e-1
+if eps_t >= 0.4:
+    m, q, V, P = (7.8978e-01, 1.0551e01, 6.112215e04, 2.80915e00)
+elif eps_t == 0.3:
+    m, q, V, P = (7.7330e-01, 1.0174e01, 6.471090e04, 2.79626e00)
+elif eps_t == 0.2:
+    m, q, V, P = (7.56958e-01, 9.8140914e00, 6.842831e04, 2.78304e00)
+else:
+    m, q, V, P = (0.7048751, 10.11468, 500.038, 1.015440)
+
+reg_param_init = 1e-3
 initial_condition = (m, q, V, P)
 
 for jprime, reg_order in enumerate(reversed(reg_orders)):
-    # j = jprime
     j = n_reg_orders - jprime - 1
 
-    print(f"Starting the sweep for reg_order = {reg_order}, alpha = {alpha}, eps_t = {eps_t}")
+    print(f"Starting reg_order = {reg_order}, alpha = {alpha}, eps_t = {eps_t}")
 
     f_kwargs = {"reg_param": reg_param_init / alpha, "reg_order": reg_order, "pstar": pstar}
     f_hat_kwargs = {"alpha": alpha, "eps_t": eps_t}
 
-    def minimize_fun(reg_param):
+    def minimize_fun(reg_param: float, alpha: float):
         print(
-            f"Testing reg_param = {reg_param}. Optimising for reg_order = {reg_order}, alpha = {alpha}, eps_t = {eps_t}"
+            f"Testing reg_param = {reg_param}, for reg_order = {reg_order}, alpha = {alpha}, eps_t = {eps_t}"
         )
-        f_kwargs.update({"reg_param": float(reg_param / alpha)})
+        f_kwargs.update({"reg_param": reg_param / alpha})
         m, q, V, P = fixed_point_finder(
             f_Lr_regularisation_Lpstar_attack,
             f_hat_Logistic_no_noise_Linf_adv_classif,
@@ -87,18 +89,17 @@ for jprime, reg_order in enumerate(reversed(reg_orders)):
             f_hat_kwargs,
             abs_tol=1e-7,
             min_iter=10,
-            args_update_function=(0.4,),
+            args_update_function=(0.2,),
             max_iter=10_000_000,
         )
         return classification_adversarial_error(m, q, P, eps_g, pstar)
 
-    bnds = [(MIN_REG_PARAM, None)]
-    obj = minimize(
+    obj = minimize_scalar(
         minimize_fun,
-        x0=reg_param_init,
-        method="Nelder-Mead",
-        bounds=bnds,
-        options={"xatol": XATOL, "fatol": FATOL},
+        args=(alpha,),
+        method="bounded",
+        bounds=(MIN_REG_PARAM, 1e1),
+        options={"xatol": XATOL, "maxiter": 1000},
     )
 
     if obj.success:
@@ -116,9 +117,9 @@ for jprime, reg_order in enumerate(reversed(reg_orders)):
             initial_condition,
             f_kwargs,
             f_hat_kwargs,
-            abs_tol=1e-6,
+            abs_tol=1e-8,
             min_iter=10,
-            args_update_function=(0.2,),
+            args_update_function=(0.4,),
             max_iter=10_000_000,
         )
 
@@ -135,6 +136,8 @@ for jprime, reg_order in enumerate(reversed(reg_orders)):
 
     else:
         print(f"Optimisation failed for reg_order = {reg_order}, alpha = {alpha}, eps_t = {eps_t}")
+
+print(f"Saving data for alpha = {alpha}, eps_t = {eps_t}")
 
 # Save the data
 data = {
