@@ -4,7 +4,10 @@ from linear_regression.data.generation import (
     measure_gen_no_noise_clasif,
     data_generation,
 )
-from linear_regression.erm.metrics import percentage_flipped_labels_estim
+from linear_regression.erm.metrics import (
+    percentage_flipped_labels_estim,
+    percentage_error_from_true,
+)
 from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic,
     find_coefficients_Logistic_adv,
@@ -43,8 +46,8 @@ assert len(markers) >= len(ps)
 
 data_folder = "./data"
 img_folder = "./imgs"
-file_name = f"ERM_linear_features_adv_transition_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}.pkl"
-img_name = f"random_linear_features_alpha_{alpha:.2f}_gamma_{gamma:.2f}_ps_{*ps,}.png"
+file_name = f"ERM_linear_features_adv_transition_true_label_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}.pkl"
+img_name = f"random_linear_features_true_label_alpha_{alpha:.2f}_gamma_{gamma:.2f}_ps_{*ps,}.png"
 
 for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
     for n_hidden_features, c in zip(tqdm(dimensions, desc="dim", leave=False), colors):
@@ -109,7 +112,7 @@ for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
                         yhat_gen, cs_gen, w, F, wstar, eps_i, p
                     )
 
-                    flipped = percentage_flipped_labels_estim(
+                    flipped = percentage_error_from_true(
                         yhat_gen,
                         cs_gen,
                         w,
@@ -180,14 +183,14 @@ for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
             # label=f"p = {p}",
         )
 
-    out = np.empty_like(eps_dense)
+    # out = np.empty_like(eps_dense)
 
-    for i, eps_i in enumerate(eps_dense):
-        out[i] = percentage_flipped_linear_features_space_true_min(
-            mean_m, mean_q, mean_rho, eps_i, p, gamma
-        )
+    # for i, eps_i in enumerate(eps_dense):
+    #     out[i] = percentage_flipped_linear_features_space_true_min(
+    #         mean_m, mean_q, mean_rho, eps_i, p, gamma
+    #     )
 
-    plt.plot(eps_dense, out, linestyle=ls, color="black", linewidth=0.5)
+    # plt.plot(eps_dense, out, linestyle=ls, color="black", linewidth=0.5)
 
 plt.title(
     f"Random Features $\\alpha$ = {alpha:.1f} $\\gamma$ = {gamma:.1f} $\\lambda$ = {reg_param:.1e}"

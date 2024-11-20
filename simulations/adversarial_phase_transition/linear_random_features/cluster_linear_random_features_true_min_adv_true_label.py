@@ -3,7 +3,10 @@ from linear_regression.data.generation import (
     measure_gen_no_noise_clasif,
     data_generation,
 )
-from linear_regression.erm.metrics import percentage_flipped_labels_estim
+from linear_regression.erm.metrics import (
+    percentage_flipped_labels_estim,
+    percentage_error_from_true,
+)
 from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic,
     find_coefficients_Logistic_adv,
@@ -17,12 +20,12 @@ from itertools import product
 
 alphas = [0.25, 0.5, 1.0, 1.5, 2.0]
 gammas = [0.25, 0.5, 1.0, 1.5, 2.0]
-reg_params = [0.1, 1.0]
-ps = [2, 3, "inf"]
+reg_params = [0.01, 1, 1.0]
+ps = ["inf"]
 
 eps_training = 0.0
 pstar_t = 1.0
-dimensions = [int(2**a) for a in range(9, 12)]
+dimensions = [int(2**a) for a in range(9, 11)]
 reps = 10
 
 rank = MPI.COMM_WORLD.Get_rank()
@@ -37,7 +40,7 @@ assert len(params_list) <= size
 alpha, gamma, reg_param, p = params_list[rank]
 
 data_folder = "./data"
-file_name = f"ERM_linear_features_adv_transition_n_features_{{:d}}_alpha_{alpha:.1f}_gamma_{gamma:.1f}_reps_{reps:d}_p_{p}_reg_param_{reg_param:.1e}_eps_t_{eps_training:.2f}_pstar_t_{pstar_t}.pkl"
+file_name = f"ERM_linear_features_adv_transition_true_label_n_features_{{:d}}_alpha_{alpha:.1f}_gamma_{gamma:.1f}_reps_{reps:d}_p_{p}_reg_param_{reg_param:.1e}_eps_t_{eps_training:.2f}_pstar_t_{pstar_t}.pkl"
 
 for n_hidden_features in tqdm(dimensions, desc="dim", leave=False):
     n_features = int(n_hidden_features / gamma)
@@ -92,7 +95,7 @@ for n_hidden_features in tqdm(dimensions, desc="dim", leave=False):
                 yhat_gen, cs_gen, w, F, wstar, eps_i, p
             )
 
-            flipped = percentage_flipped_labels_estim(
+            flipped = percentage_error_from_true(
                 yhat_gen,
                 cs_gen,
                 w,
