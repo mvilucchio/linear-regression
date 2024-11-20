@@ -61,6 +61,23 @@ def percentage_flipped_labels_estim(
     return mean(sign(xs @ w) != sign(xs_pertubed @ w))
 
 
+def percentage_error_from_true(
+    ys,
+    xs,
+    w,
+    wstar,
+    xs_pertubed,
+    hidden_model=False,
+    projection_matrix=None,
+):
+    if hidden_model:
+        if projection_matrix is None:
+            raise ValueError("Hidden model requires projection matrix")
+        return mean(sign(ys) != sign(xs_pertubed @ projection_matrix @ w))
+
+    return mean(sign(ys) != sign(xs_pertubed @ w))
+
+
 def percentage_flipped_labels_NLRF(
     ys,
     xs,

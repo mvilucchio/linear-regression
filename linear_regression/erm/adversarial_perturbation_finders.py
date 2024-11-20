@@ -3,6 +3,7 @@ from cvxpy import Variable, Problem, Maximize, norm
 from jax import jit, grad, vmap
 from jax.lax import cond
 import jax.numpy as jnp
+from typing import Tuple, Optional, List
 from ..erm import (
     MAX_ITER_PDG,
     STEP_BLOCK_PDG,
@@ -19,7 +20,32 @@ def find_adversarial_perturbation_direct_space(
     wstar: ndarray,
     ε: float,
     p: float,
-):
+) -> ndarray:
+    """
+    Find adversarial perturbations in the direct input space using convex optimization.
+    Solves the problem: maximize w^T δ subject to ||δ||_p ≤ ε and δ ⊥ w*.
+    Uses CVXPY to find the optimal perturbation and applies it to each sample.
+
+    Parameters:
+    -----------
+    ys : ndarray of shape (n_samples,)
+        Labels (+1/-1) for each sample
+    xs : ndarray of shape (n_samples, n_features)
+        Input samples to perturb
+    w : ndarray of shape (n_features,)
+        Model weights
+    wstar : ndarray of shape (n_features,)
+        Vector to maintain orthogonality with perturbations
+    ε : float
+        Maximum p-norm of perturbations
+    p : float
+        Norm type (usually 2 or inf)
+
+    Returns:
+    --------
+    ndarray of shape (n_samples, n_features)
+        Adversarial perturbations for each sample
+    """
     _, d = xs.shape
     x = Variable(len(w))
 
@@ -41,7 +67,34 @@ def find_adversarial_perturbation_RandomFeatures_space(
     wstar: ndarray,
     ε: float,
     p: float,
-):
+) -> ndarray:
+    """
+    Find adversarial perturbations for a linear random features model using convex optimization.
+    Solves the problem: maximize (Fw)^T δ subject to ||δ||_p ≤ ε and δ ⊥ w*.
+    Uses CVXPY to find the optimal perturbation for the linearized model.
+
+    Parameters:
+    -----------
+    ys : ndarray of shape (n_samples,)
+        Labels (+1/-1) for each sample
+    cs : ndarray of shape (n_samples, n_features)
+        Input samples to perturb
+    w : ndarray of shape (n_random_features,)
+        Model weights in random feature space
+    F : ndarray of shape (n_features, n_random_features)
+        Random feature matrix
+    wstar : ndarray of shape (n_features,)
+        Vector to maintain orthogonality with perturbations
+    ε : float
+        Maximum p-norm of perturbations
+    p : float
+        Norm type (usually 2 or inf)
+
+    Returns:
+    --------
+    ndarray of shape (n_samples, n_features)
+        Adversarial perturbations for each sample
+    """
     _, d = cs.shape
     delta = Variable(d)
 
@@ -57,57 +110,86 @@ def find_adversarial_perturbation_RandomFeatures_space(
 
 
 def find_adversarial_perturbation_NLRF(
-    ys: ndarray,
-    cs: ndarray,
-    w: ndarray,
-    F: ndarray,
-    wstar: ndarray,
+    ys: jnp.ndarray,
+    cs: jnp.ndarray,
+    w: jnp.ndarray,
+    F: jnp.ndarray,
+    wstar: jnp.ndarray,
     ε: float,
     p: float,
     step_size: float = STEP_SIZE_PDG,
     abs_tol: float = TOL_PDG,
     step_block: int = STEP_BLOCK_PDG,
     max_iterations: int = MAX_ITER_PDG,
-    adv_pert: ndarray = None,
+    adv_pert: Optional[jnp.ndarray] = None,
     test_iters: int = TEST_ITERS_PDG,
     return_losses: bool = False,
-):
-    if adv_pert is None:
-        print("adv_pert is None")
-        adv_pert = jnp.zeros_like(cs)
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    """
+    Find adversarial perturbations using projected gradient ascent.
 
-    assert cs.shape == adv_pert.shape
+    Parameters:
+    -----------
+    ys : labels (+1/-1)
+    cs : input samples
+    w : model weights
+    F : random feature matrix
+    wstar : vector to maintain orthogonality with perturbations
+    ε : maximum p-norm of perturbations
+    p : norm type (usually 2 or inf)
+    step_size : learning rate for gradient ascent
+    abs_tol : tolerance for convergence
+    step_block : number of steps between convergence checks
+    max_iterations : maximum number of iterations
+    adv_pert : initial perturbation (optional)
+    test_iters : number of iterations for convergence test
+    return_losses : if True, return loss history
+
+    Returns:
+    --------
+    Tuple[jnp.ndarray, jnp.ndarray]:
+        - Final adversarial perturbations
+        - Either loss history (shape: (n_iterations, n_samples)) if return_losses=True
+          or final loss values (shape: (n_samples,)) if return_losses=False
+    """
+    if adv_pert is None:
+        adv_pert = jnp.zeros_like(cs)
+    elif cs.shape != adv_pert.shape:
+        raise ValueError("The shape of the adv_pert is not the same as cs.")
+
+    adv_pert = vec_alternating_projections(adv_pert, wstar, ε, p)
 
     _, d = cs.shape
+    all_losses = []
 
-    if return_losses:
-        losses = []
+    current_loss = vec_NLRF_data_perturb_loss(adv_pert, cs, ys, w, F, d)
+    all_losses.append(current_loss)
 
-    for i in range(max_iterations):
-        if return_losses:
-            losses.append([])
-
+    for _ in range(max_iterations):
         for _ in range(step_block):
-            if return_losses:
-                losses[i].append(vec_NLRF_data_perturb_loss(adv_pert, cs, ys, w, F, d))
-
             adv_pert = PGA_step_NLRF(adv_pert, cs, ys, w, wstar, F, d, step_size, ε, p)
 
-        all_current_loss_val = vec_NLRF_data_perturb_loss(adv_pert, cs, ys, w, F, d)
+        # Record loss after block update
+        current_loss = vec_NLRF_data_perturb_loss(adv_pert, cs, ys, w, F, d)
+        all_losses.append(current_loss)
 
-        tmp_adv_pert = adv_pert.copy()
-
+        # Check convergence
+        tmp_adv_pert = adv_pert
         for _ in range(test_iters):
             tmp_adv_pert = PGA_step_NLRF(tmp_adv_pert, cs, ys, w, wstar, F, d, step_size, ε, p)
 
-        all_temp_loss = vec_NLRF_data_perturb_loss(tmp_adv_pert, cs, ys, w, F, d)
+        test_loss = vec_NLRF_data_perturb_loss(tmp_adv_pert, cs, ys, w, F, d)
 
-        if jnp.max(jnp.abs(all_current_loss_val - all_temp_loss)) <= abs_tol:
+        if jnp.max(jnp.abs(current_loss - test_loss)) <= abs_tol:
             break
+
+    # Convert losses to array
+    losses = jnp.array(all_losses)  # Shape: (n_iterations, n_samples)
 
     if return_losses:
         return adv_pert, losses
-    return adv_pert
+    else:
+        return adv_pert, current_loss
 
 
 # ---------------------------------------------------------------------------- #
@@ -119,17 +201,16 @@ def find_adversarial_perturbation_NLRF(
 
 @jit
 def linear_NLRF_data_perturb_loss(δ, c, y, w, F, d: int):
-    return -y * jnp.dot(jnp.tanh((c + δ) @ F / jnp.sqrt(d)), w)
-
-
-# @jit
-# def linear_NLRF_data_perturb_loss(δ, c, y, w, F, d: int, activ_fun):
-#     return -y * jnp.dot(activ_fun((c + δ) @ F / jnp.sqrt(d)), w)
+    """Single sample loss function"""
+    feature = jnp.tanh((jnp.dot(c + δ, F)) / jnp.sqrt(d))
+    return -y * jnp.dot(feature, w)
 
 
 @jit
 def vec_NLRF_data_perturb_loss(δs, cs, ys, w, F, d: int):
-    return -ys * jnp.dot(jnp.tanh(((cs + δs) @ F) / jnp.sqrt(d)), w)
+    """Vectorized loss function for multiple samples"""
+    features = jnp.tanh((cs + δs) @ F / jnp.sqrt(d))
+    return -ys * (features @ w)
 
 
 grad_NLRF_data_perturb = jit(grad(linear_NLRF_data_perturb_loss, argnums=0))
@@ -138,98 +219,57 @@ vec_grad_NLRF_data_perturb = jit(vmap(grad_NLRF_data_perturb, in_axes=(0, 0, 0, 
 
 
 @jit
-def then_func(ops):
-    x, ε, norm_x_projected = ops
-    return ε * x / norm_x_projected
+def project_onto_orthogonal_space(z: jnp.ndarray, wstar: jnp.ndarray) -> jnp.ndarray:
+    """Project vector z onto the space orthogonal to wstar."""
+    wstar_normalized = wstar / jnp.sqrt(jnp.dot(wstar, wstar))
+    return z - jnp.dot(z, wstar_normalized) * wstar_normalized
 
 
 @jit
-def else_func(ops):
-    return ops[0]
+def project_onto_p_ball(z: jnp.ndarray, ε: float, p: float) -> jnp.ndarray:
+    """Project vector z onto the p-norm ball of radius ε."""
+    norm = jnp.sum(jnp.abs(z) ** p) ** (1 / p)
+    return cond(norm > ε, lambda x: ε * x[0] / x[1], lambda x: x[0], (z, norm))
 
 
-def project_and_normalize(z, wstar, ε, p):
-    z -= jnp.dot(z, wstar) * wstar / jnp.dot(wstar, wstar)
-    norm_x_projected = jnp.sum(jnp.abs(z) ** p) ** (1 / p)
+@jit
+def alternating_projections(z: jnp.ndarray, wstar: jnp.ndarray, ε: float, p: float) -> jnp.ndarray:
+    """
+    Apply alternating projections between orthogonality constraint and p-norm ball.
+    Uses multiple iterations to better approximate the projection onto the intersection.
+    """
+    n_projections = 7
 
-    return cond(norm_x_projected > ε, then_func, else_func, (z, ε, norm_x_projected))
+    for _ in range(n_projections):
+        z = project_onto_orthogonal_space(z, wstar)
+        z = project_onto_p_ball(z, ε, p)
+    return z
 
 
-vec_project_and_normalize = jit(vmap(project_and_normalize, in_axes=(0, None, None, None)))
+vec_alternating_projections = jit(vmap(alternating_projections, in_axes=(0, None, None, None)))
 
 
-# @jit
-def PGA_step_NLRF(δs, xs, ys, w, wstar, F, d: int, step_size: float, ε: float, p):
+def PGA_step_NLRF(
+    δs: jnp.ndarray,
+    xs: jnp.ndarray,
+    ys: jnp.ndarray,
+    w: jnp.ndarray,
+    wstar: jnp.ndarray,
+    F: jnp.ndarray,
+    d: int,
+    step_size: float,
+    ε: float,
+    p: float,
+) -> jnp.ndarray:
+    """
+    Single step of projected gradient ascent with proper handling of constraints.
+
+    1. Compute gradient
+    2. Project gradient onto orthogonal space (to maintain feasible direction)
+    3. Take step in projected gradient direction
+    4. Project result onto constraint set using alternating projections
+    """
     g = vec_grad_NLRF_data_perturb(δs, xs, ys, w, F, d)
-    return vec_project_and_normalize(δs + step_size * g, wstar, ε, p)
-
-
-# -------------------------------- linear loss ------------------------------- #
-# @jit
-# def total_loss_logistic(w, Xs, ys, reg_param):
-#     ys = ys.reshape(-1, 1) if ys.ndim == 1 else ys
-#     scores = jnp.matmul(Xs, w)
-#     loss_part = jnp.sum(jnp.log(1 + jnp.exp(-ys * scores)))
-#     reg_part = 0.5 * reg_param * jnp.dot(w, w)
-#     return loss_part + reg_part
-
-
-# @jit
-# def linear_classif_loss(x, y, w):
-#     return -y * jnp.dot(x, w)
-
-
-# vec_linear_classif_loss = jit(vmap(linear_classif_loss, in_axes=(0, 0, None)))
-# grad_linear_classif_loss = jit(grad(linear_classif_loss, argnums=0))
-# vec_grad_linear_classif_loss = jit(vmap(grad_linear_classif_loss, in_axes=(0, 0, None)))
-
-
-# # jitted_norm = jit(jnp.linalg.norm, static_argnums=["ord"])
-
-
-# @jit
-# def project_and_normalize(x, wstar, ε, p):
-#     x -= jnp.dot(x, wstar) * wstar / jnp.dot(wstar, wstar)
-#     norm_x_projected = jnp.sum(jnp.abs(x) ** p) ** (1 / p)
-#     # norm_x_projected = jitted_norm(x, ord=p)
-
-#     return jax.lax.cond(norm_x_projected > ε, then_func, else_func, (x, ε, norm_x_projected))
-
-
-# vec_project_and_normalize = jit(vmap(project_and_normalize, in_axes=(0, None, None, None)))
-
-
-# @jit
-# def PGA_step_NLRF(vs, ys, w, wstar, step_size, ε, p):
-#     g = vec_grad_linear_classif_loss(vs, ys, w)
-#     return vec_project_and_normalize(vs + step_size * g, wstar, ε, p)
-
-
-# # THERE IS A PROBLEM HERE IN THE IMPLEMENTATION
-# def projected_GA(ys, w, wstar, step_size, n_steps, ε, p, adv_perturbation=None):
-#     if adv_perturbation is None:
-#         adv_perturbation = jnp.zeros((len(ys), len(w)))
-
-#     for _ in range(n_steps):
-#         adv_perturbation = PGA_step_NLRF(adv_perturbation, ys, w, wstar, step_size, ε, p)
-#     return adv_perturbation
-
-
-# def check_if_additional_step_improves(adv_perturbation, ys, w, ε, p):
-#     loss_before = linear_classif_loss(adv_perturbation, ys, w)
-#     adv_perturbation_after = PGA_step_NLRF(adv_perturbation, ys, w, ε, p)
-#     loss_after = linear_classif_loss(adv_perturbation_after, ys, w)
-#     return loss_after < loss_before
-
-
-# def projected_GA_untill_convergence(
-#     ys, w, wstar, step_size, ε, p, adv_perturbation=None, step_block=100
-# ):
-#     if adv_perturbation is None:
-#         adv_perturbation = jnp.zeros((len(ys), len(w)))
-
-#     while not check_if_additional_step_improves(adv_perturbation, ys, w, ε, p):
-#         for _ in range(step_block):
-#             adv_perturbation = PGA_step_NLRF(adv_perturbation, ys, w, wstar, step_size, ε, p)
-
-#     return adv_perturbation
+    g_proj = vec_alternating_projections(g, wstar, ε, p)
+    δs_new = δs + step_size * g_proj
+    return vec_alternating_projections(δs_new, wstar, ε, p)
