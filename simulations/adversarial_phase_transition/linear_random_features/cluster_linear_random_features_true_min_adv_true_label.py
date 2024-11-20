@@ -17,6 +17,9 @@ import os
 import pickle
 from mpi4py import MPI
 from itertools import product
+import warnings
+
+warnings.filterwarnings("error")
 
 alphas = [0.25, 0.5, 1.0, 1.5, 2.0]
 gammas = [0.25, 0.5, 1.0, 1.5, 2.0]
