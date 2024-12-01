@@ -1,28 +1,27 @@
-from linear_regression.aux_functions.percentage_flipped import (
-    percentage_flipped_linear_features_space_true_min,
-)
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 import os
 import numpy as np
 import pickle
+from tqdm.auto import tqdm
+from linear_regression.aux_functions.percentage_flipped import (
+    percentage_misclassified_linear_features,
+)
 
-# alpha = 2.0
 reps = 10
 eps_training = 0.0
 pstar_t = 1.0
 p = "inf"
 reg_param = 1e-3
 
-data_folder = "./data"
-file_name = f"ERM_linear_RF_adv_transition_true_label_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{p}_reg_param_{reg_param:.1e}_eps_t_{{:.2f}}_pstar_t_{pstar_t}.pkl"
-dimensions = [int(2**a) for a in range(9, 12)]
+data_folder = "./data/linear_random_features"
+file_name = f"ERM_linear_features_adv_transition_true_label_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{p}_reg_param_{reg_param:.1e}_eps_t_{{:.2f}}_pstar_t_{pstar_t}.pkl"
+dimensions = [int(2**a) for a in range(10, 11)]
 
-gammas = [0.5, 1.0, 2.0]
-alphas = [0.5, 1.0, 2.0]
+gammas = [0.5, 1.0, 1.5, 2.0, 4.0]
+alphas = [1.0]
 markers = [".", "x", "1", "2", "+", "3", "4"]
 
-eps_dense = np.logspace(-1, 1, 100)
+eps_dense = np.logspace(-1, 1, 12)
 out = np.empty_like(eps_dense)
 
 plt.figure(
@@ -49,10 +48,10 @@ for k, alpha in enumerate(alphas):
                 mean_rho = data["mean_rho"]
                 std_rho = data["std_rho"]
 
-                if dimension == dimensions[-1]:
-                    print(
-                        f"alpha = {alpha:.1f} gamma = {gamma:.1f} dim = {dimension}:\nm = {mean_m:.2f} +- {std_m:.2f}\tq = {mean_q:.2f} +- {std_q:.2f}\trho = {mean_rho:.2f} +- {std_rho:.2f}"
-                    )
+                # if dimension == dimensions[-1]:
+                print(
+                    f"alpha = {alpha:.1f} gamma = {gamma:.1f} dim = {dimension}:\nm = {mean_m:.2f} +- {std_m:.2f}\tq = {mean_q:.2f} +- {std_q:.2f}\trho = {mean_rho:.2f} +- {std_rho:.2f}"
+                )
 
             plt.errorbar(
                 epss_g,
@@ -61,23 +60,17 @@ for k, alpha in enumerate(alphas):
                 linestyle="",
                 color=f"C{idx}",
                 marker=mks,
-                label=f"$\\gamma = $ {gamma:.1f}",
+                # label=f"$\\gamma = $ {gamma:.1f}",
             )
 
-        for j, eps_i in enumerate(eps_dense):
-            out[j] = percentage_flipped_linear_features_space_true_min(
+        for j, eps_i in enumerate(tqdm(eps_dense)):
+            out[j] = percentage_misclassified_linear_features(
                 mean_m, mean_q, mean_rho, eps_i, p, gamma
             )
 
-        plt.plot(eps_dense, out, color=f"C{idx}")
+        plt.plot(eps_dense, out, color=f"C{idx}", label=f"$\\gamma = $ {gamma:.1f}")
 
-    custom_lines = [
-        Line2D([0], [0], color="C0", lw=4),
-        Line2D([0], [0], color="C1", lw=4),
-        Line2D([0], [0], color="C2", lw=4),
-    ]
-
-    plt.legend(custom_lines, [f"$\\gamma = $ {gamma:.1f}" for gamma in gammas])
+    plt.legend()
 
     plt.xscale("log")
     # plt.yscale("log")

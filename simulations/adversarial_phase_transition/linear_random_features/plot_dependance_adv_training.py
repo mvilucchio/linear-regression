@@ -1,5 +1,5 @@
 from linear_regression.aux_functions.percentage_flipped import (
-    percentage_flipped_linear_features_space_true_min,
+    percentage_flipped_linear_features,
 )
 import matplotlib.pyplot as plt
 import os
@@ -13,7 +13,7 @@ pstar_t = 1.0
 p = "inf"
 reg_param = 1e-3
 
-data_folder = "./data"
+data_folder = "./data/linear_random_features"
 file_name = f"ERM_linear_RF_adv_transition_n_features_{{:d}}_alpha_{alpha:.1f}_gamma_{gamma:.1f}_reps_{reps:d}_p_{p}_reg_param_{reg_param:.1e}_eps_t_{{:.2f}}_pstar_t_{pstar_t}.pkl"
 dimensions = [int(2**a) for a in range(9, 12)]
 
@@ -61,9 +61,7 @@ for idx, e_t in enumerate(eps_trainigs):
         )
 
     for j, eps_i in enumerate(eps_dense):
-        out[j] = percentage_flipped_linear_features_space_true_min(
-            mean_m, mean_q, mean_rho, eps_i, p, gamma
-        )
+        out[j] = percentage_flipped_linear_features(mean_m, mean_q, mean_rho, eps_i, p, gamma)
 
     plt.plot(eps_dense, out, color=f"C{idx}")
 

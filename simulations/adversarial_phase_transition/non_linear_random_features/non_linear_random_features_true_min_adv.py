@@ -4,36 +4,41 @@ from linear_regression.data.generation import (
     measure_gen_no_noise_clasif,
     data_generation,
 )
-from linear_regression.erm.metrics import (
-    percentage_flipped_labels_estim,
-    percentage_error_from_true,
-)
+from linear_regression.erm.metrics import percentage_flipped_labels_NLRF
 from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic,
     find_coefficients_Logistic_adv,
 )
-from linear_regression.erm.erm_solvers import find_adversarial_perturbation_RandomFeatures_space
+from linear_regression.erm.adversarial_perturbation_finders import (
+    find_adversarial_perturbation_NLRF,
+)
 from linear_regression.aux_functions.percentage_flipped import (
-    percentage_flipped_linear_features_space_true_min,
+    percentage_flipped_linear_features,
 )
 from tqdm.auto import tqdm
 import os
 import pickle
-import sys
+from numba import vectorize
 
-gamma, eps_training = float(sys.argv[1]), float(sys.argv[2])
 
-alpha = 1.0
-# gamma = 1.5
+@vectorize(["float64(float64)"], nopython=True)
+def non_linearity(x):
+    return np.tanh(x)
 
-# eps_training = 0.1
+
+alpha = 1.1
+gamma = 1.5
+
+eps_training = 0.05
 pstar_t = 1.0
-reg_param = 1e-3
-ps = [2, 3, "inf"]
-dimensions = [int(2**a) for a in range(9, 12)]
-epss = np.logspace(-1, 1, 15)
+reg_param = 1.0
+ps = [
+    2,
+]  # , "inf" not working yet
+dimensions = [int(2**a) for a in range(8, 10)]
+epss = np.logspace(-1, 1, 10)
 eps_dense = np.logspace(-1, 1, 100)
-reps = 10
+reps = 7
 
 run_experiment = True
 
@@ -46,19 +51,23 @@ assert len(markers) >= len(ps)
 
 data_folder = "./data"
 img_folder = "./imgs"
-file_name = f"ERM_linear_features_adv_transition_true_label_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}.pkl"
-img_name = f"random_linear_features_true_label_alpha_{alpha:.2f}_gamma_{gamma:.2f}_ps_{*ps,}.png"
+file_name = f"ERM_NLRF_adv_transition_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}.pkl"
+img_name = f"NLRF_alpha_{alpha:.2f}_gamma_{gamma:.2f}_ps_{*ps,}.png"
 
-for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
+for p, ls, mrk in zip(tqdm(ps, desc="p"), linestyles, markers):
     for n_hidden_features, c in zip(tqdm(dimensions, desc="dim", leave=False), colors):
         if run_experiment:
             n_features = int(n_hidden_features / gamma)
             n_samples = int(n_features * alpha)
 
+            print(
+                f"n_features = {n_features}, n_samples = {n_samples}, n_hidden_features = {n_hidden_features}"
+            )
+
             if p == "inf":
                 epss_rescaled = epss * (n_features ** (-1 / 2))
             else:
-                epss_rescaled = epss * (n_features ** (-1 / 2 + 1 / p))
+                epss_rescaled = epss
 
             vals = np.empty((reps, len(epss)))
             estim_vals_m = np.empty((reps,))
@@ -80,7 +89,7 @@ for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
 
                 assert cs.shape == (n_samples, n_hidden_features)
 
-                xs = cs @ F / np.sqrt(n_hidden_features)
+                xs = non_linearity(cs @ F / np.sqrt(n_hidden_features))
 
                 assert xs.shape == (n_samples, n_features)
 
@@ -94,32 +103,36 @@ for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
                         eps_training,
                         2.0,
                         pstar_t,
-                        F.T @ wstar / np.sqrt(n_hidden_features),
+                        F.T @ wstar / np.sqrt(n_hidden_features),  # this is just an intial guess
                     )
 
                 estim_vals_rho[j] = np.sum(wstar**2) / n_hidden_features
                 estim_vals_m[j] = np.sum(np.dot(wstar, F @ w)) / n_hidden_features
                 estim_vals_q[j] = np.sum((F @ w) ** 2) / n_hidden_features
 
-                yhat = np.repeat(np.sign(xs @ w).reshape(-1, 1), n_hidden_features, axis=1)
+                # yhat = np.repeat(np.sign(xs @ w).reshape(-1, 1), n_hidden_features, axis=1)
+                yhat = np.sign(xs @ w)
 
-                xs_gen = cs_gen @ F / np.sqrt(n_hidden_features)
+                xs_gen = non_linearity(cs_gen @ F / np.sqrt(n_hidden_features))
 
                 yhat_gen = np.sign(xs_gen @ w)
 
                 for i, eps_i in enumerate(tqdm(epss_rescaled, desc="eps", leave=False)):
-                    adv_perturbation = find_adversarial_perturbation_RandomFeatures_space(
-                        yhat_gen, cs_gen, w, F, wstar, eps_i, p
+                    adv_perturbation = find_adversarial_perturbation_NLRF(
+                        yhat,
+                        cs,
+                        w,
+                        F,
+                        wstar,
+                        eps_i,
+                        p,
+                        step_size=1e-6,
+                        abs_tol=1e-6,
+                        step_block=50,
                     )
 
-                    flipped = percentage_error_from_true(
-                        yhat_gen,
-                        cs_gen,
-                        w,
-                        wstar,
-                        cs_gen + adv_perturbation,
-                        hidden_model=True,
-                        projection_matrix=F,
+                    flipped = percentage_flipped_labels_NLRF(
+                        yhat, cs, w, wstar, cs + adv_perturbation, F, np.tanh
                     )
 
                     vals[j, i] = flipped
@@ -127,10 +140,6 @@ for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
             mean_m, std_m = np.mean(estim_vals_m), np.std(estim_vals_m)
             mean_q, std_q = np.mean(estim_vals_q), np.std(estim_vals_q)
             mean_rho, std_rho = np.mean(estim_vals_rho), np.std(estim_vals_rho)
-
-            # print(
-            #     f"Estimated m = {mean_m:.3f} ± {std_m:.3f} q = {mean_q:.3f} ± {std_q:.3f} rho = {mean_rho:.3f} ± {std_rho:.3f}"
-            # )
 
             data = {
                 "epss": epss,
@@ -183,14 +192,12 @@ for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
             # label=f"p = {p}",
         )
 
-    # out = np.empty_like(eps_dense)
+    out = np.empty_like(eps_dense)
 
-    # for i, eps_i in enumerate(eps_dense):
-    #     out[i] = percentage_flipped_linear_features_space_true_min(
-    #         mean_m, mean_q, mean_rho, eps_i, p, gamma
-    #     )
+    for i, eps_i in enumerate(eps_dense):
+        out[i] = percentage_flipped_linear_features(mean_m, mean_q, mean_rho, eps_i, p, gamma)
 
-    # plt.plot(eps_dense, out, linestyle=ls, color="black", linewidth=0.5)
+    plt.plot(eps_dense, out, linestyle=ls, color="black", linewidth=0.5)
 
 plt.title(
     f"Random Features $\\alpha$ = {alpha:.1f} $\\gamma$ = {gamma:.1f} $\\lambda$ = {reg_param:.1e}"

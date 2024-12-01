@@ -11,7 +11,7 @@ from linear_regression.erm.erm_solvers import (
 )
 from linear_regression.erm.erm_solvers import find_adversarial_perturbation_RandomFeatures_space
 from linear_regression.aux_functions.percentage_flipped import (
-    percentage_flipped_linear_features_space_true_min,
+    percentage_flipped_linear_features,
 )
 from tqdm.auto import tqdm
 import os

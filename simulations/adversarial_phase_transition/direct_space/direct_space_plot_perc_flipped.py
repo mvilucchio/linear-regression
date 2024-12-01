@@ -59,11 +59,9 @@ for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
 
     for i, eps in enumerate(tqdm(eps_dense, desc="eps", leave=False)):
         if p == "inf":
-            out[i] = percentage_flipped_direct_space_true_min(mean_m, mean_q, mean_rho, eps, 1)
+            out[i] = percentage_flipped_direct_space(mean_m, mean_q, mean_rho, eps, 1)
         else:
-            out[i] = percentage_flipped_direct_space_true_min(
-                mean_m, mean_q, mean_rho, eps, p / (p - 1)
-            )
+            out[i] = percentage_flipped_direct_space(mean_m, mean_q, mean_rho, eps, p / (p - 1))
 
     plt.plot(eps_dense, out, label=f"p = {p}", linestyle=ls, color="black", linewidth=1)
 
