@@ -11,8 +11,8 @@ from ..utils.minimizers import brent_minimize_scalar
 from . import MAX_ITER_BRENT_MINIMIZE, TOL_BRENT_MINIMIZE
 
 
-BIG_NUMBER = 50_000_000
-SMALL_NUMBER = 1e-14
+BIG_NUMBER = 500_000_000
+SMALL_NUMBER = 1e-15
 
 # ---------------------------------------------------------------------------- #
 #                            Loss functions proximal                           #

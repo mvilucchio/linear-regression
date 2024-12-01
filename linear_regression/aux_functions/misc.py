@@ -135,7 +135,6 @@ def damped_update(new, old, damping):
 
 @njit(error_model="numpy", fastmath=False)
 def max_difference(x, y):
-    # print(x, type(x), y, type(y))
     max = -inf
     for i in range(len(x)):
         diff = abs(x[i] - y[i])
@@ -152,11 +151,13 @@ def classification_adversarial_error(m, q, P, eps, pstar):
         lambda x: np.exp(-0.5 * x**2 / q) * erfc(m * x / np.sqrt(2 * q * (q - m**2))),
         -eps * P ** (1 / pstar),
         np.inf,
+        epsabs=1e-10,
     )[0]
     Iplus = quad(
         lambda x: np.exp(-0.5 * x**2 / q) * (1 + erf(m * x / np.sqrt(2 * q * (q - m**2)))),
         -np.inf,
         eps * P ** (1 / pstar),
+        epsabs=1e-10,
     )[0]
     return 0.5 * (Iminus + Iplus) / np.sqrt(2 * pi * q)
 
