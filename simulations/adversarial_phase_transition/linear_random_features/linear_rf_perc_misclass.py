@@ -23,27 +23,15 @@ gamma, alpha, eps_training = float(sys.argv[1]), float(sys.argv[2]), float(sys.a
 pstar_t = 1.0
 reg_param = 1e-3
 ps = ["inf"]
-dimensions = [int(2**a) for a in range(10, 11)]
-epss = np.logspace(-1, 1, 15)
-eps_dense = np.logspace(-1, 1, 15)
+dimensions = [int(2**a) for a in range(10, 12)]
+epss = np.logspace(-1.5, 1.5, 15)
 reps = 10
 
-run_experiment = True
-
-colors = [f"C{i}" for i in range(len(dimensions))]
-linestyles = ["-", "--", "-.", ":"]
-markers = [".", "x", "1", "2", "+", "3", "4"]
-
-assert len(linestyles) >= len(ps)
-assert len(markers) >= len(ps)
-
 data_folder = "./data/linear_random_features"
-img_folder = "./imgs"
-file_name = f"ERM_linear_features_adv_transition_true_label_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}.pkl"
-img_name = f"random_linear_features_true_label_alpha_{alpha:.2f}_gamma_{gamma:.2f}_ps_{*ps,}.png"
+file_name = f"ERM_linear_rf_perc_misclass_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}.pkl"
 
-for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
-    for d, c in zip(tqdm(dimensions, desc="dim", leave=False), colors):
+for p in tqdm(ps, desc="p", leave=False):
+    for d in tqdm(dimensions, desc="dim", leave=False):
         features_dim = int(d / gamma)
         n_samples = int(d * alpha)
 

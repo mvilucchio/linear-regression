@@ -195,7 +195,7 @@ for p, ls, mrk in zip(tqdm(ps, desc="p"), linestyles, markers):
     out = np.empty_like(eps_dense)
 
     for i, eps_i in enumerate(eps_dense):
-        out[i] = percentage_flipped_linear_features(mean_m, mean_q, mean_rho, eps_i, p, gamma)
+        out[i] = percentage_flipped_linear_features(mean_m, mean_q, mean_rho, eps_i, p)
 
     plt.plot(eps_dense, out, linestyle=ls, color="black", linewidth=0.5)
 

@@ -3,7 +3,7 @@ from linear_regression.data.generation import (
     measure_gen_no_noise_clasif,
     data_generation,
 )
-from linear_regression.erm.metrics import percentage_flipped_labels_estim
+from linear_regression.erm.metrics import percentage_error_from_true
 from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic,
     find_coefficients_Logistic_adv,
@@ -27,7 +27,7 @@ epss = np.logspace(-1.5, 1.5, 15)
 reps = 10
 
 data_folder = "./data/direct_space"
-file_name = f"ERM_direct_space_perc_flipped_n_features_{{:d}}_alpha_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}.pkl"
+file_name = f"ERM_direct_space_perc_misclass_n_features_{{:d}}_alpha_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}.pkl"
 
 for p in tqdm(ps, desc="p", leave=False):
     for d in tqdm(dimensions, desc="n", leave=False):
@@ -61,15 +61,13 @@ for p in tqdm(ps, desc="p", leave=False):
             estim_vals_m[j] = np.sum(wstar * w) / d
             estim_vals_q[j] = np.sum(w**2) / d
 
-            yhat = np.sign(xs_gen @ w)
-
             for i, eps_i in enumerate(tqdm(epss_rescaled, desc="eps", leave=False)):
                 adv_perturbation = find_adversarial_perturbation_direct_space(
-                    yhat, xs_gen, w, wstar, eps_i, p
+                    ys_gen, xs_gen, w, wstar, eps_i, p
                 )
 
-                flipped = percentage_flipped_labels_estim(
-                    yhat,
+                flipped = percentage_error_from_true(
+                    ys_gen,
                     xs_gen,
                     w,
                     wstar,

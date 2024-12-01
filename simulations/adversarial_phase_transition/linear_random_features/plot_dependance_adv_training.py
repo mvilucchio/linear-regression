@@ -61,7 +61,7 @@ for idx, e_t in enumerate(eps_trainigs):
         )
 
     for j, eps_i in enumerate(eps_dense):
-        out[j] = percentage_flipped_linear_features(mean_m, mean_q, mean_rho, eps_i, p, gamma)
+        out[j] = percentage_flipped_linear_features(mean_m, mean_q, mean_rho, eps_i, p)
 
     plt.plot(eps_dense, out, color=f"C{idx}")
 

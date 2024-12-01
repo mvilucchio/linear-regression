@@ -2,23 +2,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm.auto import tqdm
 from linear_regression.aux_functions.percentage_flipped import (
-    percentage_flipped_direct_space,
+    percentage_misclassified_direct_space,
 )
-from math import gamma
-import jax.numpy as jnp
-import jax
-from jax.scipy.optimize import minimize as jax_minimize
-from jax import grad, vmap
+import os
 import pickle
 
-
 alpha = 1.5
-reg_param = 1.0
-ps = ["inf", 2, 3, 5]
-dimensions = [int(2**a) for a in range(11, 12)]
-reps = 20
+reg_param = 1e-3
+ps = ["inf", 2, 3]
+dimensions = [int(2**a) for a in range(10, 12)]
+reps = 10
+epsilon_t = 0.0
+pstar_t = 1.0
 
-eps_dense = np.logspace(-2, 2, 100)
+eps_dense = np.logspace(-1.5, 1.5, 100)
 
 colors = [f"C{i}" for i in range(len(dimensions))]
 linestyles = ["-", "--", "-.", ":"]
@@ -26,12 +23,18 @@ markers = [".", "x", "1", "2", "+", "3", "4"]
 assert len(linestyles) >= len(ps)
 assert len(markers) >= len(ps)
 
+data_folder = "./data/direct_space"
+file_name = f"ERM_direct_space_perc_misclass_n_features_{{:d}}_alpha_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}.pkl"
+
 for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
 
     for n_features, c in zip(tqdm(dimensions, desc="n", leave=False), colors):
 
         with open(
-            f"./data/n_features_{n_features:d}_reps_{reps:d}_p_{p}_alpha_{alpha:.1f}.pkl", "rb"
+            os.path.join(
+                data_folder, file_name.format(n_features, alpha, p, reg_param, epsilon_t, pstar_t)
+            ),
+            "rb",
         ) as f:
             data = pickle.load(f)
             epss = data["epss"]
@@ -58,10 +61,7 @@ for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
     out = np.empty_like(eps_dense)
 
     for i, eps in enumerate(tqdm(eps_dense, desc="eps", leave=False)):
-        if p == "inf":
-            out[i] = percentage_flipped_direct_space(mean_m, mean_q, mean_rho, eps, 1)
-        else:
-            out[i] = percentage_flipped_direct_space(mean_m, mean_q, mean_rho, eps, p / (p - 1))
+        out[i] = percentage_misclassified_direct_space(mean_m, mean_q, mean_rho, eps, p)
 
     plt.plot(eps_dense, out, label=f"p = {p}", linestyle=ls, color="black", linewidth=1)
 

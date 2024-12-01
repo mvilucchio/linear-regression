@@ -7,6 +7,8 @@ from linear_regression.aux_functions.percentage_flipped import (
     percentage_misclassified_linear_features,
 )
 
+gammas = [0.5, 1.0, 1.5]
+alphas = [0.5, 1.0, 2.0]
 reps = 10
 eps_training = 0.0
 pstar_t = 1.0
@@ -14,14 +16,13 @@ p = "inf"
 reg_param = 1e-3
 
 data_folder = "./data/linear_random_features"
-file_name = f"ERM_linear_features_adv_transition_true_label_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{p}_reg_param_{reg_param:.1e}_eps_t_{{:.2f}}_pstar_t_{pstar_t}.pkl"
-dimensions = [int(2**a) for a in range(10, 11)]
+file_name = f"ERM_linear_rf_perc_misclass_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}.pkl"
 
-gammas = [0.5, 1.0, 1.5, 2.0, 4.0]
-alphas = [1.0]
+dimensions = [int(2**a) for a in range(10, 12)]
+
 markers = [".", "x", "1", "2", "+", "3", "4"]
 
-eps_dense = np.logspace(-1, 1, 12)
+eps_dense = np.logspace(-1.5, 1.5, 50)
 out = np.empty_like(eps_dense)
 
 plt.figure(
@@ -34,7 +35,10 @@ for k, alpha in enumerate(alphas):
 
         for i, (dimension, mks) in enumerate(zip(dimensions, markers)):
             with open(
-                os.path.join(data_folder, file_name.format(dimension, alpha, gamma, eps_training)),
+                os.path.join(
+                    data_folder,
+                    file_name.format(dimension, alpha, gamma, p, reg_param, eps_training, pstar_t),
+                ),
                 "rb",
             ) as f:
                 data = pickle.load(f)
