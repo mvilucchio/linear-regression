@@ -1,3 +1,6 @@
+from numpy import tanh, ones_like
+from numba import njit
+
 MAX_ITER_MINIMIZE = 5_0000
 GTOL_MINIMIZE = 1e-5
 
@@ -9,4 +12,6 @@ MAX_ITER_PDG = 100
 STEP_BLOCK_PDG = 10
 TOL_PDG = 1e-6
 STEP_SIZE_PDG = 1e-2
-TEST_ITERS_PDG = 10
+TEST_ITERS_PDG = 100
+N_ALTERNATING_PROJ = 25
+NOISE_SCALE = 1e-3

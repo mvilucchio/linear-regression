@@ -1,16 +1,27 @@
 from numpy import ndarray, tile
-from cvxpy import Variable, Problem, Maximize, norm
-from jax import jit, grad, vmap
-from jax.lax import cond
-import jax.numpy as jnp
-from typing import Tuple, Optional, List
+from math import inf, sqrt
+from cvxpy import Variable, Problem, Minimize, norm
+from typing import Optional
+from numba import njit
+import numpy as np
 from ..erm import (
     MAX_ITER_PDG,
     STEP_BLOCK_PDG,
     STEP_SIZE_PDG,
     TOL_PDG,
     TEST_ITERS_PDG,
+    N_ALTERNATING_PROJ,
+    NOISE_SCALE,
 )
+
+from line_profiler import profile
+
+
+# ---------------------------------------------------------------------------- #
+#                                Main functions                                #
+# ---------------------------------------------------------------------------- #
+
+# ---------------------------- Linear Direct Space --------------------------- #
 
 
 def find_adversarial_perturbation_direct_space(
@@ -46,20 +57,25 @@ def find_adversarial_perturbation_direct_space(
     ndarray of shape (n_samples, n_features)
         Adversarial perturbations for each sample
     """
-    _, d = xs.shape
-    x = Variable(len(w))
+    delta = Variable(len(w))
 
-    constraints = [norm(x, p) <= ε, wstar @ x == 0]
+    if float(p) == inf:
+        constraints = [norm(delta, "inf") <= ε, wstar @ delta == 0]
+    else:
+        constraints = [norm(delta, p) <= ε, wstar @ delta == 0]
 
-    objective = Maximize(w @ x)
+    objective = Minimize(w @ delta)
 
     problem = Problem(objective, constraints)
     problem.solve()
 
-    return -ys[:, None] * tile(x.value, (len(ys), 1))
+    return ys[:, None] * tile(x.value, (len(ys), 1))
 
 
-def find_adversarial_perturbation_RandomFeatures_space(
+# -------------------------- Linear Random Features -------------------------- #
+
+
+def find_adversarial_perturbation_linear_rf(
     ys: ndarray,
     cs: ndarray,
     w: ndarray,
@@ -97,179 +113,273 @@ def find_adversarial_perturbation_RandomFeatures_space(
     """
     _, d = cs.shape
     delta = Variable(d)
-
-    constraints = [norm(delta, p) <= ε, wstar.T @ delta == 0]
+    if float(p) == inf:
+        constraints = [norm(delta, "inf") <= ε, wstar.T @ delta == 0]
+    else:
+        constraints = [norm(delta, p) <= ε, wstar.T @ delta == 0]
 
     wtilde = F @ w
-    objective = Maximize(wtilde.T @ delta)
+    objective = Minimize(wtilde.T @ delta)
 
     problem = Problem(objective, constraints)
     problem.solve()
 
-    return -ys[:, None] * tile(delta.value, (len(ys), 1))
+    return ys[:, None] * tile(delta.value, (len(ys), 1))
 
 
-def find_adversarial_perturbation_NLRF(
-    ys: jnp.ndarray,
-    cs: jnp.ndarray,
-    w: jnp.ndarray,
-    F: jnp.ndarray,
-    wstar: jnp.ndarray,
+# ------------------------ Non-Linear Random Features ------------------------ #
+
+
+# @profile
+def find_adversarial_perturbation_non_linear_rf(
+    ys: ndarray,
+    cs: ndarray,
+    w: ndarray,
+    F: ndarray,
+    wstar: ndarray,
     ε: float,
     p: float,
+    non_linearity: callable,
+    D_non_linearity: callable,
     step_size: float = STEP_SIZE_PDG,
     abs_tol: float = TOL_PDG,
     step_block: int = STEP_BLOCK_PDG,
     max_iterations: int = MAX_ITER_PDG,
-    adv_pert: Optional[jnp.ndarray] = None,
+    adv_pert: Optional[ndarray] = None,
     test_iters: int = TEST_ITERS_PDG,
-    return_losses: bool = False,
-) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    """
-    Find adversarial perturbations using projected gradient ascent.
-
-    Parameters:
-    -----------
-    ys : labels (+1/-1)
-    cs : input samples
-    w : model weights
-    F : random feature matrix
-    wstar : vector to maintain orthogonality with perturbations
-    ε : maximum p-norm of perturbations
-    p : norm type (usually 2 or inf)
-    step_size : learning rate for gradient ascent
-    abs_tol : tolerance for convergence
-    step_block : number of steps between convergence checks
-    max_iterations : maximum number of iterations
-    adv_pert : initial perturbation (optional)
-    test_iters : number of iterations for convergence test
-    return_losses : if True, return loss history
-
-    Returns:
-    --------
-    Tuple[jnp.ndarray, jnp.ndarray]:
-        - Final adversarial perturbations
-        - Either loss history (shape: (n_iterations, n_samples)) if return_losses=True
-          or final loss values (shape: (n_samples,)) if return_losses=False
-    """
+) -> ndarray:
     if adv_pert is None:
-        adv_pert = jnp.zeros_like(cs)
+        adv_pert = np.zeros_like(cs).astype(np.float32)
     elif cs.shape != adv_pert.shape:
         raise ValueError("The shape of the adv_pert is not the same as cs.")
 
-    adv_pert = vec_alternating_projections(adv_pert, wstar, ε, p)
+    n_features, d = cs.shape
+    d = np.array([d]).astype(np.float32)[0]
+    n_features = np.array([n_features]).astype(np.float32)[0]
 
-    _, d = cs.shape
-    all_losses = []
+    wstar_norm = wstar / np.linalg.norm(wstar, ord=2)
+    F_sqrtd = F / np.sqrt(d)
+    w_sqrtp = w / np.sqrt(n_features)
 
-    current_loss = vec_NLRF_data_perturb_loss(adv_pert, cs, ys, w, F, d)
-    all_losses.append(current_loss)
+    adv_pert = alternating_projections_vec(adv_pert, wstar_norm, ε, p)
 
-    for _ in range(max_iterations):
+    cur_i = 0
+    for idx in range(max_iterations):
         for _ in range(step_block):
-            adv_pert = PGA_step_NLRF(adv_pert, cs, ys, w, wstar, F, d, step_size, ε, p)
+            adv_pert = proj_grad_ascent_step(
+                adv_pert,
+                cs,
+                ys,
+                w_sqrtp,
+                wstar_norm,
+                F_sqrtd,
+                step_size,
+                ε,
+                p,
+                cur_i,
+                D_non_linearity,
+            )
+            cur_i += 1
+            # print(loss_vec_linear_data_perturb(adv_pert, cs, ys, w_sqrtp, F_sqrtd))
 
         # Record loss after block update
-        current_loss = vec_NLRF_data_perturb_loss(adv_pert, cs, ys, w, F, d)
-        all_losses.append(current_loss)
+        current_loss = loss_vec_linear_data_perturb(
+            adv_pert, cs, ys, w_sqrtp, F_sqrtd, non_linearity
+        )
 
         # Check convergence
-        tmp_adv_pert = adv_pert
         for _ in range(test_iters):
-            tmp_adv_pert = PGA_step_NLRF(tmp_adv_pert, cs, ys, w, wstar, F, d, step_size, ε, p)
+            adv_pert = proj_grad_ascent_step(
+                adv_pert,
+                cs,
+                ys,
+                w_sqrtp,
+                wstar_norm,
+                F_sqrtd,
+                step_size,
+                ε,
+                p,
+                cur_i,
+                D_non_linearity,
+            )
+            cur_i += 1
 
-        test_loss = vec_NLRF_data_perturb_loss(tmp_adv_pert, cs, ys, w, F, d)
+        test_loss = loss_vec_linear_data_perturb(adv_pert, cs, ys, w_sqrtp, F_sqrtd, non_linearity)
 
-        if jnp.max(jnp.abs(current_loss - test_loss)) <= abs_tol:
+        print(
+            f"Iteration {idx}, Loss: {np.max(current_loss)} {np.min(current_loss)}, Test Loss: {np.max(test_loss)} {np.min(test_loss)}"
+        )
+
+        if np.max(np.abs(current_loss - test_loss)) <= abs_tol:
             break
 
-    # Convert losses to array
-    losses = jnp.array(all_losses)  # Shape: (n_iterations, n_samples)
-
-    if return_losses:
-        return adv_pert, losses
-    else:
-        return adv_pert, current_loss
+    return adv_pert
 
 
 # ---------------------------------------------------------------------------- #
 #                          Projected Gradient Descent                          #
 # ---------------------------------------------------------------------------- #
 
-# ------------------------ non-linear random features ------------------------ #
+
+# ---------------------------- Non Linear Features --------------------------- #
 
 
-@jit
-def linear_NLRF_data_perturb_loss(δ, c, y, w, F, d: int):
-    """Single sample loss function"""
-    feature = jnp.tanh((jnp.dot(c + δ, F)) / jnp.sqrt(d))
-    return -y * jnp.dot(feature, w)
+@njit(error_model="numpy", fastmath=True)
+def loss_vec_linear_data_perturb(
+    δs: ndarray, cs: ndarray, ys: ndarray, w: ndarray, F_sqrtd: ndarray, non_linearity: callable
+):
+    preactivations = np.dot(cs + δs, F_sqrtd)  # (n, p)
+    loss_vals = ys * np.dot(non_linearity(preactivations), w)  # (n,)
+    return loss_vals
 
 
-@jit
-def vec_NLRF_data_perturb_loss(δs, cs, ys, w, F, d: int):
-    """Vectorized loss function for multiple samples"""
-    features = jnp.tanh((cs + δs) @ F / jnp.sqrt(d))
-    return -ys * (features @ w)
+@njit(error_model="numpy", fastmath=True)
+def grad_vec_linear_data_perturb(
+    δs: ndarray, cs: ndarray, ys: ndarray, w: ndarray, F_sqrtd: ndarray, D_non_linearity: callable
+):
+    preactivations = np.dot(cs + δs, F_sqrtd)  # (n, p)
+    grad_vals = ys[:, None] * np.dot(D_non_linearity(preactivations) * w, F_sqrtd.T)  # (n, d)
+    return grad_vals
 
 
-grad_NLRF_data_perturb = jit(grad(linear_NLRF_data_perturb_loss, argnums=0))
-
-vec_grad_NLRF_data_perturb = jit(vmap(grad_NLRF_data_perturb, in_axes=(0, 0, 0, None, None, None)))
-
-
-@jit
-def project_onto_orthogonal_space(z: jnp.ndarray, wstar: jnp.ndarray) -> jnp.ndarray:
-    """Project vector z onto the space orthogonal to wstar."""
-    wstar_normalized = wstar / jnp.sqrt(jnp.dot(wstar, wstar))
-    return z - jnp.dot(z, wstar_normalized) * wstar_normalized
+@njit(error_model="numpy", fastmath=True)
+def project_onto_orthogonal_space_vec(zs: ndarray, wstar_normalized: ndarray):
+    return zs - np.dot(zs, wstar_normalized)[:, None] * wstar_normalized[None, :]
 
 
-@jit
-def project_onto_p_ball(z: jnp.ndarray, ε: float, p: float) -> jnp.ndarray:
-    """Project vector z onto the p-norm ball of radius ε."""
-    norm = jnp.sum(jnp.abs(z) ** p) ** (1 / p)
-    return cond(norm > ε, lambda x: ε * x[0] / x[1], lambda x: x[0], (z, norm))
+@njit(error_model="numpy", fastmath=True)
+def numba_compute_p_norm_vec(zs: ndarray, p: float):
+    out = np.zeros(zs.shape[0]).astype(zs.dtype)
+    if p == np.inf:
+        for i in range(zs.shape[0]):
+            out[i] = np.max(np.abs(zs[i]))
+    else:
+        for i in range(zs.shape[0]):
+            out[i] = np.linalg.norm(zs[i], ord=p)
+    return out
 
 
-@jit
-def alternating_projections(z: jnp.ndarray, wstar: jnp.ndarray, ε: float, p: float) -> jnp.ndarray:
+@njit(error_model="numpy", fastmath=True)
+def project_onto_p_ball_vec(zs: ndarray, ε: float, p: float):
+    if p == np.inf:
+        # For L∞ norm, we clip each component independently to [-ε, ε]
+        return np.clip(zs, -ε, ε)
+    else:
+        # For other Lp norms, we scale the vectors when they exceed the norm bound
+        norms = numba_compute_p_norm_vec(zs, p)
+        return np.where((norms > ε)[:, None], ε * zs / norms[:, None], zs)
+
+
+@njit(error_model="numpy", fastmath=True)
+def alternating_projections_vec(
+    zs: ndarray, wstar_normalized: ndarray, ε: float, p: float, n_steps: int = N_ALTERNATING_PROJ
+):
+    for _ in range(n_steps):
+        zs = project_onto_orthogonal_space_vec(zs, wstar_normalized)
+        zs = project_onto_p_ball_vec(zs, ε, p)
+
+    return zs
+
+
+@njit(error_model="numpy", fastmath=True)
+def dykstra_momentum_projections_vec(
+    zs: ndarray, wstar_normalized: ndarray, ε: float, p: float, n_steps: int = N_ALTERNATING_PROJ
+):
     """
-    Apply alternating projections between orthogonality constraint and p-norm ball.
-    Uses multiple iterations to better approximate the projection onto the intersection.
+    Dykstra's algorithm with momentum for alternating projections.
+
+    This implementation uses existing projection functions and maintains
+    correction vectors to prevent zigzagging between constraints. It also
+    includes momentum for faster convergence.
+
+    Args:
+        zs: Array of shape (n,d) containing n vectors of dimension d
+        wstar_normalized: Normalized vector defining orthogonal space
+        ε: Epsilon for p-norm ball constraint
+        p: Order of the norm (use np.inf for infinity norm)
+        n_steps: Number of iteration steps
+
+    Returns:
+        Projected vectors maintaining (n,d) shape
     """
-    n_projections = 7
+    # Initialize current point and previous point for momentum
+    current = zs.copy()
+    previous = zs.copy()
 
-    for _ in range(n_projections):
-        z = project_onto_orthogonal_space(z, wstar)
-        z = project_onto_p_ball(z, ε, p)
-    return z
+    # Initialize correction terms for both projections
+    # p1 for orthogonal space, p2 for p-norm ball
+    p1 = np.zeros_like(zs)
+    p2 = np.zeros_like(zs)
+
+    momentum = 0.9
+
+    for t in range(n_steps):
+        old_point = current.copy()
+
+        # First projection (onto orthogonal space) with correction
+        y = current + p1
+        y_proj = project_onto_orthogonal_space_vec(y, wstar_normalized)
+        p1 = y - y_proj  # Update correction term
+        current = y_proj
+
+        # Second projection (onto p-ball) with correction
+        y = current + p2
+        y_proj = project_onto_p_ball_vec(y, ε, p)
+        p2 = y - y_proj  # Update correction term
+        current = y_proj
+
+        # Apply momentum with increasing schedule
+        beta_t = t / (t + 3)  # Momentum grows with iterations
+        current = current + beta_t * momentum * (current - previous)
+        previous = old_point
+
+        # Ensure feasibility after momentum by projecting onto both constraints
+        current = project_onto_orthogonal_space_vec(current, wstar_normalized)
+        current = project_onto_p_ball_vec(current, ε, p)
+
+    return current
 
 
-vec_alternating_projections = jit(vmap(alternating_projections, in_axes=(0, None, None, None)))
-
-
-def PGA_step_NLRF(
-    δs: jnp.ndarray,
-    xs: jnp.ndarray,
-    ys: jnp.ndarray,
-    w: jnp.ndarray,
-    wstar: jnp.ndarray,
-    F: jnp.ndarray,
-    d: int,
+@njit(error_model="numpy", fastmath=True)
+def proj_grad_ascent_step(
+    δs: ndarray,
+    xs: ndarray,
+    ys: ndarray,
+    w: ndarray,
+    wstar_normalized: ndarray,
+    F: ndarray,
     step_size: float,
     ε: float,
     p: float,
-) -> jnp.ndarray:
-    """
-    Single step of projected gradient ascent with proper handling of constraints.
+    t: int,
+    D_non_linearity: callable,
+):
+    gs = grad_vec_linear_data_perturb(δs, xs, ys, w, F, D_non_linearity)
+    return alternating_projections_vec(δs - step_size * gs, wstar_normalized, ε, p)
 
-    1. Compute gradient
-    2. Project gradient onto orthogonal space (to maintain feasible direction)
-    3. Take step in projected gradient direction
-    4. Project result onto constraint set using alternating projections
-    """
-    g = vec_grad_NLRF_data_perturb(δs, xs, ys, w, F, d)
-    g_proj = vec_alternating_projections(g, wstar, ε, p)
-    δs_new = δs + step_size * g_proj
-    return vec_alternating_projections(δs_new, wstar, ε, p)
+
+@njit(error_model="numpy", fastmath=True)
+def add_gradient_noise(gs: ndarray, noise_scale: float, t: int):
+    noise = np.random.normal(0, 1, size=gs.shape)
+    current_scale = noise_scale / (1 + t) ** 0.55
+    return gs + current_scale * noise
+
+
+@njit(error_model="numpy", fastmath=True)
+def stochastic_proj_grad_ascent_step(
+    δs: ndarray,
+    xs: ndarray,
+    ys: ndarray,
+    w: ndarray,
+    wstar_normalized: ndarray,
+    F: ndarray,
+    step_size: float,
+    ε: float,
+    p: float,
+    t: int,
+    D_non_linearity: callable,
+    noise_scale: float = NOISE_SCALE,
+):
+    gs = grad_vec_linear_data_perturb(δs, xs, ys, w, F, D_non_linearity)
+    noisy_gs = add_gradient_noise(gs, noise_scale, t)
+    return alternating_projections_vec(δs - step_size * noisy_gs, wstar_normalized, ε, p)
