@@ -11,7 +11,7 @@ from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic,
     find_coefficients_Logistic_adv,
 )
-from linear_regression.erm.erm_solvers import find_adversarial_perturbation_RandomFeatures_space
+from linear_regression.erm.erm_solvers import find_adversarial_perturbation_linear_rf
 from tqdm.auto import tqdm
 import os
 import pickle
@@ -94,7 +94,7 @@ for n_hidden_features in tqdm(dimensions, desc="dim", leave=False):
         yhat_gen = np.sign(xs_gen @ w)
 
         for i, eps_i in enumerate(tqdm(epss_rescaled, desc="eps", leave=False)):
-            adv_perturbation = find_adversarial_perturbation_RandomFeatures_space(
+            adv_perturbation = find_adversarial_perturbation_linear_rf(
                 yhat_gen, cs_gen, w, F, wstar, eps_i, p
             )
 

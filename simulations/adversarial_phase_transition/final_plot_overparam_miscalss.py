@@ -72,6 +72,7 @@ for k, alpha in enumerate(alphas):
                 linestyle="",
                 color=f"C{idx}",
                 marker=mks,
+                markersize=2,
                 label=f"$\\gamma = $ {gamma:.1f}",
             )
 
@@ -102,6 +103,7 @@ for k, alpha in enumerate(alphas):
             linestyle="",
             color="k",
             marker=mks,
+            markersize=2,
         )
 
         for j, eps_i in enumerate(eps_dense):
@@ -126,7 +128,7 @@ for k, alpha in enumerate(alphas):
         )
 
     ax.set_xscale("log")
-    ax.set_xlabel(r"$\varepsilon_g (\sqrt[p]{d} / \sqrt{d})$")
+    ax.set_xlabel(r"$\varepsilon \, d^{\frac{1}{p} - \frac{1}{2}}$")
     if k == 0:
         ax.set_ylabel(r"$E_{\mathrm{flip}}^{\mathrm{true}}$")
     ax.grid(True)
@@ -144,6 +146,7 @@ for k in range(len(alphas)):
     axs[k].set_ylim(min_val, 1)
 
 fig.set_constrained_layout(True)
+fig.get_layout_engine().set(w_pad=0 / 72, h_pad=0 / 72, hspace=0, wspace=0)
 
 plt.savefig(
     os.path.join(img_folder, file_name_img),

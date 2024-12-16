@@ -10,7 +10,7 @@ from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic_adv,
 )
 from linear_regression.erm.adversarial_perturbation_finders import (
-    find_adversarial_perturbation_NLRF,
+    find_adversarial_perturbation_non_linear_rf,
 )
 from linear_regression.aux_functions.percentage_flipped import (
     percentage_flipped_linear_features,
@@ -120,7 +120,7 @@ for p, ls, mrk in zip(tqdm(ps, desc="p", leave=False), linestyles, markers):
                 yhat_gen = np.sign(xs_gen @ w)
 
                 for i, eps_i in enumerate(tqdm(epss_rescaled, desc="eps", leave=False)):
-                    adv_perturbation, _ = find_adversarial_perturbation_NLRF(
+                    adv_perturbation, _ = find_adversarial_perturbation_non_linear_rf(
                         yhat_gen,
                         cs_gen,
                         w,

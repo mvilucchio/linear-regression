@@ -9,7 +9,7 @@ from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic,
     find_coefficients_Logistic_adv,
 )
-from linear_regression.erm.erm_solvers import find_adversarial_perturbation_RandomFeatures_space
+from linear_regression.erm.erm_solvers import find_adversarial_perturbation_linear_rf
 from linear_regression.aux_functions.percentage_flipped import (
     percentage_flipped_linear_features,
 )
@@ -72,7 +72,7 @@ for p in tqdm(ps, desc="p"):
                 xs_gen = cs_gen @ F / np.sqrt(n_hidden_features)
                 yhat = np.sign(xs_gen @ w)
 
-                adv_perturbation = find_adversarial_perturbation_RandomFeatures_space(
+                adv_perturbation = find_adversarial_perturbation_linear_rf(
                     yhat, cs_gen, w, F, wstar, eps_i, p
                 )
 
