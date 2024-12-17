@@ -1,5 +1,15 @@
 from numba import njit
-from .loss_functions import logistic_loss, exponential_loss, DDz_logistic_loss, DDz_exponential_loss
+from .loss_functions import (
+    logistic_loss,
+    DDz_logistic_loss,
+    exponential_loss,
+    DDz_exponential_loss,
+    tukey_loss,
+    DDz_tukey_loss,
+    mod_tukey_loss,
+    Dz_mod_tukey_loss,
+    DDz_mod_tukey_loss,
+)
 from .regularisation_functions import (
     power_regularisation,
     Dx_power_regularisation,
@@ -17,6 +27,78 @@ SMALL_NUMBER = 1e-15
 # ---------------------------------------------------------------------------- #
 #                            Loss functions proximal                           #
 # ---------------------------------------------------------------------------- #
+
+
+# -------------------------------- tukey loss -------------------------------- #
+@njit(error_model="numpy", fastmath=False)
+def moreau_loss_Tukey(x: float, y: float, omega: float, V: float, τ: float) -> float:
+    return (x - omega) ** 2 / (2 * V) + tukey_loss(y, x, τ)
+
+
+# maybe it is better some initialisation of the brent_minimize_scalar
+@njit(error_model="numpy", fastmath=False)
+def proximal_Tukey_loss(y: float, omega: float, V: float, τ: float) -> float:
+    return brent_minimize_scalar(
+        moreau_loss_Tukey,
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+        (y, omega, V, τ),
+    )[0]
+
+
+@njit(error_model="numpy", fastmath=False)
+def Dω_proximal_Tukey_loss(y: float, omega: float, V: float, τ: float) -> float:
+    proximal = brent_minimize_scalar(
+        moreau_loss_Tukey,
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+        (y, omega, V, τ),
+    )[0]
+    return 1 / (1 + V * DDz_tukey_loss(y, proximal, τ))
+
+
+# ---------------------------- modified tukey loss --------------------------- #
+@njit(error_model="numpy", fastmath=False)
+def moreau_loss_Tukey_modified(
+    x: float, y: float, omega: float, V: float, τ: float, c: float
+) -> float:
+    return (x - omega) ** 2 / (2 * V) + mod_tukey_loss(y, x, τ, c)
+
+
+@njit(error_model="numpy", fastmath=False)
+def proximal_loss_Tukey_modified(
+    x: float, y: float, omega: float, V: float, τ: float, c: float
+) -> float:
+    return (x - omega) / V + Dz_mod_tukey_loss(y, x, τ, c)
+
+
+@njit(error_model="numpy", fastmath=False)
+def proximal_Tukey_modified(y: float, omega: float, V: float, τ: float, c: float) -> float:
+    return brent_minimize_scalar(
+        moreau_loss_Tukey_modified,
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+        (y, omega, V, τ, c),
+    )[0]
+
+
+@njit(error_model="numpy", fastmath=False)
+def Dω_proximal_Tukey_modified(y: float, omega: float, V: float, τ: float, c: float) -> float:
+    proximal = brent_minimize_scalar(
+        moreau_loss_Tukey_modified,
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+        (y, omega, V, τ, c),
+    )[0]
+    return 1 / (1 + V * DDz_mod_tukey_loss(y, proximal, τ, c))
 
 
 # -------------------------------- hinge loss -------------------------------- #

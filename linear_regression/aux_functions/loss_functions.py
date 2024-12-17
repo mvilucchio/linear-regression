@@ -9,6 +9,11 @@ from .likelihood_channel_functions import log_Z_out_Bayes_decorrelated_noise
 BIG_NUMBER = 50_000_000
 
 
+# ---------------------------------------------------------------------------- #
+#                               Regression Losses                              #
+# ---------------------------------------------------------------------------- #
+
+
 @vectorize("float64(float64, float64)")
 def l2_loss(y: float, z: float):
     return 0.5 * (y - z) ** 2
@@ -30,6 +35,64 @@ def huber_loss(y: float, z: float, a: float) -> float:
 
 
 # ----
+@vectorize("float64(float64, float64, float64)")
+def tukey_loss(y: float, z: float, τ: float) -> float:
+    if abs(y - z) <= τ:
+        return τ**2 / 6 * (1 - (1 - ((y - z) / τ) ** 2) ** 3)
+    else:
+        return τ**2 / 6
+
+
+@vectorize("float64(float64, float64, float64)")
+def Dz_tukey_loss(y: float, z: float, τ: float) -> float:
+    if abs(y - z) <= τ:
+        return -(y - z) * (1 - (y - z) ** 2 / τ**2) ** 2
+    else:
+        return 0.0
+
+
+@vectorize("float64(float64, float64, float64)")
+def DDz_tukey_loss(y: float, z: float, τ: float) -> float:
+    if abs(y - z) <= τ:
+        return 1 + (5 * (y - z) ** 4) / τ**4 - (6 * (y - z) ** 2) / τ**2
+    else:
+        return 0.0
+
+
+# ----
+@vectorize("float64(float64, float64, float64, float64)")
+def mod_tukey_loss(y: float, z: float, τ: float, c: float) -> float:
+    if abs(y - z) <= τ:
+        return τ**2 / 6 * (1 - (1 - ((y - z) / τ) ** 2) ** 3)
+    elif y - z > τ:
+        return c * (y - z - τ) ** 3 + τ**2 / 6.0
+    else:
+        return τ**2 / 6.0 - c * (y - z + τ) ** 3
+
+
+@vectorize("float64(float64, float64, float64, float64)")
+def Dz_mod_tukey_loss(y: float, z: float, τ: float, c: float) -> float:
+    if abs(y - z) <= τ:
+        return -(y - z) * (1 - (y - z) ** 2 / τ**2) ** 2
+    elif y - z > τ:
+        return -3 * c * (-y + z + τ) ** 2
+    else:
+        return 3 * c * (y - z + τ) ** 2
+
+
+@vectorize("float64(float64, float64, float64, float64)")
+def DDz_mod_tukey_loss(y: float, z: float, τ: float, c: float) -> float:
+    if abs(y - z) <= τ:
+        return 1 + (5 * (y - z) ** 4) / τ**4 - (6 * (y - z) ** 2) / τ**2
+    elif y - z > τ:
+        return 6 * c * (y - z - τ)
+    else:
+        return -6 * c * (y - z + τ)
+
+
+# ---------------------------------------------------------------------------- #
+#                             Classification Losses                            #
+# ---------------------------------------------------------------------------- #
 
 
 @vectorize("float64(float64, float64)")
