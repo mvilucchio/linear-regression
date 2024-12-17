@@ -1,4 +1,5 @@
 from numpy import tanh, ones_like
+from numpy import float32 as np_float32
 from numba import njit
 
 MAX_ITER_MINIMIZE = 5_0000
@@ -14,4 +15,4 @@ TOL_PDG = 1e-6
 STEP_SIZE_PDG = 1e-2
 TEST_ITERS_PDG = 100
 N_ALTERNATING_PROJ = 25
-NOISE_SCALE = 1e-3
+NOISE_SCALE = np_float32(1.0)

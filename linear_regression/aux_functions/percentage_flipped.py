@@ -1,5 +1,5 @@
 from math import pi, sqrt, erf, exp, erfc
-from math import gamma
+from math import gamma as gamma_fun
 from scipy.integrate import quad
 import numpy as np
 from numba import njit
@@ -16,7 +16,12 @@ def percentage_misclassified_direct_space(
         A = epsilon / sqrt(pi) * sqrt(2 * q) * sqrt(1 - η)
     else:
         pstar = 1 / (1 - 1 / p)
-        A = (gamma((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar) * epsilon * sqrt(2 * q) * sqrt(1 - η)
+        A = (
+            (gamma_fun((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar)
+            * epsilon
+            * sqrt(2 * q)
+            * sqrt(1 - η)
+        )
 
     int_val_1 = quad(
         lambda x: exp(-(x**2) / (2 * q))
@@ -44,7 +49,7 @@ def percentage_flipped_direct_space(m: float, q: float, rho: float, epsilon: flo
         return erf(epsilon * sqrt(1 - η) * C)
     else:
         pstar = 1 / (1 - 1 / p)
-        C = (gamma((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar)
+        C = (gamma_fun((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar)
         return erf(epsilon * sqrt(1 - η) * C)
 
 
@@ -57,7 +62,7 @@ def percentage_flipped_linear_features(m: float, q: float, rho: float, epsilon: 
         return erf(epsilon * sqrt(1 - m**2 / (q * rho)) * C)
     else:
         pstar = 1 / (1 - 1 / p)
-        C = (gamma((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar)
+        C = (gamma_fun((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar)
         return erf(epsilon * sqrt(1 - m**2 / (q * rho)) * C)
 
 
@@ -69,7 +74,7 @@ def percentage_misclassified_linear_features(
     else:
         pstar = 1 / (1 - 1 / p)
         A = (
-            (gamma((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar)
+            (gamma_fun((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar)
             * epsilon
             * sqrt(2 * q)
             * sqrt(1 - m**2 / (q * rho))

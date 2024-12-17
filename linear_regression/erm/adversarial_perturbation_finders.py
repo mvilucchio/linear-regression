@@ -166,7 +166,8 @@ def find_adversarial_perturbation_non_linear_rf(
     cur_i = 0
     for idx in range(max_iterations):
         for _ in range(step_block):
-            adv_pert = proj_grad_ascent_step(
+            adv_pert = proj_grad_descent_step(
+                # adv_pert = stochastic_proj_grad_descent_step(
                 adv_pert,
                 cs,
                 ys,
@@ -176,7 +177,7 @@ def find_adversarial_perturbation_non_linear_rf(
                 step_size,
                 ε,
                 p,
-                cur_i,
+                np.float32(cur_i),
                 D_non_linearity,
             )
             cur_i += 1
@@ -189,7 +190,7 @@ def find_adversarial_perturbation_non_linear_rf(
 
         # Check convergence
         for _ in range(test_iters):
-            adv_pert = proj_grad_ascent_step(
+            adv_pert = proj_grad_descent_step(
                 adv_pert,
                 cs,
                 ys,
@@ -341,7 +342,7 @@ def dykstra_momentum_projections_vec(
 
 
 @njit(error_model="numpy", fastmath=True)
-def proj_grad_ascent_step(
+def proj_grad_descent_step(
     δs: ndarray,
     xs: ndarray,
     ys: ndarray,
@@ -360,13 +361,13 @@ def proj_grad_ascent_step(
 
 @njit(error_model="numpy", fastmath=True)
 def add_gradient_noise(gs: ndarray, noise_scale: float, t: int):
-    noise = np.random.normal(0, 1, size=gs.shape)
-    current_scale = noise_scale / (1 + t) ** 0.55
+    noise = np.random.normal(0, 1, size=gs.shape).astype(gs.dtype)
+    current_scale = np.float32(noise_scale / sqrt(1 + t))
     return gs + current_scale * noise
 
 
 @njit(error_model="numpy", fastmath=True)
-def stochastic_proj_grad_ascent_step(
+def stochastic_proj_grad_descent_step(
     δs: ndarray,
     xs: ndarray,
     ys: ndarray,
