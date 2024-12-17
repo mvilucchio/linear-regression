@@ -130,7 +130,7 @@ def all_brents(
 
     # Count exact zeros and sign changes
     n_changes = 0
-    for i in range(1, len(y) - 1):  # Skip extreme points
+    for i in range(len(y)):
         if y[i] == 0.0:  # Exact zero
             n_changes += 1
         elif y[i] * y[i + 1] < 0:  # Sign change between non-zero values
@@ -141,7 +141,7 @@ def all_brents(
     idx = 0
 
     # Process exact zeros and sign changes
-    for i in range(1, len(y) - 1):  # Skip extreme points
+    for i in range(len(y)):
         if y[i] == 0.0:  # Exact zero found
             zeros[idx] = x[i]
             idx += 1
