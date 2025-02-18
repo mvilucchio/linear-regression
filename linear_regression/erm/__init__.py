@@ -2,8 +2,9 @@ from numpy import tanh, ones_like
 from numpy import float32 as np_float32
 from numba import njit
 
-MAX_ITER_MINIMIZE = 5_0000
+MAX_ITER_MINIMIZE = 50_000
 GTOL_MINIMIZE = 1e-5
+XTOL_MINIMIZE = 1e-5
 
 BLEND_GAMP = 1.0
 TOL_GAMP = 5e-3

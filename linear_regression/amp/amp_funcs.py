@@ -5,7 +5,7 @@ from numpy.random import random
 from numba import njit
 from ..erm import TOL_GAMP, BLEND_GAMP, MAX_ITER_GAMP
 from ..utils.errors import ConvergenceError
-from ..aux_functions.misc import damped_update
+from ..aux_functions.misc import damped_update, damped_update_vectorized
 import numpy as np
 
 # ---------------------------------------------------------------------------- #
@@ -43,7 +43,7 @@ def GAMP_step(
     return new_w_hat_t, new_c_w_t, f_out_t
 
 
-@njit
+# @njit
 def GAMP_step_fullyTAP(
     F: ndarray,
     ys: ndarray,
@@ -56,6 +56,8 @@ def GAMP_step_fullyTAP(
     f_w: callable,
     f_w_args: tuple,
 ):
+    # print(f"V_star = {V_star} {type(V_star)}, Lambda_star = {Lambda_star} {type(Lambda_star)}")
+    # print(f"w_hat_t = {type(w_hat_t)}, f_out_t_1 = {type(f_out_t_1)}")
     omega_t = (F @ w_hat_t) - (V_star * f_out_t_1)
 
     f_out_t = f_out(ys, omega_t, V_star, *f_out_args)
@@ -182,10 +184,13 @@ def GAMP_fullyTAP(
     f_out_t_1 = zeros(n)
 
     omega_t = F @ w_hat_t
+    V_star, Vhat_star = se_values
+
+    # print(f"V_star = {V_star}, Vhat_star = {Vhat_star}")
 
     f_out_t_1 = f_out(ys, omega_t, V_star, *f_out_args)
 
-    V_star, Vhat_star = se_values
+    # print("inside whatt", type(w_hat_t))
 
     if return_overlaps:
         ms_list = []
@@ -207,13 +212,16 @@ def GAMP_fullyTAP(
             f_w_args,
         )
 
+        # if iter_nb % 10 == 0:
+        #     print(f"err = {err}, q = {mean(new_w_hat_t**2)}, m = {mean(new_w_hat_t * wstar)}")
+
         err = mean(abs(new_w_hat_t - w_hat_t))
 
         if return_overlaps:
             ms_list.append(mean(new_w_hat_t * wstar))
             qs_list.append(mean(new_w_hat_t**2))
 
-        w_hat_t = damped_update(new_w_hat_t, w_hat_t, blend)
+        w_hat_t = damped_update_vectorized(new_w_hat_t, w_hat_t, blend)
         f_out_t_1 = f_out_t
 
         iter_nb += 1
