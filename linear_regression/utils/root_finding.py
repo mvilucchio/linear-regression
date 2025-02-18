@@ -120,7 +120,6 @@ def all_brents(
     if left_bnd > min_x or right_bnd < max_x:
         raise ValueError("Bounds must contain the interval [min_x, max_x].")
 
-    # Create extended grid
     x = np.empty(n_points + 2)
     x[0] = left_bnd
     x[1 : n_points + 1] = np.linspace(min_x, max_x, n_points)
@@ -128,36 +127,30 @@ def all_brents(
 
     y = np.array([D_fun(xi, *fun_args) for xi in x])
 
-    # Count exact zeros and sign changes
     n_changes = 0
-    for i in range(len(y)):
-        if y[i] == 0.0:  # Exact zero
+    for i in range(len(y) - 1):
+        if y[i] == 0.0:
             n_changes += 1
-        elif y[i] * y[i + 1] < 0:  # Sign change between non-zero values
+        elif y[i] * y[i + 1] < 0:
             n_changes += 1
 
-    # Pre-allocate arrays
     zeros = np.zeros(n_changes)
     idx = 0
 
-    # Process exact zeros and sign changes
-    for i in range(len(y)):
-        if y[i] == 0.0:  # Exact zero found
+    for i in range(len(y) - 1):
+        if y[i] == 0.0:
             zeros[idx] = x[i]
             idx += 1
-        elif y[i] * y[i + 1] < 0:  # Sign change between non-zero values
-            # Use Brent's method to find the zero
+        elif y[i] * y[i + 1] < 0:
             xa, xb = x[i], x[i + 1]
             zeros[idx] = brent_root_finder(D_fun, xa, xb, xtol, rtol, max_iter, fun_args)
             idx += 1
 
-    # If no zeros found, check endpoints
     if n_changes == 0:
         f_min = fun(min_x, *fun_args)
         f_max = fun(max_x, *fun_args)
         return min_x if f_min < f_max else max_x
 
-    # Evaluate function at all zeros and endpoints
     candidates = np.zeros(n_changes + 2)
     candidates[0:n_changes] = zeros
     candidates[n_changes] = min_x
@@ -167,7 +160,6 @@ def all_brents(
     for i in range(len(candidates)):
         f_values[i] = fun(candidates[i], *fun_args)
 
-    # Return the point with lowest function value
     min_idx = 0
     min_value = f_values[0]
     for i in range(1, len(f_values)):
