@@ -125,12 +125,17 @@ def multivariate_gaussian(x: ndarray, mean: ndarray, cov: ndarray) -> float:
 #     return damping * new + (1 - damping) * old
 
 
-@njit(error_model="numpy", fastmath=False)
+# @njit(error_model="numpy", fastmath=False)
 def damped_update(new, old, damping):
     res = []
     for i in range(len(new)):
         res.append(damping * new[i] + (1 - damping) * old[i])
     return res
+
+
+@vectorize("float64(float64, float64, float64)")
+def damped_update_vectorized(new, old, damping):
+    return damping * new + (1 - damping) * old
 
 
 @njit(error_model="numpy", fastmath=False)

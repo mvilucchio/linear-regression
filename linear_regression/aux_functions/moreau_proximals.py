@@ -6,9 +6,15 @@ from .loss_functions import (
     DDz_exponential_loss,
     tukey_loss,
     DDz_tukey_loss,
-    mod_tukey_loss,
-    Dz_mod_tukey_loss,
-    DDz_mod_tukey_loss,
+    mod_tukey_loss_cubic,
+    Dz_mod_tukey_loss_cubic,
+    DDz_mod_tukey_loss_cubic,
+    mod_tukey_loss_quad,
+    Dz_mod_tukey_loss_quad,
+    DDz_mod_tukey_loss_quad,
+    cauchy_loss,
+    Dz_cauchy_loss,
+    DDz_cauchy_loss,
 )
 from .regularisation_functions import (
     power_regularisation,
@@ -18,6 +24,7 @@ from .regularisation_functions import (
     DxDreg_param_power_regularisation,
 )
 from ..utils.minimizers import brent_minimize_scalar
+from ..utils.root_finding import all_brents
 from . import MAX_ITER_BRENT_MINIMIZE, TOL_BRENT_MINIMIZE
 
 
@@ -63,42 +70,148 @@ def Dω_proximal_Tukey_loss(y: float, omega: float, V: float, τ: float) -> floa
 
 # ---------------------------- modified tukey loss --------------------------- #
 @njit(error_model="numpy", fastmath=False)
-def moreau_loss_Tukey_modified(
+def moreau_loss_Tukey_modified_cubic(
     x: float, y: float, omega: float, V: float, τ: float, c: float
 ) -> float:
-    return (x - omega) ** 2 / (2 * V) + mod_tukey_loss(y, x, τ, c)
+    return (x - omega) ** 2 / (2 * V) + mod_tukey_loss_cubic(y, x, τ, c)
 
 
 @njit(error_model="numpy", fastmath=False)
-def proximal_loss_Tukey_modified(
+def proximal_loss_Tukey_modified_cubic(
     x: float, y: float, omega: float, V: float, τ: float, c: float
 ) -> float:
-    return (x - omega) / V + Dz_mod_tukey_loss(y, x, τ, c)
+    return (x - omega) / V + Dz_mod_tukey_loss_cubic(y, x, τ, c)
 
 
 @njit(error_model="numpy", fastmath=False)
-def proximal_Tukey_modified(y: float, omega: float, V: float, τ: float, c: float) -> float:
-    return brent_minimize_scalar(
-        moreau_loss_Tukey_modified,
+def proximal_Tukey_modified_cubic(y: float, omega: float, V: float, τ: float, c: float) -> float:
+    return all_brents(
+        moreau_loss_Tukey_modified_cubic,
+        proximal_loss_Tukey_modified_cubic,
+        (y, omega, V, τ, c),
         -BIG_NUMBER,
         BIG_NUMBER,
+        y - 3 * τ,
+        y + 3 * τ,
+        20,
+        TOL_BRENT_MINIMIZE,
         TOL_BRENT_MINIMIZE,
         MAX_ITER_BRENT_MINIMIZE,
-        (y, omega, V, τ, c),
-    )[0]
+    )
 
 
 @njit(error_model="numpy", fastmath=False)
-def Dω_proximal_Tukey_modified(y: float, omega: float, V: float, τ: float, c: float) -> float:
-    proximal = brent_minimize_scalar(
-        moreau_loss_Tukey_modified,
+def Dω_proximal_Tukey_modified_cubic(y: float, omega: float, V: float, τ: float, c: float) -> float:
+    proximal = all_brents(
+        moreau_loss_Tukey_modified_cubic,
+        proximal_loss_Tukey_modified_cubic,
+        (y, omega, V, τ, c),
         -BIG_NUMBER,
         BIG_NUMBER,
+        y - 3 * τ,
+        y + 3 * τ,
+        20,
+        TOL_BRENT_MINIMIZE,
         TOL_BRENT_MINIMIZE,
         MAX_ITER_BRENT_MINIMIZE,
+    )
+    return 1 / (1 + V * DDz_mod_tukey_loss_cubic(y, proximal, τ, c))
+
+
+# ------------------------------ mod tukey loss ------------------------------ #
+@njit(error_model="numpy", fastmath=False)
+def moreau_loss_Tukey_modified_quad(
+    x: float, y: float, omega: float, V: float, τ: float, c: float
+) -> float:
+    return (x - omega) ** 2 / (2 * V) + mod_tukey_loss_quad(y, x, τ, c)
+
+
+@njit(error_model="numpy", fastmath=False)
+def proximal_loss_Tukey_modified_quad(
+    x: float, y: float, omega: float, V: float, τ: float, c: float
+) -> float:
+    return (x - omega) / V + Dz_mod_tukey_loss_quad(y, x, τ, c)
+
+
+@njit(error_model="numpy", fastmath=False)
+def proximal_Tukey_modified_quad(y: float, omega: float, V: float, τ: float, c: float) -> float:
+    return all_brents(
+        moreau_loss_Tukey_modified_quad,
+        proximal_loss_Tukey_modified_quad,
         (y, omega, V, τ, c),
-    )[0]
-    return 1 / (1 + V * DDz_mod_tukey_loss(y, proximal, τ, c))
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        y - 1.5 * τ,
+        y + 1.5 * τ,
+        20,
+        TOL_BRENT_MINIMIZE,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+    )
+
+
+@njit(error_model="numpy", fastmath=False)
+def Dω_proximal_Tukey_modified_quad(y: float, omega: float, V: float, τ: float, c: float) -> float:
+    proximal = all_brents(
+        moreau_loss_Tukey_modified_quad,
+        proximal_loss_Tukey_modified_quad,
+        (y, omega, V, τ, c),
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        y - 1.5 * τ,
+        y + 1.5 * τ,
+        20,
+        TOL_BRENT_MINIMIZE,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+    )
+    return 1 / (1 + V * DDz_mod_tukey_loss_quad(y, proximal, τ, c))
+
+
+# -------------------------------- cauchy loss ------------------------------- #
+@njit(error_model="numpy", fastmath=False)
+def moreau_loss_Cauchy(x: float, y: float, omega: float, V: float, τ: float) -> float:
+    return (x - omega) ** 2 / (2 * V) + cauchy_loss(y, x, τ)
+
+
+@njit(error_model="numpy", fastmath=False)
+def proximal_loss_Cauchy(x: float, y: float, omega: float, V: float, τ: float) -> float:
+    return (x - omega) / V + Dz_cauchy_loss(y, x, τ)
+
+
+@njit(error_model="numpy", fastmath=False)
+def proximal_Cauchy(y: float, omega: float, V: float, τ: float) -> float:
+    return all_brents(
+        moreau_loss_Cauchy,
+        proximal_loss_Cauchy,
+        (y, omega, V, τ),
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        y - 3 * τ,
+        y + 3 * τ,
+        20,
+        TOL_BRENT_MINIMIZE,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+    )
+
+
+@njit(error_model="numpy", fastmath=False)
+def Dω_proximal_Cauchy(y: float, omega: float, V: float, τ: float) -> float:
+    proximal = all_brents(
+        moreau_loss_Cauchy,
+        proximal_loss_Cauchy,
+        (y, omega, V, τ),
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        y - 3 * τ,
+        y + 3 * τ,
+        20,
+        TOL_BRENT_MINIMIZE,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+    )
+    return 1 / (1 + V * DDz_cauchy_loss(y, proximal, τ))
 
 
 # -------------------------------- hinge loss -------------------------------- #

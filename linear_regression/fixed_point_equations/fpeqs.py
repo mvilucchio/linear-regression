@@ -52,6 +52,8 @@ def fixed_point_finder(
         y = f_hat_func(*x, **f_hat_kwargs)
         new_x = f_func(*y, **f_kwargs)
 
+        # print(f"\t\t\tnew_x = {new_x}")
+
         err = error_function(new_x, x)
 
         x = tuple(update_function(new_x, x, *args_update_function))
@@ -277,9 +279,13 @@ def fixed_point_finder_loser(
 
         err = max(errs)
 
-        m = damped_update(new_m, m, BLEND_FPE)
-        q = damped_update(new_q, q, BLEND_FPE)
-        V = damped_update(new_V, V, BLEND_FPE)
+        # m = damped_update(new_m, m, BLEND_FPE)
+        # q = damped_update(new_q, q, BLEND_FPE)
+        # V = damped_update(new_V, V, BLEND_FPE)
+
+        m = BLEND_FPE * new_m + (1 - BLEND_FPE) * m
+        q = BLEND_FPE * new_q + (1 - BLEND_FPE) * q
+        V = BLEND_FPE * new_V + (1 - BLEND_FPE) * V
 
         iter_nb += 1
         if iter_nb > max_iter:

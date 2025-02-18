@@ -34,7 +34,7 @@ def huber_loss(y: float, z: float, a: float) -> float:
         return a * abs(y - z) - 0.5 * a**2
 
 
-# ----
+# ------------------------------ real tukey loss ----------------------------- #
 @vectorize("float64(float64, float64, float64)")
 def tukey_loss(y: float, z: float, τ: float) -> float:
     if abs(y - z) <= τ:
@@ -59,9 +59,9 @@ def DDz_tukey_loss(y: float, z: float, τ: float) -> float:
         return 0.0
 
 
-# ----
+# ---------------------- regularised tukey loss (cubic) ---------------------- #
 @vectorize("float64(float64, float64, float64, float64)")
-def mod_tukey_loss(y: float, z: float, τ: float, c: float) -> float:
+def mod_tukey_loss_cubic(y: float, z: float, τ: float, c: float) -> float:
     if abs(y - z) <= τ:
         return τ**2 / 6 * (1 - (1 - ((y - z) / τ) ** 2) ** 3)
     elif y - z > τ:
@@ -71,7 +71,7 @@ def mod_tukey_loss(y: float, z: float, τ: float, c: float) -> float:
 
 
 @vectorize("float64(float64, float64, float64, float64)")
-def Dz_mod_tukey_loss(y: float, z: float, τ: float, c: float) -> float:
+def Dz_mod_tukey_loss_cubic(y: float, z: float, τ: float, c: float) -> float:
     if abs(y - z) <= τ:
         return -(y - z) * (1 - (y - z) ** 2 / τ**2) ** 2
     elif y - z > τ:
@@ -81,13 +81,58 @@ def Dz_mod_tukey_loss(y: float, z: float, τ: float, c: float) -> float:
 
 
 @vectorize("float64(float64, float64, float64, float64)")
-def DDz_mod_tukey_loss(y: float, z: float, τ: float, c: float) -> float:
+def DDz_mod_tukey_loss_cubic(y: float, z: float, τ: float, c: float) -> float:
     if abs(y - z) <= τ:
         return 1 + (5 * (y - z) ** 4) / τ**4 - (6 * (y - z) ** 2) / τ**2
     elif y - z > τ:
         return 6 * c * (y - z - τ)
     else:
         return -6 * c * (y - z + τ)
+
+
+# -------------------- regularised tukey loss (quadratic) -------------------- #
+@vectorize("float64(float64, float64, float64, float64)")
+def mod_tukey_loss_quad(y: float, z: float, τ: float, c: float) -> float:
+    if abs(y - z) <= τ:
+        return τ**2 / 6 * (1 - (1 - ((y - z) / τ) ** 2) ** 3)
+    elif y - z > τ:
+        return c * (y - z - τ) ** 2 + τ**2 / 6.0
+    else:
+        return τ**2 / 6.0 + c * (y - z + τ) ** 2
+
+
+@vectorize("float64(float64, float64, float64, float64)")
+def Dz_mod_tukey_loss_quad(y: float, z: float, τ: float, c: float) -> float:
+    if abs(y - z) <= τ:
+        return -(y - z) * (1 - (y - z) ** 2 / τ**2) ** 2
+    elif y - z > τ:
+        return -2 * c * (y - z - τ)
+    else:
+        return -2 * c * (y - z + τ)
+
+
+@vectorize("float64(float64, float64, float64, float64)")
+def DDz_mod_tukey_loss_quad(y: float, z: float, τ: float, c: float) -> float:
+    if abs(y - z) <= τ:
+        return 1 + (5 * (y - z) ** 4) / τ**4 - (6 * (y - z) ** 2) / τ**2
+    else:
+        return 2 * c
+
+
+# -------------------------------- cauchy loss ------------------------------- #
+@vectorize("float64(float64, float64, float64)")
+def cauchy_loss(y: float, z: float, τ: float) -> float:
+    return 0.5 * τ**2 * log(1 + (y - z) ** 2 / τ**2)
+
+
+@vectorize("float64(float64, float64, float64)")
+def Dz_cauchy_loss(y: float, z: float, τ: float) -> float:
+    return ((-y + z) * τ**2) / ((y - z) ** 2 + τ**2)
+
+
+@vectorize("float64(float64, float64, float64)")
+def DDz_cauchy_loss(y: float, z: float, τ: float) -> float:
+    return (-((y - z) ** 2 * τ**2) + τ**4) / ((y - z) ** 2 + τ**2) ** 2
 
 
 # ---------------------------------------------------------------------------- #

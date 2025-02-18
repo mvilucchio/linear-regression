@@ -1,6 +1,4 @@
-from numba import vectorize, njit
-
-# from numpy import pi, sign
+from numba import vectorize
 from math import exp, sqrt, pow, erf, pi, log
 from ..aux_functions.misc import gaussian
 
