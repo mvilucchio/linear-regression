@@ -6,6 +6,23 @@ import numba
 import statistics
 
 
+def stencil_derivative_1d(fun, h, x):
+    return (
+        -1259728571316 * fun(x - 2.5 * h)
+        + 17321267855599 * fun(x - 2 * h)
+        - 115475119037326 * fun(x - 1.5 * h)
+        + 519638035668003 * fun(x - 1 * h)
+        - 2078552142671768 * fun(x - 0.5 * h)
+        - 484995499956000 * fun(x + 0 * h)
+        + 2909972999739752 * fun(x + 0.5 * h)
+        - 1039276071335648 * fun(x + 1 * h)
+        + 346425357111896 * fun(x + 1.5 * h)
+        - 86606339277977 * fun(x + 2 * h)
+        + 13857014284477 * fun(x + 2.5 * h)
+        - 1049773809430 * fun(x + 3 * h)
+    ) / (1454986499869980 * 1.0 * h**1)
+
+
 class TestFunctionGeneral(TestCase):
     def get_args(self, func):
         if isinstance(func, numba.core.registry.CPUDispatcher):
@@ -18,13 +35,19 @@ class TestFunctionGeneral(TestCase):
 
     def sample_arg(self, signature):
         if signature == "+":
+            return random.uniform(1e-3, 50)
+        elif signature == "++":
             return random.uniform(1e-6, 100)
         elif signature == "u":
+            return random.uniform(-50, 50)
+        elif signature == "u+":
             return random.uniform(-100, 100)
         elif signature == "0-1":
             return random.uniform(0, 1)
         elif signature == "b":
             return random.choice([0, 1])
+        elif signature == "+/-":
+            return random.choice([1, -1])
         elif signature == "n":
             return random.gauss(0, 1)
         elif isinstance(signature, tuple):
