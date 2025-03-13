@@ -37,25 +37,23 @@ def set_size(width, fraction=1, subplots=(1, 1)):
 
 
 save = True
-width = 1.25 * 458.63788
+width = 433.62
 
 plt.style.use("./plotting/latex_ready.mplstyle")
 
 tuple_size = set_size(width, fraction=0.50)
 
-multiplier = 1.0
-second_multiplier = 0.7
 
 fig, axs = plt.subplots(
     nrows=2,
     ncols=2,
-    figsize=(multiplier * tuple_size[0], 0.75 * multiplier * tuple_size[0]),
+    figsize=(tuple_size[0], 0.75 * tuple_size[0]),
     gridspec_kw={"hspace": 0, "wspace": 0},
 )
-fig.subplots_adjust(left=0.16)
+fig.subplots_adjust(left=0.14)
 fig.subplots_adjust(bottom=0.16)
-fig.subplots_adjust(top=0.97)
-fig.subplots_adjust(right=0.97)
+fig.subplots_adjust(top=0.98)
+fig.subplots_adjust(right=0.96)
 
 fig.delaxes(axs[0, 0])
 
@@ -104,14 +102,16 @@ for ax in axs[:, 1]:
 for ax in axs[1, :]:
     ax.sharey(axs[1, 0])
 
-axs[1, 1].set_xlabel("Iters.")
+axs[1, 1].set_xlabel("GD Iters.", labelpad=0.0)
 axs[1, 1].set_xlim([0, 1000])
 
-axs[1, 0].set_xlabel(r"$E_{\mathrm{train}}$")
+# axs[1, 0].set_xlabel(r"$E_{\mathrm{train}}$", labelpad=0.0)
+axs[1, 0].set_xlabel(r"$\tilde{\mathcal{A}}(q)$", labelpad=0.0)
 axs[1, 0].set_ylabel(r"$q$")
 axs[1, 0].set_ylim([0.2, 350])
 
-axs[0, 1].set_ylabel(r"$E_{\mathrm{estim}}$")
+# axs[0, 1].set_ylabel(r"$E_{\mathrm{estim}}$")
+axs[0, 1].set_ylabel(r"$\frac{1}{d} \|\hat{\mathbf{w}} - \mathbf{w}_\star\|_2^2$")
 axs[0, 1].set_yscale("log")
 # axs[0,1].set_ylim([-10, 150])
 
@@ -136,7 +136,7 @@ for ax in [
 
 # legend_ax.legend(handles, labels, loc="center", title="Legend")
 
-plt.tight_layout()
+# plt.tight_layout()
 
 if save:
     save_plot(

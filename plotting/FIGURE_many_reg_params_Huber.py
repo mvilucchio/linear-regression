@@ -36,33 +36,30 @@ def set_size(width, fraction=1, subplots=(1, 1)):
 
 
 save = True
-width = 1.25 * 458.63788
+width = 433.62
 
 plt.style.use("./plotting/latex_ready.mplstyle")
 
 tuple_size = set_size(width, fraction=0.50)
 
-multiplier = 1.0
-second_multiplier = 0.7
 
 fig, axs = plt.subplots(
     nrows=1,
     ncols=1,
-    sharex=True,
-    figsize=(multiplier * tuple_size[0], 0.75 * multiplier * tuple_size[0]),
-    gridspec_kw={"hspace": 0},
+    figsize=(tuple_size[0], 0.75 * tuple_size[0]),
+    gridspec_kw={"hspace": 0, "wspace": 0},
 )
-fig.subplots_adjust(left=0.16)
+fig.subplots_adjust(left=0.17)
 fig.subplots_adjust(bottom=0.16)
-fig.subplots_adjust(top=0.97)
-fig.subplots_adjust(right=0.97)
+fig.subplots_adjust(top=0.98)
+fig.subplots_adjust(right=0.96)
 
 
 delta_in, delta_out, percentage, beta, a = 1.0, 5.0, 0.3, 0.0, 1.0
 alpha = 10.0
 
 data_directory = "./data"
-file_prefix = "huber_1.000"
+file_prefix = "aa_huber_1.000"
 file_list = [
     file
     for file in os.listdir(data_directory)
@@ -75,6 +72,8 @@ for file in file_list:
     label = file.split("reg_param_")[1].split("_")[0]
     label_list.append(float(label))
 
+print(label_list)
+
 data = []
 for path in path_list:
     with open(path, "rb") as file:
@@ -83,17 +82,34 @@ for path in path_list:
 colors = [f"C{i}" for i in range(len(data))]
 
 for d, lb, c in zip(data, label_list, colors):
-    axs.plot(d["qs"], d["training_errors"], label=f"$\lambda = {lb:.1f}$", color=c)
-    axs.plot(d["q_true"], d["training_error_true"], "x", color=c)
+    # if lb == -0.5:
+    #     continue
+    axs.plot(d["qs"], d["training_errors"], label=f"$\\lambda = {lb:.1f}$", color=c)
+    # axs.plot(d["q_true"], d["training_error_true"], "x", color=c)
 
 # axs.set_title(r"$\alpha = {:.0f}$ $a = {:.0f}$ $\Delta_{{\mathrm{{IN}}}} = {:.1f}$ $\Delta_{{\mathrm{{OUT}}}} = {:.1f}$ $\beta = {:.1f}$ $\epsilon = {:.1f}$".format(alpha, a, delta_in, delta_out, beta, percentage), fontsize=9)
 axs.set_xscale("log")
-axs.set_ylabel(r"$E_{\mathrm{train}}$", labelpad=2.0)
-axs.set_xlabel(r"$q$", labelpad=2.0)
+# axs.set_ylabel(r"$E_{\mathrm{train}}$", labelpad=2.0)
+axs.set_ylabel(r"$\mathcal{A}^{\star}(q)$", labelpad=3.0)
+axs.set_xlabel(r"$q$", labelpad=0.0)
 axs.grid(which="both", axis="both", alpha=0.5)
 axs.set_xlim(1e-1, 1e2)
-axs.set_ylim(0.5, 2.5)
-axs.legend()
+axs.set_ylim(0.4, 2.5)
+# axs.legend()
+
+# create a legend with the specific order
+handles, labels = axs.get_legend_handles_labels()
+order = [1, 4, 0, 3, 2]
+axs.legend(
+    [handles[idx] for idx in order],
+    [
+        "$\\lambda > 0$",
+        "$\\lambda = 0$",
+        "$\\lambda \\in [\\lambda_c, 0]$",
+        "$\\lambda = \\lambda_c$",
+        "$\\lambda < \\lambda_c$",
+    ],
+)
 
 if save:
     save_plot(

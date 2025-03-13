@@ -124,9 +124,9 @@ for delta_noise, c in zip(deltas, color_list):
 
     # stab_values = np.empty_like(data_se["qs"])
     # if delta_noise == 0.0:
-    #     # for idx, (m, q, sigma) in enumerate(zip(data_se["ms"], data_se["qs"], data_se["sigmas"])):
+    #     # for idx, (m, q, V) in enumerate(zip(data_se["ms"], data_se["qs"], data_se["Vs"])):
     #     #     print("---- ", idx, q)
-    #     #     stab_values[idx] = stability_Logistic_no_noise_classif(m, q, sigma, alpha)
+    #     #     stab_values[idx] = stability_Logistic_no_noise_classif(m, q, V, alpha)
 
     #     first_neg_idx = 0
     #     for i in range(len(data_se["stab_values"])):
@@ -170,15 +170,15 @@ for delta_noise, c in zip(deltas, color_list):
     #         qs=data_se["qs"],
     #         training_error=data_se["training_error"],
     #         angle_ts=data_se["angle_ts"],
-    #         sigmas=data_se["sigmas"],
+    #         Vs=data_se["Vs"],
     #         ms=data_se["ms"],
     #         stab_values=stab_values,
     #     )
 
     # else:
-    #     for idx, (m, q, sigma) in enumerate(zip(data_se["ms"], data_se["qs"], data_se["sigmas"])):
+    #     for idx, (m, q, V) in enumerate(zip(data_se["ms"], data_se["qs"], data_se["Vs"])):
     #         print("Δ={:.3f} --- time ".format(delta_noise), datetime.datetime.now(), " --- ", idx, q)
-    #         stab_values[idx] = stability_Logistic_probit_classif(m, q, sigma, alpha, delta_noise)
+    #         stab_values[idx] = stability_Logistic_probit_classif(m, q, V, alpha, delta_noise)
 
     #     axs.plot(
     #         data_se["qs"],
@@ -201,7 +201,7 @@ for delta_noise, c in zip(deltas, color_list):
     #     qs=data_se["qs"],
     #     training_error=data_se["training_error"],
     #     angle_ts=data_se["angle_ts"],
-    #     sigmas=data_se["sigmas"],
+    #     Vs=data_se["Vs"],
     #     ms=data_se["ms"],
     #     stab_values=stab_values,
     # )

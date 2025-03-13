@@ -83,8 +83,8 @@ for reg_param in reg_prams:
         data["alphas"],
         np.array(
             [
-                training_error_Hinge_loss_no_noise(m, q, sigma)
-                for m, q, sigma in zip(data["ms"], data["qs"], data["sigmas"])
+                training_error_Hinge_loss_no_noise(m, q, V)
+                for m, q, V in zip(data["ms"], data["qs"], data["Vs"])
             ]
         ),
         "-",
