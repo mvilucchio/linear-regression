@@ -238,3 +238,14 @@ def f_out_Logistic(y: float, omega: float, V: float) -> float:
 # @vectorize(["float64(float64, float64, float64)"])
 def Df_out_Logistic(y: float, omega: float, V: float) -> float:
     raise NotImplementedError
+
+
+# -----------------------------------
+@vectorize("float64(float64, float64, float64)")
+def f_out_phase_retrival_simple(y: float, omega: float, V: float) -> float:
+    return 2 * omega * y / (1 + 2 * y * V)
+
+
+@vectorize(["float64(float64, float64, float64)"])
+def Df_out_phase_retrival_simple(y: float, omega: float, V: float) -> float:
+    return 2 * y / (1 + 2 * y * V)
