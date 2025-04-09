@@ -100,3 +100,13 @@ def percentage_misclassified_linear_features(
 
 
 # ---------------------------- Non-Linear Features --------------------------- #
+def percentage_flipped_nonlinear_features(
+    m: float, q: float, rho: float, epsilon: float, p
+) -> float:
+    raise NotImplementedError
+    if p == "inf":
+        a
+    else:
+        pstar = 1 / (1 - 1 / p)
+        C = (gamma_fun((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar)
+        return erf(epsilon * sqrt(1 - m**2 / (q * rho)) * C)

@@ -140,6 +140,52 @@ def data_generation(
         return xs, ys, xs_gen, ys_gen, theta_0_teacher
 
 
+def data_generation_hastie(
+    measure_fun: callable,
+    d: int,
+    n: int,
+    n_gen: int,
+    measure_fun_args,
+    gamma: float = 1.0,
+    theta_0_teacher: ndarray = None,
+    Σx: ndarray = None,
+):
+    rng = default_rng()
+
+    if Σx is None:
+        Σx = eye(d, dtype=float32)
+
+    if theta_0_teacher is None:
+        theta_0_teacher = rng.standard_normal(size=(d,), dtype=float32)
+
+    p = int(d / gamma)
+
+    projector = zeros((p, d), dtype=float32)
+    if p >= d:
+        projector[:d, :d] = sqrt(p / d) * eye(d)
+    else:
+        projector[:p, :p] = eye(p)
+
+    print("projector shape", projector.shape)
+
+    zero_vec = zeros(d, dtype=float32)
+
+    zs = rng.multivariate_normal(zero_vec, Σx, size=(n,)).astype(float32)
+    zs_gen = rng.multivariate_normal(zero_vec, Σx, size=(n_gen,)).astype(float32)
+
+    ys = measure_fun(rng, theta_0_teacher, zs, *measure_fun_args)
+    ys_gen = measure_fun(rng, theta_0_teacher, zs_gen, *measure_fun_args)
+
+    xs = zs @ projector.T + rng.multivariate_normal(
+        zeros(p, dtype=float32), eye(p, dtype=float32), size=(n,)
+    ).astype(float32)
+    xs_gen = zs_gen @ projector.T + rng.multivariate_normal(
+        zeros(p, dtype=float32), eye(p, dtype=float32), size=(n_gen,)
+    ).astype(float32)
+
+    return xs, ys, zs, xs_gen, ys_gen, zs_gen, theta_0_teacher, projector
+
+
 def data_generation_correalted(
     measure_fun,
     n_features: int,

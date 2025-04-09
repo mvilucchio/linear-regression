@@ -420,7 +420,7 @@ def find_coefficients_Logistic_adv(
 ):
     _, d = xs.shape
     # w = rng.standard_normal((d,), float32)  # normal(loc=0.0, scale=1.0, size=(d,))
-    w = initial_w.copy() + rng.standard_normal((d,), float32)
+    w = initial_w.copy() + 0.01 * rng.standard_normal((d,), float32)
     xs_norm = divide(xs, sqrt(d))
 
     opt_res = minimize(
@@ -430,7 +430,7 @@ def find_coefficients_Logistic_adv(
         jac=_grad_loss_Logistic_adv,
         hess=_hess_loss_Logistic_adv,
         args=(xs_norm, ys, reg_param, ε, reg_order, pstar, d),
-        options={"maxiter": MAX_ITER_MINIMIZE, "xtol": 1e-3},
+        options={"maxiter": MAX_ITER_MINIMIZE, "xtol": 5e-5},
     )
 
     if opt_res.status == 2:
@@ -443,14 +443,16 @@ def find_coefficients_Logistic_adv(
 
 # ------------------------------ Vdeltacase ------------------------------ #
 @jit
-def _loss_Logistic_adv_Sigmadelta(w, xs_norm, ys, reg_param: float, ε: float, Sigmadelta, d: int):
+def _loss_Logistic_adv_Sigmadelta(
+    w, xs_norm, ys, reg_param: float, ε: float, Sigmadelta, Sigmaw, d: int
+):
     loss = jnp.sum(
         jnp.log1p(
             jnp.exp(
-                -ys * jnp.dot(xs_norm, w) + ε / jnp.sqrt(d) * jnp.sqrt(jnp.dot(w, Sigmadelta @ w))
+                -ys * jnp.dot(xs_norm, w) + ε * jnp.sqrt(jnp.dot(w, Sigmadelta @ w)) / jnp.sqrt(d)
             )
         )
-    ) + 0.5 * reg_param * jnp.sum(w**2)
+    ) + 0.5 * reg_param * jnp.dot(w, Sigmaw @ w)
     return loss
 
 
@@ -459,10 +461,10 @@ _hess_loss_Logistic_adv_Sigmadelta = jit(hessian(_loss_Logistic_adv_Sigmadelta))
 
 
 def find_coefficients_Logistic_adv_Sigmadelta(
-    ys, xs, reg_param: float, ε: float, wstar: ndarray, Sigmadelta
+    ys, xs, reg_param: float, ε: float, w_star: ndarray, Sigmadelta, Sigmaw
 ):
     _, d = xs.shape
-    w = wstar.copy() + rng.standard_normal((d,), float32)
+    w = w_star.copy() + 0.01 * rng.standard_normal((d,), float32)
     xs_norm = divide(xs, sqrt(d))
 
     opt_res = minimize(
@@ -471,7 +473,7 @@ def find_coefficients_Logistic_adv_Sigmadelta(
         method="Newton-CG",
         jac=_grad_loss_Logistic_adv_Sigmadelta,
         hess=_hess_loss_Logistic_adv_Sigmadelta,
-        args=(xs_norm, ys, reg_param, ε, Sigmadelta, d),
+        args=(xs_norm, ys, reg_param, ε, Sigmadelta, Sigmaw, d),
         options={"maxiter": MAX_ITER_MINIMIZE},
     )
 
@@ -549,6 +551,6 @@ def find_coefficients_Logistic_adv_Linf_L1(ys: ndarray, xs: ndarray, reg_param: 
 
     objective = Minimize(loss_term + reg_param * l1_reg)
     problem = Problem(objective)
-    problem.solve(verbose=False)
+    problem.solve(verbose=True)
 
     return w.value
