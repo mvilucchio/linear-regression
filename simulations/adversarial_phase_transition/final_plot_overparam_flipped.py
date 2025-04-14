@@ -33,7 +33,7 @@ out = np.empty_like(eps_dense)
 
 min_val = 1.0
 
-plt.style.use("./latex_ready.mplstyle")
+plt.style.use("./plotting/latex_ready.mplstyle")
 columnwidth = 469.75502
 fig_width_pt = columnwidth
 inches_per_pt = 1.0 / 72.27
