@@ -6,6 +6,10 @@
 data/
 !data/.gitkeep
 
+# datasets folder
+datasets/**
+!datasets/.gitkeep
+
 imgs/
 !imgs/.gitkeep
 
