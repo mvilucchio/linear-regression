@@ -27,6 +27,10 @@ epss = np.logspace(-1.5, 1.5, 15)
 reps = 10
 
 data_folder = "./data/linear_random_features"
+
+if not os.path.exists(data_folder):
+    os.makedirs(data_folder)
+
 file_name = f"ERM_Hastie_linear_rf_perc_flipped_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}.pkl"
 
 for p in tqdm(ps, desc="p", leave=False):
@@ -44,10 +48,6 @@ for p in tqdm(ps, desc="p", leave=False):
         estim_vals_q = np.empty((reps,))
         estim_vals_rho = np.empty((reps,))
 
-        F = np.random.normal(0.0, 1.0, (d, n_features))
-
-        assert F.shape == (d, n_features)
-
         for j in tqdm(range(reps), desc="reps", leave=False):
             xs, ys, zs, xs_gen, ys_gen, zs_gen, wstar, F = data_generation_hastie(
                 measure_gen_no_noise_clasif,
@@ -57,6 +57,8 @@ for p in tqdm(ps, desc="p", leave=False):
                 measure_fun_args={},
                 gamma=gamma,
             )
+
+            print(f"xs.shape = {xs.shape}, ys.shape = {ys.shape}, zs.shape = {zs.shape}, F.shape = {F.shape}, wstar.shape = {wstar.shape}")
 
             assert F.shape == (d, n_features)
 
