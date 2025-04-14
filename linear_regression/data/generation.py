@@ -3,9 +3,9 @@ from numpy.random import default_rng
 from math import sqrt
 
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Classification                                          #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# ---------------------------------------------------------------------------- #
+#                                Classification                                #
+# ---------------------------------------------------------------------------- #
 
 
 def measure_gen_no_noise_clasif(rng, teacher_vector: ndarray, xs: ndarray):
@@ -15,7 +15,7 @@ def measure_gen_no_noise_clasif(rng, teacher_vector: ndarray, xs: ndarray):
     return ys
 
 
-def measure_gen_probit_clasif(rng, teacher_vector, xs, delta):
+def measure_gen_probit_clasif(rng, teacher_vector: ndarray, xs: ndarray, delta: float):
     n_samples, n_features = xs.shape
     w_xs = divide(xs @ teacher_vector, sqrt(n_features), dtype=float32)
     noise = sqrt(delta) * rng.standard_normal(size=(n_samples,), dtype=float32)
@@ -23,7 +23,7 @@ def measure_gen_probit_clasif(rng, teacher_vector, xs, delta):
     return ys
 
 
-def measure_gen_single_noise_clasif(rng, teacher_vector, xs, delta: float):
+def measure_gen_single_noise_clasif(rng, teacher_vector: ndarray, xs: ndarray, delta: float):
     n_samples, n_features = xs.shape
     w_xs = divide(xs @ teacher_vector, sqrt(n_features), dtype=float32)
     error_sample = sqrt(delta) * rng.standard_normal(size=(n_samples,), dtype=float32)
@@ -31,12 +31,12 @@ def measure_gen_single_noise_clasif(rng, teacher_vector, xs, delta: float):
     return ys
 
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Regression                                              #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# ---------------------------------------------------------------------------- #
+#                                  Regression                                  #
+# ---------------------------------------------------------------------------- #
 
 
-def measure_gen_single(rng, teacher_vector, xs, delta: float):
+def measure_gen_single(rng, teacher_vector: ndarray, xs: ndarray, delta: float):
     n_samples, n_features = xs.shape
     w_xs = divide(xs @ teacher_vector, sqrt(n_features), dtype=float32)
     error_sample = sqrt(delta) * rng.standard_normal(size=(n_samples,), dtype=float32)
@@ -46,8 +46,8 @@ def measure_gen_single(rng, teacher_vector, xs, delta: float):
 
 def measure_gen_double(
     rng,
-    teacher_vector,
-    xs,
+    teacher_vector: ndarray,
+    xs: ndarray,
     delta_in: float,
     delta_out: float,
     percentage: float,
@@ -65,8 +65,8 @@ def measure_gen_double(
 
 def measure_gen_decorrelated(
     rng,
-    teacher_vector,
-    xs,
+    teacher_vector: ndarray,
+    xs: ndarray,
     delta_in: float,
     delta_out: float,
     percentage: float,
@@ -84,9 +84,9 @@ def measure_gen_decorrelated(
     return ys
 
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# General                                                 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# ---------------------------------------------------------------------------- #
+#                                    General                                   #
+# ---------------------------------------------------------------------------- #
 
 
 def data_generation(
@@ -166,7 +166,7 @@ def data_generation_hastie(
     else:
         projector[:p, :p] = eye(p)
 
-    print("projector shape", projector.shape)
+    # print("projector shape", projector.shape)
 
     zero_vec = zeros(d, dtype=float32)
 

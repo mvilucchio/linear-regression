@@ -416,11 +416,15 @@ _hess_loss_Logistic_adv = jit(hessian(_loss_Logistic_adv))
 
 
 def find_coefficients_Logistic_adv(
-    ys, xs, reg_param: float, ε: float, reg_order: float, pstar: float, initial_w: ndarray
+    ys, xs, reg_param: float, ε: float, reg_order: float, pstar: float, initial_w: ndarray = None
 ):
     _, d = xs.shape
-    # w = rng.standard_normal((d,), float32)  # normal(loc=0.0, scale=1.0, size=(d,))
+
+    if initial_w is None:
+        initial_w = rng.standard_normal((d,), float32)
+
     w = initial_w.copy() + 0.01 * rng.standard_normal((d,), float32)
+
     xs_norm = divide(xs, sqrt(d))
 
     opt_res = minimize(
@@ -430,7 +434,7 @@ def find_coefficients_Logistic_adv(
         jac=_grad_loss_Logistic_adv,
         hess=_hess_loss_Logistic_adv,
         args=(xs_norm, ys, reg_param, ε, reg_order, pstar, d),
-        options={"maxiter": MAX_ITER_MINIMIZE, "xtol": 5e-5},
+        options={"maxiter": MAX_ITER_MINIMIZE, "xtol": 1e-4},
     )
 
     if opt_res.status == 2:

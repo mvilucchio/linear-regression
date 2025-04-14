@@ -69,7 +69,7 @@ def find_adversarial_perturbation_direct_space(
     problem = Problem(objective, constraints)
     problem.solve()
 
-    return ys[:, None] * tile(x.value, (len(ys), 1))
+    return ys[:, None] * tile(delta.value, (len(ys), 1))
 
 
 # -------------------------- Linear Random Features -------------------------- #
