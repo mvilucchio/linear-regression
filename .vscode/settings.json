@@ -9,7 +9,7 @@
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": true,
     "python.analysis.typeCheckingMode": "off",
-    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.defaultFormatter": "ms-python.python",
     "editor.formatOnSave": true,
     "black-formatter.args": [
         "--line-length", "100",
