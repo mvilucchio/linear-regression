@@ -115,8 +115,8 @@ gen_error = results_dict['gen_error']
 rs_values = results_dict.get('rs_values', np.full_like(alphas, np.nan)) # Utilise .get pour compatibilité
 
 # --- Préparation du Plot ---
-if os.path.exists(STYLE_FILE):
-    plt.style.use(STYLE_FILE)
+#if os.path.exists(STYLE_FILE):
+#    plt.style.use(STYLE_FILE)
 
 fig_width_in, fig_height_in = set_size(FIG_WIDTH, fraction=0.9)
 fig, ax1 = plt.subplots(figsize=(fig_width_in, fig_height_in))
