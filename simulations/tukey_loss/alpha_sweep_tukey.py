@@ -29,19 +29,19 @@ BETA = 0.0
 C_TUKEY = 0.001
 
 # Hyperparamètres fixés pour le balayage en alpha
-REG_PARAM = 10.0
-TAU = 2.0
+REG_PARAM = 2.0
+TAU = 1.0
 print(f"Hyperparamètres fixes : lambda={REG_PARAM:.2f}, tau={TAU:.2f}")
 
 # Plage pour alpha
 ALPHA_MIN = 10
-ALPHA_MAX = 20
-N_ALPHA_PTS = 3
+ALPHA_MAX = 1000
+N_ALPHA_PTS = 50
 
 # Options d'intégration (utilisées pour RS si CALCULATE_RS=True)
-INTEGRATION_BOUND = 10.0
-INTEGRATION_EPSABS = 1e-10
-INTEGRATION_EPSREL = 1e-7
+INTEGRATION_BOUND = 5
+INTEGRATION_EPSABS = 1e-7
+INTEGRATION_EPSREL = 1e-4
 
 # Options pour le solveur de point fixe
 #FPE_ABS_TOL = 1e-7

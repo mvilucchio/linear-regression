@@ -43,15 +43,15 @@ IMG_FORMATS = ["pdf", "png"]
 # Doivent correspondre à ceux du script de calcul !
 NOM_LOSS = "Tukey_mod"
 ALPHA_MIN = 10
-ALPHA_MAX = 20
-N_ALPHA_PTS = 3
+ALPHA_MAX = 1000
+N_ALPHA_PTS = 50
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
 BETA = 0.0
 C_TUKEY = 0.001
-REG_PARAM = 10.0
-TAU = 2.0
+REG_PARAM = 2.0
+TAU = 1.0
 
 # --- Chargement des Données ---
 DATA_FOLDER = "./data/alpha_sweeps_tukey" # Doit correspondre
