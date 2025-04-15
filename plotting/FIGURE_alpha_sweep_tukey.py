@@ -114,6 +114,13 @@ Vs = results_dict['Vs']
 gen_error = results_dict['gen_error']
 rs_values = results_dict.get('rs_values', np.full_like(alphas, np.nan)) # Utilise .get pour compatibilité
 
+# Création des données m^2/q
+
+m2_q = np.full_like(alphas, np.nan)
+for i in range(len(alphas)):
+    if ms[i] > 0 and qs[i] > 0:
+        m2_q[i] = np.abs(1-(ms[i]**2) / qs[i])
+
 # --- Préparation du Plot ---
 #if os.path.exists(STYLE_FILE):
 #    plt.style.use(STYLE_FILE)
@@ -126,6 +133,7 @@ ax1.plot(alphas, gen_error, marker='.', linestyle='-', markersize=3, color='tab:
 ax1.plot(alphas, ms, marker='.', linestyle='-', markersize=3, color='tab:green', label='$m$')
 ax1.plot(alphas, qs, marker='.', linestyle='-', markersize=3, color='tab:red', label='$q$')
 ax1.plot(alphas, Vs, marker='.', linestyle='-', markersize=3, color='tab:purple', label='$V$')
+ax1.plot(alphas, m2_q, marker='.', linestyle='-', markersize=3, color='tab:cyan', label='$1-m^2/q$')
 
 # Configuration de l'axe Y principal
 ax1.set_xlabel(r'$\alpha = n/d$')
