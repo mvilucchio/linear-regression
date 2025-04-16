@@ -97,11 +97,15 @@ for i, alpha in enumerate(tqdm(alphas)):
     gen_error[i] = np.mean(gen_error_list), np.std(gen_error_list)
 
 data = {
-    "alphas": alphas,
-    "ms": ms,
-    "qs": qs,
-    "estim_err": estim_error,
-    "gen_err": gen_error,
+    "alpha": alphas,
+    "m_mean": ms[:, 0],
+    "m_std": ms[:, 1],
+    "q_mean": qs[:, 0],
+    "q_std": qs[:, 1],
+    "estim_err_mean": estim_error[:, 0],
+    "estim_err_std": estim_error[:, 1],
+    "gen_err_mean": gen_error[:, 0],
+    "gen_err_std": gen_error[:, 1],
 }
 
 data_array = np.column_stack([data[key] for key in data.keys()])
