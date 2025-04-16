@@ -8,7 +8,7 @@ import warnings
 
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
-from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import f_hat_mod_Tukey_decorrelated_noise
+from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import (f_hat_mod_Tukey_decorrelated_noise, f_hat_uv_mod_Tukey_decorrelated_noise)
 from linear_regression.aux_functions.stability_functions import RS_E2_mod_Tukey_decorrelated_noise
 from linear_regression.aux_functions.moreau_proximals import DƔ_proximal_L2
 from linear_regression.aux_functions.misc import excess_gen_error
@@ -21,7 +21,7 @@ from linear_regression.fixed_point_equations import TOL_FPE, MAX_ITER_FPE, BLEND
 CALCULATE_RS = False
 
 # Paramètres physiques fixes
-NOM_LOSS = "Tukey_mod"
+NOM_LOSS = "Tukey_mod_uv"
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
@@ -36,7 +36,7 @@ print(f"Hyperparamètres fixes : lambda={REG_PARAM:.2f}, tau={TAU:.2f}")
 # Plage pour alpha
 ALPHA_MIN = 10
 ALPHA_MAX = 1000
-N_ALPHA_PTS = 50
+N_ALPHA_PTS = 500
 
 # Options d'intégration (utilisées pour RS si CALCULATE_RS=True)
 INTEGRATION_BOUND = 5
@@ -50,11 +50,11 @@ INTEGRATION_EPSREL = 1e-4
 #FPE_MIN_ITER = 50
 
 # Condition initiale pour le premier alpha
-initial_cond_fpe = (0.8, 0.7, 0.06)
+initial_cond_fpe = (3.51584311e-01,1.51750452e-01,3.31756761e-01)
 
 # Configuration sauvegarde
 DATA_FOLDER = "./data/alpha_sweeps_tukey" # Dossier dédié
-FILE_NAME_BASE = f"alpha_sweep_{NOM_LOSS}_lambda_{REG_PARAM:.1f}_tau_{TAU:.1f}_cin_{DELTA_IN}_cout_{DELTA_OUT}_eps_{PERCENTAGE}_beta_{BETA}_c_{C_TUKEY}"
+FILE_NAME_BASE = f"alpha_sweep_{NOM_LOSS}_alpha_min_{ALPHA_MIN:.1f}_alpha_max_{ALPHA_MAX:.1f}_lambda_{REG_PARAM:.1f}_tau_{TAU:.1f}_delta_in_{DELTA_IN}_delta_out_{DELTA_OUT}_eps_{PERCENTAGE}_beta_{BETA}_c_{C_TUKEY}"
 FILE_PATH_CSV = os.path.join(DATA_FOLDER, FILE_NAME_BASE + ".csv")
 FILE_PATH_PKL = os.path.join(DATA_FOLDER, FILE_NAME_BASE + ".pkl") # Pour sauvegarde finale
 
@@ -110,7 +110,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Balayage Alpha")):
         # Recherche du point fixe
         m, q, V = fixed_point_finder(
             f_func=f_L2_reg,
-            f_hat_func=f_hat_mod_Tukey_decorrelated_noise,
+            f_hat_func=f_hat_uv_mod_Tukey_decorrelated_noise,
             initial_condition=current_initial_cond,
             f_kwargs=f_kwargs,
             f_hat_kwargs=f_hat_kwargs,
@@ -125,7 +125,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Balayage Alpha")):
         # Si convergence, calculer les autres quantités
         if np.all(np.isfinite([m, q, V])):
             # Calculer les chapeaux
-            m_hat, q_hat, V_hat = f_hat_mod_Tukey_decorrelated_noise(m, q, V, **f_hat_kwargs)
+            m_hat, q_hat, V_hat = f_hat_uv_mod_Tukey_decorrelated_noise(m, q, V, **f_hat_kwargs)
 
             # Calculer l'erreur de généralisation
             gen_err = excess_gen_error(m, q, V, DELTA_IN, DELTA_OUT, PERCENTAGE, BETA) # Ou autre mesure

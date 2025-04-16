@@ -33,7 +33,7 @@ def set_size(width, fraction=1, subplots=(1, 1)):
     return (fig_width_in, fig_height_in)
 
 # --- Configuration du Plot ---
-LOAD_FROM_PKL = True # Privilégier PKL
+LOAD_FROM_PKL = False # Privilégier PKL
 SAVE_PLOT = True
 STYLE_FILE = "./plotting/latex_ready.mplstyle" # Ajustez si nécessaire
 FIG_WIDTH = 469.75502 # Largeur LaTeX standard
@@ -41,10 +41,10 @@ IMG_FORMATS = ["pdf", "png"]
 
 # --- Paramètres de la Simulation (pour retrouver le fichier) ---
 # Doivent correspondre à ceux du script de calcul !
-NOM_LOSS = "Tukey_mod"
+NOM_LOSS = "Tukey_mod_uv"
 ALPHA_MIN = 10
 ALPHA_MAX = 1000
-N_ALPHA_PTS = 50
+N_ALPHA_PTS = 500
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
@@ -55,7 +55,8 @@ TAU = 1.0
 
 # --- Chargement des Données ---
 DATA_FOLDER = "./data/alpha_sweeps_tukey" # Doit correspondre
-FILE_NAME_BASE = f"alpha_sweep_{NOM_LOSS}_lambda_{REG_PARAM:.1f}_tau_{TAU:.1f}_cin_{DELTA_IN}_cout_{DELTA_OUT}_eps_{PERCENTAGE}_beta_{BETA}_c_{C_TUKEY}"
+#FILE_NAME_BASE = f"alpha_sweep_{NOM_LOSS}_lambda_{REG_PARAM:.1f}_tau_{TAU:.1f}_cin_{DELTA_IN}_cout_{DELTA_OUT}_eps_{PERCENTAGE}_beta_{BETA}_c_{C_TUKEY}"
+FILE_NAME_BASE = f"alpha_sweep_{NOM_LOSS}_alpha_min_{ALPHA_MIN:.1f}_alpha_max_{ALPHA_MAX:.1f}_lambda_{REG_PARAM:.1f}_tau_{TAU:.1f}_delta_in_{DELTA_IN}_delta_out_{DELTA_OUT}_eps_{PERCENTAGE}_beta_{BETA}_c_{C_TUKEY}"
 FILE_PATH_PKL = os.path.join(DATA_FOLDER, FILE_NAME_BASE + ".pkl")
 FILE_PATH_CSV = os.path.join(DATA_FOLDER, FILE_NAME_BASE + ".csv") # Fallback
 
@@ -78,7 +79,7 @@ if not data_loaded and os.path.exists(FILE_PATH_CSV):
      try:
          # Attention: cette lecture suppose que le CSV contient les colonnes dans cet ordre précis
          # et qu'il n'y a pas de lignes manquantes. La reconstruction est fragile.
-         data_csv = np.loadtxt(FILE_PATH_CSV, delimiter=',', skiprows=1)
+         data_csv = np.genfromtxt(FILE_PATH_CSV, delimiter=',', skip_header=1)
          results_dict = {
              "alphas": data_csv[:, 0],
              "ms": data_csv[:, 1],
