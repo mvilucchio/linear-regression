@@ -2,16 +2,47 @@ from linear_regression.data.generation import data_generation, measure_gen_decor
 from linear_regression.erm.erm_solvers import find_coefficients_mod_Tukey, find_coefficients_Huber
 import numpy as np
 import matplotlib.pyplot as plt
-import os
+from os.path import join
 from tqdm import tqdm
 import pickle
+import sys
 
-d = 300
-reps = 10
-alpha_min, alpha_max, n_alpha_pts = 0.1, 10, 15
+if len(sys.argv) > 1:
+    (
+        alpha_min,
+        alpha_max,
+        n_alpha_pts,
+        d,
+        reps,
+        tau,
+        c,
+        reg_param,
+        delta_in,
+        delta_out,
+        percentage,
+        beta,
+    ) = (
+        float(sys.argv[1]),
+        float(sys.argv[2]),
+        int(sys.argv[3]),
+        int(sys.argv[4]),
+        int(sys.argv[5]),
+        float(sys.argv[6]),
+        float(sys.argv[7]),
+        float(sys.argv[8]),
+        float(sys.argv[9]),
+        float(sys.argv[10]),
+        float(sys.argv[11]),
+        float(sys.argv[12]),
+    )
+else:
+    d = 300
+    reps = 30
+    alpha_min, alpha_max, n_alpha_pts = 1.0, 10, 15
+    tau, c = 1.0, 0.001
+    reg_param = 2.0
+
 delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0.1
-tau, c = 1.0, 0.1
-reg_param = 0.1
 
 data_folder = "./data/mod_Tukey_decorrelated_noise/"
 file_name = f"ERM_mod_Tukey_{tau:.2f}_{c:.2f}_alpha_sweep_{alpha_min:.2f}_{alpha_max:.3f}_{n_alpha_pts:d}_reps_{reps:d}_decorrelated_noise_{delta_in:.2f}_{delta_out:.2f}_{percentage:.2f}_{beta:.2f}.pkl"
@@ -26,7 +57,10 @@ for i, alpha in enumerate(tqdm(alphas)):
     n = int(alpha * d)
 
     m_list, q_list, estim_error_list, gen_error_list = [], [], [], []
-    for rep in tqdm(range(reps), leave=False):
+
+    pbar = tqdm(total=reps, leave=False)
+    rep = 0
+    while rep < reps:
         xs, ys, xs_gen, ys_gen, wstar = data_generation(
             measure_gen_decorrelated,
             d,
@@ -35,19 +69,27 @@ for i, alpha in enumerate(tqdm(alphas)):
             (delta_in, delta_out, percentage, beta),
         )
 
-        w_init = find_coefficients_Huber(
-            ys, xs, reg_param, tau, inital_w=wstar + np.random.randn(d) * 1.0
-        )
+        try:
+            w_init = find_coefficients_Huber(
+                ys, xs, reg_param, tau, inital_w=wstar + np.random.randn(d)
+            )
 
-        w = find_coefficients_mod_Tukey(ys, xs, reg_param, tau, c, initial_w=w_init)
-        # w = w_init
+            w = find_coefficients_mod_Tukey(ys, xs, reg_param, tau, c, initial_w=w_init)
+        except ValueError as e:
+            print("Error in finding coefficients:", e)
+            rep += 1
+            continue
 
         m, q = np.dot(w, wstar) / d, np.sum(w**2) / d
         m_list.append(m)
         q_list.append(q)
 
-        estim_error_list.append(np.sum(np.abs(w - wstar)) / d)
+        estim_error_list.append(np.sum(np.abs(w - wstar) ** 2) / d)
         gen_error_list.append(np.mean((xs_gen @ w - ys_gen) ** 2))
+        rep += 1
+        pbar.update(1)
+
+    pbar.close()
 
     ms[i] = np.mean(m_list), np.std(m_list)
     qs[i] = np.mean(q_list), np.std(q_list)
@@ -58,12 +100,19 @@ data = {
     "alphas": alphas,
     "ms": ms,
     "qs": qs,
-    "estim_error": estim_error,
-    "gen_error": gen_error,
+    "estim_err": estim_error,
+    "gen_err": gen_error,
 }
 
-with open(os.path.join(data_folder, file_name), "wb") as f:
-    pickle.dump(data, f)
+data_array = np.column_stack([data[key] for key in data.keys()])
+header = ",".join(data.keys())
+np.savetxt(
+    join(data_folder, file_name),
+    data_array,
+    delimiter=",",
+    header=header,
+    comments="",
+)
 
 plt.figure(figsize=(7.5, 7.5))
 # plt.errorbar(alphas, ms[:, 0], yerr=ms[:, 1], fmt=".-", label="m")
