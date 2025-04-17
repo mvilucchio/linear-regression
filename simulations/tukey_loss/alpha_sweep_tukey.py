@@ -8,7 +8,7 @@ import warnings
 
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
-from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import (f_hat_mod_Tukey_decorrelated_noise, f_hat_uv_mod_Tukey_decorrelated_noise)
+from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import (f_hat_mod_Tukey_decorrelated_noise, f_hat_wv_mod_Tukey_decorrelated_noise)
 from linear_regression.aux_functions.stability_functions import RS_E2_mod_Tukey_decorrelated_noise
 from linear_regression.aux_functions.moreau_proximals import DƔ_proximal_L2
 from linear_regression.aux_functions.misc import excess_gen_error
@@ -21,7 +21,7 @@ from linear_regression.fixed_point_equations import TOL_FPE, MAX_ITER_FPE, BLEND
 CALCULATE_RS = False
 
 # Paramètres physiques fixes
-NOM_LOSS = "Tukey_mod_uv"
+NOM_LOSS = "Tukey_mod_wv"
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
@@ -42,6 +42,7 @@ N_ALPHA_PTS = 500
 INTEGRATION_BOUND = 5
 INTEGRATION_EPSABS = 1e-7
 INTEGRATION_EPSREL = 1e-4
+DEFAULT_N_STD = 7 # Nombre d'écarts-types pour l'intégration en w
 
 # Options pour le solveur de point fixe
 #FPE_ABS_TOL = 1e-7
@@ -96,7 +97,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Balayage Alpha")):
         "alpha": alpha,
         "delta_in": DELTA_IN, "delta_out": DELTA_OUT,
         "percentage": PERCENTAGE, "beta": BETA, "tau": TAU, "c": C_TUKEY,
-        #"integration_bound": INTEGRATION_BOUND,
+        "integration_bound": DEFAULT_N_STD,
         #"integration_epsabs": INTEGRATION_EPSABS,
         #"integration_epsrel": INTEGRATION_EPSREL
     }
@@ -110,7 +111,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Balayage Alpha")):
         # Recherche du point fixe
         m, q, V = fixed_point_finder(
             f_func=f_L2_reg,
-            f_hat_func=f_hat_uv_mod_Tukey_decorrelated_noise,
+            f_hat_func=f_hat_wv_mod_Tukey_decorrelated_noise,
             initial_condition=current_initial_cond,
             f_kwargs=f_kwargs,
             f_hat_kwargs=f_hat_kwargs,
@@ -125,7 +126,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Balayage Alpha")):
         # Si convergence, calculer les autres quantités
         if np.all(np.isfinite([m, q, V])):
             # Calculer les chapeaux
-            m_hat, q_hat, V_hat = f_hat_uv_mod_Tukey_decorrelated_noise(m, q, V, **f_hat_kwargs)
+            m_hat, q_hat, V_hat = f_hat_wv_mod_Tukey_decorrelated_noise(m, q, V, **f_hat_kwargs)
 
             # Calculer l'erreur de généralisation
             gen_err = excess_gen_error(m, q, V, DELTA_IN, DELTA_OUT, PERCENTAGE, BETA) # Ou autre mesure
@@ -192,7 +193,7 @@ final_results_dict = {
     "ALPHA_MIN": ALPHA_MIN, "ALPHA_MAX": ALPHA_MAX, "N_ALPHA_PTS": N_ALPHA_PTS,
     "DELTA_IN": DELTA_IN, "DELTA_OUT": DELTA_OUT, "PERCENTAGE": PERCENTAGE,
     "BETA": BETA, "C_TUKEY": C_TUKEY, "REG_PARAM": REG_PARAM, "TAU": TAU,
-    "CALCULATED_RS": CALCULATE_RS,
+    "CALCULATED_RS": CALCULATE_RS, "integration_bound": DEFAULT_N_STD,
     # Données
     "alphas": alphas,
     "ms": ms_results,

@@ -41,7 +41,7 @@ IMG_FORMATS = ["pdf", "png"]
 
 # --- Paramètres de la Simulation (pour retrouver le fichier) ---
 # Doivent correspondre à ceux du script de calcul !
-NOM_LOSS = "Tukey_mod_uv"
+NOM_LOSS = "Tukey_mod_wv"
 ALPHA_MIN = 10
 ALPHA_MAX = 1000
 N_ALPHA_PTS = 500
