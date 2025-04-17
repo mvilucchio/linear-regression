@@ -80,7 +80,7 @@ for i, alpha in enumerate(alpha_list):
             )
             continue
 
-        m_vals.append(np.dot(wstar, F.T @ w) / p)
+        m_vals.append(np.dot(wstar, F.T @ w) / (p * np.sqrt(gamma)))
         q_vals.append(np.dot(F.T @ w, F.T @ w) / p + np.dot(w, w) / p)
         P_vals.append(np.sum(np.abs(w) ** pstar) / p)
 
@@ -91,7 +91,7 @@ for i, alpha in enumerate(alpha_list):
 
         # calculation of flipped perturbation
         adv_perturbation = find_adversarial_perturbation_direct_space(
-            yhat_gen, xs_gen, w, F @ wstar, eps_t, p
+            yhat_gen, xs_gen, w, F @ wstar, eps_t * p ** (-1 / 2), "inf"
         )
         flipped = percentage_flipped_labels_estim(
             yhat_gen,
@@ -104,7 +104,7 @@ for i, alpha in enumerate(alpha_list):
 
         # calculation of perturbation
         adv_perturbation = find_adversarial_perturbation_direct_space(
-            ys_gen, xs_gen, w, F @ wstar, eps_t, p
+            ys_gen, xs_gen, w, F @ wstar, eps_t * p ** (-1 / 2), "inf"
         )
         misclass = percentage_error_from_true(
             ys_gen,

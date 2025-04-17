@@ -80,7 +80,7 @@ for i, gamma in enumerate(gamma_list):
             )
             continue
 
-        m_vals.append(np.dot(wstar, F.T @ w) / p)
+        m_vals.append(np.dot(wstar, F.T @ w) / (p * np.sqrt(gamma)))
         q_vals.append(np.dot(F.T @ w, F.T @ w) / p + np.dot(w, w) / p)
         P_vals.append(np.sum(np.abs(w) ** pstar) / p)
 
