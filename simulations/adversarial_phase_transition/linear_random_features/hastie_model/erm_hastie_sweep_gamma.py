@@ -15,24 +15,26 @@ import os
 import sys
 
 if len(sys.argv) > 1:
-    gamma_min, gamma_max, n_gammas, alpha, eps_t = (
+    gamma_min, gamma_max, n_gammas, alpha, eps_t, delta, reg_param = (
         float(sys.argv[1]),
         float(sys.argv[2]),
         int(sys.argv[3]),
         float(sys.argv[4]),
         float(sys.argv[5]),
+        float(sys.argv[6]),
+        float(sys.argv[7]),
     )
 else:
     gamma_min, gamma_max, n_gammas = 0.5, 5.0, 20
     alpha = 0.5
     eps_t = 0.1
+    delta = 0.0
+    reg_param = 1e-3
 
-d = 500
+d = 1000
 reps = 20
-n_gen = 100
-delta = 0.1
+n_gen = 1000
 
-reg_param = 1e-2
 pstar = 1.0
 
 data_folder = f"./data/hastie_model_training"
