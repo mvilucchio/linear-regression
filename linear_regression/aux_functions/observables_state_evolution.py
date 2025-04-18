@@ -47,54 +47,51 @@ def estimation_error(m, q, V, **args):
     return 1 + q - 2.0 * m
 
 
-def margin_probit_classif(m, q, V, delta):
-    return (4 * m * sqrt(2 * pi**3)) / sqrt(delta + 1)
+def margin_probit_classif(m, q, V, Δ):
+    return (4 * m * sqrt(2 * pi**3)) / sqrt(Δ + 1)
 
 
 # errors
-def gen_error(m, q, V, delta_in, delta_out, percentage, beta):
-    return q - 2 * m * (1 + (-1 + beta) * percentage) + 1 + percentage * (-1 + beta**2)
+def gen_error(m, q, V, Δ_in, Δ_out, ε, β):
+    return q - 2 * m * (1 + (-1 + β) * ε) + 1 + ε * (-1 + β**2)
 
 
-def excess_gen_error(m, q, V, delta_in, delta_out, percentage, beta):
-    gen_err_BO_alpha_inf = (1 - percentage) * percentage**2 * (1 - beta) ** 2 + percentage * (
-        1 - percentage
-    ) ** 2 * (beta - 1) ** 2
-    return gen_error(m, q, V, delta_in, delta_out, percentage, beta) - gen_err_BO_alpha_inf
+def excess_gen_error(m, q, V, Δ_in, Δ_out, ε, β):
+    gen_err_BO_alpha_inf = (1 - ε) * ε**2 * (1 - β) ** 2 + ε * (1 - ε) ** 2 * (β - 1) ** 2
+    return gen_error(m, q, V, Δ_in, Δ_out, ε, β) - gen_err_BO_alpha_inf
 
 
-def excess_gen_error_oracle_rescaling(m, q, V, delta_in, delta_out, percentage, beta):
-    oracle_norm = 1 - percentage + percentage * beta
+def excess_gen_error_oracle_rescaling(m, q, V, Δ_in, Δ_out, ε, β):
+    oracle_norm = 1 - ε + ε * β
     m_prime = oracle_norm * m / sqrt(q)
     q_prime = oracle_norm**2
 
-    return excess_gen_error(m_prime, q_prime, V, delta_in, delta_out, percentage, beta)
+    return excess_gen_error(m_prime, q_prime, V, Δ_in, Δ_out, ε, β)
 
 
-def estimation_error_rescaled(m, q, V, delta_in, delta_out, percentage, beta, norm_const):
+def estimation_error_rescaled(m, q, V, Δ_in, Δ_out, ε, β, norm_const):
     m = m / norm_const
     q = q / (norm_const**2)
 
     return estimation_error(m, q, V)
 
 
-def estimation_error_oracle_rescaling(m, q, V, delta_in, delta_out, percentage, beta):
-    oracle_norm = 1.0  # abs(1 - percentage + percentage * beta)
+def estimation_error_oracle_rescaling(m, q, V, Δ_in, Δ_out, ε, β):
+    oracle_norm = 1.0  # abs(1 - ε + ε * β)
     m_prime = oracle_norm * m / sqrt(q)
     q_prime = oracle_norm**2
 
     return estimation_error(m_prime, q_prime, V)
 
 
-def gen_error_BO(m, q, V, delta_in, delta_out, percentage, beta):
-    return (1 + percentage * (-1 + beta**2) - (1 + percentage * (-1 + beta)) ** 2 * q) - (
-        (1 - percentage) * percentage**2 * (1 - beta) ** 2
-        + percentage * (1 - percentage) ** 2 * (beta - 1) ** 2
+def gen_error_BO(m, q, V, Δ_in, Δ_out, ε, β):
+    return (1 + ε * (-1 + β**2) - (1 + ε * (-1 + β)) ** 2 * q) - (
+        (1 - ε) * ε**2 * (1 - β) ** 2 + ε * (1 - ε) ** 2 * (β - 1) ** 2
     )
 
 
-def gen_error_BO_old(m, q, V, delta_in, delta_out, percentage, beta):
-    q = (1 - percentage + percentage * beta) ** 2 * q
-    m = (1 - percentage + percentage * beta) * m
+def gen_error_BO_old(m, q, V, Δ_in, Δ_out, ε, β):
+    q = (1 - ε + ε * β) ** 2 * q
+    m = (1 - ε + ε * β) * m
 
     return estimation_error(m, q, V, tuple())
