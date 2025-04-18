@@ -416,6 +416,10 @@ def Dlambdaq_moreau_loss_sum_absolute(
 
 @njit(error_model="numpy", fastmath=False)
 def proximal_L1(Ɣ: float, Λ: float, reg_param: float) -> float:
+    """
+    Proximal operator of the L1 regularisation defined as:
+    reg_param |β|
+    """
     if Ɣ > reg_param:
         return (Ɣ - reg_param) / Λ
     elif Ɣ < -reg_param:
@@ -426,6 +430,10 @@ def proximal_L1(Ɣ: float, Λ: float, reg_param: float) -> float:
 
 @njit(error_model="numpy", fastmath=False)
 def DƔ_proximal_L1(Ɣ: float, Λ: float, reg_param: float) -> float:
+    """
+    Derivative of the proximal operator of the L1 regularisation defined as:
+    reg_param |β|
+    """
     if Ɣ > reg_param:
         return 1.0 / Λ
     elif Ɣ < -reg_param:
@@ -436,6 +444,10 @@ def DƔ_proximal_L1(Ɣ: float, Λ: float, reg_param: float) -> float:
 
 @njit(error_model="numpy", fastmath=False)
 def Dphat_proximal_L1(Ɣ: float, Λ: float, reg_param: float, Phat: float) -> float:
+    """
+    Derivative of the proximal operator of the L1 regularisation defined as:
+    reg_param |β|
+    """
     if Phat + reg_param < Ɣ:
         return (-Phat + Ɣ - reg_param) / Λ
     elif Ɣ < Phat + reg_param:
@@ -446,18 +458,59 @@ def Dphat_proximal_L1(Ɣ: float, Λ: float, reg_param: float, Phat: float) -> fl
 
 @njit(error_model="numpy", fastmath=False)
 def proximal_L2(Ɣ: float, Λ: float, reg_param: float) -> float:
+    """
+    Proximal operator of the L2 regularisation defined as:
+    reg_param / 2 |β|^2
+    """
     return Ɣ / (reg_param + Λ)
 
 
 @njit(error_model="numpy", fastmath=False)
 def DƔ_proximal_L2(Ɣ: float, Λ: float, reg_param: float) -> float:
+    """
+    Derivative of the proximal operator of the L2 regularisation defined as:
+    reg_param / 2 |β|^2
+    """
     return 1 / (reg_param + Λ)
 
 
 @njit(error_model="numpy", fastmath=False)
-def proximal_Elastic_net(Ɣ: float, Λ: float, lambda_1: float, lambda_2: float) -> float:
+def proximal_Elastic_net(Ɣ: float, Λ: float, lambda1: float, lambda2: float) -> float:
     """
     Proximal operator of the elastic net regularisation defined as:
     λ_1 |β| + (λ_2 / 2) |β|^2
     """
-    return
+    if Ɣ > lambda1:
+        return (Ɣ - lambda1) / ((lambda2 / Λ + 1) * Λ)
+    elif Ɣ < -lambda1:
+        return (Ɣ + lambda1) / ((lambda2 / Λ + 1) * Λ)
+    else:
+        return 0
+
+
+@njit(error_model="numpy", fastmath=False)
+def DƔ_proximal_Elastic_net(Ɣ: float, Λ: float, lambda1: float, lambda2: float) -> float:
+    """
+    Derivative of the proximal operator of the elastic net regularisation defined as:
+    λ_1 |β| + (λ_2 / 2) |β|^2
+    """
+    if Ɣ > lambda1:
+        return 1 / ((lambda2 / Λ + 1) * Λ)
+    elif Ɣ < -lambda1:
+        return 1 / ((lambda2 / Λ + 1) * Λ)
+    else:
+        return 0
+
+
+@njit(error_model="numpy", fastmath=False)
+def Dlambda1_proximal_Elastic_net(Ɣ: float, Λ: float, lambda1: float, lambda2: float) -> float:
+    """
+    Derivative of the proximal operator of the elastic net regularisation defined as:
+    λ_1 |β| + (λ_2 / 2) |β|^2
+    """
+    if Ɣ > lambda1:
+        return (-Ɣ + lambda1) / ((lambda2 / Λ + 1) * Λ)
+    elif Ɣ < -lambda1:
+        return (-Ɣ - lambda1) / ((lambda2 / Λ + 1) * Λ)
+    else:
+        return 0
