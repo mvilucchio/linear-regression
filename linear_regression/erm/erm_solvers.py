@@ -558,3 +558,19 @@ def find_coefficients_Logistic_adv_Linf_L1(ys: ndarray, xs: ndarray, reg_param: 
     problem.solve(verbose=True)
 
     return w.value
+
+
+# for this it is better to consider the data as parameters and avoid recompilation at each iteration
+def find_coefficients_Logistic_adv_Linf_L2(ys: ndarray, xs: ndarray, reg_param: float, ε: float):
+    _, d = xs.shape
+    xs_norm = divide(xs, sqrt(d))
+    w = Variable(d)
+    loss_term = cp_sum(logistic(-multiply(ys, xs_norm @ w) + ε * norm1(w) / d))
+
+    l2_reg = norm(w) ** 2
+
+    objective = Minimize(loss_term + reg_param * l2_reg)
+    problem = Problem(objective)
+    problem.solve(verbose=True)
+
+    return w.value

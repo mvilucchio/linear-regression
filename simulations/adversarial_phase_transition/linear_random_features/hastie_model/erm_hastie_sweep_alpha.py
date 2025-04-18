@@ -1,4 +1,7 @@
-from linear_regression.erm.erm_solvers import find_coefficients_Logistic_adv
+from linear_regression.erm.erm_solvers import (
+    find_coefficients_Logistic_adv,
+    find_coefficients_Logistic_adv_Linf_L2,
+)
 from linear_regression.erm.adversarial_perturbation_finders import (
     find_adversarial_perturbation_direct_space,
 )
@@ -73,7 +76,8 @@ for i, alpha in enumerate(alpha_list):
         )
 
         try:
-            w = find_coefficients_Logistic_adv(ys, xs, 0.5 * reg_param, eps_t, 2.0, pstar)
+            # w = find_coefficients_Logistic_adv(ys, xs, 0.5 * reg_param, eps_t, 2.0, pstar)
+            w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, 0.5 * reg_param, eps_t)
         except ValueError as e:
             print(
                 f"minimization didn't converge on iteration {j} for alpha {alpha:.2f}. Trying again."
