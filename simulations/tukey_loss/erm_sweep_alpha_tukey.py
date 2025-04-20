@@ -89,7 +89,7 @@ for i, alpha in enumerate(tqdm(alphas)):
         q_list.append(q)
 
         estim_error_list.append(np.sum(np.abs(w - wstar) ** 2) / d)
-        gen_error_list.append(np.mean((xs_gen @ w - ys_gen) ** 2))
+        gen_error_list.append(np.mean((xs_gen @ w / np.sqrt(d) - ys_gen) ** 2))
         rep += 1
         pbar.update(1)
 

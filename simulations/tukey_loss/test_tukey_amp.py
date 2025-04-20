@@ -123,72 +123,76 @@ for i in range(n_alpha_pts):
     print(f"alpha: {alphas_se[i]:.3f}, m: {ms_se[i]:.3f}, q: {qs_se[i]:.3f}, V: {Vs_se[i]:.3f}")
 
 plt.figure()
-plt.plot(alphas_se, 1 - 2 * ms_se + qs_se, label="SE")
+# plt.plot(alphas_se, 1 - 2 * ms_se + qs_se, label="SE")
+plt.plot(alphas_se, qs_se, label="q")
+plt.plot(alphas_se, ms_se, label="m")
+plt.plot(alphas_se, Vs_se, label="V")
+
 
 n_alpha_pts = 10
-reps = 5
-ds = [500]
-for d in ds:
-    alphas = np.logspace(np.log10(alpha_min), np.log10(alpha_max), n_alpha_pts)
-    ms = np.empty((n_alpha_pts, 2))
-    qs = np.empty((n_alpha_pts, 2))
-    estim_error = np.empty((n_alpha_pts, 2))
-    gen_error = np.empty((n_alpha_pts, 2))
+# reps = 5
+# ds = [500]
+# for d in ds:
+#     alphas = np.logspace(np.log10(alpha_min), np.log10(alpha_max), n_alpha_pts)
+#     ms = np.empty((n_alpha_pts, 2))
+#     qs = np.empty((n_alpha_pts, 2))
+#     estim_error = np.empty((n_alpha_pts, 2))
+#     gen_error = np.empty((n_alpha_pts, 2))
 
-    for i, alpha in enumerate(tqdm(alphas)):
-        n = int(alpha * d)
+#     for i, alpha in enumerate(tqdm(alphas)):
+#         n = int(alpha * d)
 
-        m_list, q_list, estim_error_list, gen_error_list = [], [], [], []
-        for rep in tqdm(range(reps), leave=False):
-            xs, ys, xs_gen, ys_gen, wstar = data_generation(
-                measure_gen_decorrelated,
-                d,
-                n,
-                1000,
-                (delta_in, delta_out, percentage, beta),
-            )
+#         m_list, q_list, estim_error_list, gen_error_list = [], [], [], []
+#         for rep in tqdm(range(reps), leave=False):
+#             xs, ys, xs_gen, ys_gen, wstar = data_generation(
+#                 measure_gen_decorrelated,
+#                 d,
+#                 n,
+#                 1000,
+#                 (delta_in, delta_out, percentage, beta),
+#             )
 
-            # try:
-            #     w = find_coefficients_Huber(
-            #         ys, xs, reg_param, tau, inital_w=wstar + np.random.randn(d) * 1.0
-            #     )
-            # except ValueError:
-            #     pass
+#             # try:
+#             #     w = find_coefficients_Huber(
+#             #         ys, xs, reg_param, tau, inital_w=wstar + np.random.randn(d) * 1.0
+#             #     )
+#             # except ValueError:
+#             #     pass
 
-            w_init = ms_se[i] * wstar + np.sqrt(qs_se[i] - ms_se[i] ** 2) * np.random.randn(d)
-            # w_init = 10.0 * np.random.randn(d)
+#             w_init = ms_se[i] * wstar + np.sqrt(qs_se[i] - ms_se[i] ** 2) * np.random.randn(d)
+#             # w_init = 10.0 * np.random.randn(d)
 
-            w = GAMP_fullyTAP(
-                priors.f_w_L2_regularization,
-                f_out_mod_Tukey,
-                ys,
-                xs,
-                (reg_param,),
-                (tau, c),
-                w_init,
-                (Vs_se[i], V_hat_se[i]),
-                1e-4,
-                1000,
-                wstar=wstar,
-            )
+#             w = GAMP_fullyTAP(
+#                 priors.f_w_L2_regularization,
+#                 f_out_mod_Tukey,
+#                 ys,
+#                 xs,
+#                 (reg_param,),
+#                 (tau, c),
+#                 w_init,
+#                 (Vs_se[i], V_hat_se[i]),
+#                 1e-4,
+#                 1000,
+#                 wstar=wstar,
+#             )
 
-            m, q = np.dot(w, wstar) / d, np.sum(w**2) / d
-            m_list.append(m)
-            q_list.append(q)
+#             m, q = np.dot(w, wstar) / d, np.sum(w**2) / d
+#             m_list.append(m)
+#             q_list.append(q)
 
-            estim_error_list.append(np.sum((w - wstar) ** 2) / d)
-            gen_error_list.append(np.mean((xs_gen @ w - ys_gen) ** 2))
+#             estim_error_list.append(np.sum((w - wstar) ** 2) / d)
+#             gen_error_list.append(np.mean((xs_gen @ w - ys_gen) ** 2))
 
-        ms[i] = np.mean(m_list), np.std(m_list)
-        qs[i] = np.mean(q_list), np.std(q_list)
-        estim_error[i] = np.mean(estim_error_list), np.std(estim_error_list)
-        gen_error[i] = np.mean(gen_error_list), np.std(gen_error_list)
+#         ms[i] = np.mean(m_list), np.std(m_list)
+#         qs[i] = np.mean(q_list), np.std(q_list)
+#         estim_error[i] = np.mean(estim_error_list), np.std(estim_error_list)
+#         gen_error[i] = np.mean(gen_error_list), np.std(gen_error_list)
 
-    print("Results ERM")
-    for i in range(n_alpha_pts):
-        print(f"alpha: {alphas[i]:.3f}, m: {ms[i, 0]:.3f}, q: {qs[i, 0]:.3f}")
+#     print("Results ERM")
+#     for i in range(n_alpha_pts):
+#         print(f"alpha: {alphas[i]:.3f}, m: {ms[i, 0]:.3f}, q: {qs[i, 0]:.3f}")
 
-    plt.errorbar(alphas, estim_error[:, 0], yerr=estim_error[:, 1], fmt=".-", label=f"d = {d}")
+#     plt.errorbar(alphas, estim_error[:, 0], yerr=estim_error[:, 1], fmt=".-", label=f"d = {d}")
 
 plt.xscale("log")
 plt.xlabel(r"$\alpha$")
