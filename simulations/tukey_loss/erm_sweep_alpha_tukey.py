@@ -46,7 +46,7 @@ else:
 delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0.1
 
 data_folder = "./data/mod_Tukey_decorrelated_noise/"
-file_name = f"ERM_mod_Tukey_{tau:.2f}_{c:.2f}_alpha_sweep_{alpha_min:.2f}_{alpha_max:.3f}_{n_alpha_pts:d}_reps_{reps:d}_decorrelated_noise_{delta_in:.2f}_{delta_out:.2f}_{percentage:.2f}_{beta:.2f}.pkl"
+file_name = f"ERM_mod_Tukey_{tau:.2f}_{c:.2e}_alpha_sweep_{alpha_min:.2f}_{alpha_max:.3f}_{n_alpha_pts:d}_reps_{reps:d}_d_{d:d}_decorrelated_noise_{delta_in:.2f}_{delta_out:.2f}_{percentage:.2f}_{beta:.2f}.pkl"
 
 if not os.path.exists(data_folder):
     os.makedirs(data_folder)
