@@ -9,9 +9,10 @@ from ...aux_functions.prior_regularization_funcs import (
 from ...aux_functions.moreau_proximals import (
     proximal_Elastic_net,
     DƔ_proximal_Elastic_net,
+    Dlambdaq_moreau_loss_sum_absolute,
 )
 
-BIG_NUMBER = 15
+BIG_NUMBER = 10
 
 
 @njit(error_model="numpy", fastmath=False)
@@ -27,21 +28,21 @@ def m_integral_hastie_L2_reg_Linf_attack(
     η_hat = m_hat**2 / q_hat
     if gamma <= 1:
         η_hat_red = η_hat / (1 + gamma)
-        gamma_tilde = 1 + 1 / gamma
+        gamma_tilde = 1 + (1 / gamma)
         return (
-            sqrt(1 + gamma)
+            sqrt(gamma)
             * gaussian(ξ, 0, 1)
             * DZ_w_Bayes_gaussian_prior(sqrt(η_hat_red) * ξ, η_hat_red, 0, 1)
             * proximal_Elastic_net(
-                sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, 0.5 * reg_param
+                sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, reg_param
             )
         )
     else:
+        η_hat_red = η_hat / 2
         return (
-            sqrt(2 / gamma)
-            * gaussian(ξ, 0, 1)
-            * DZ_w_Bayes_gaussian_prior(sqrt(η_hat) * ξ, η_hat, 0, 1)
-            * proximal_Elastic_net(sqrt(2 * q_hat) * ξ, 2 * V_hat, P_hat, 0.5 * reg_param)
+            gaussian(ξ, 0, 1)
+            * DZ_w_Bayes_gaussian_prior(sqrt(η_hat_red) * ξ, η_hat_red, 0, 1)
+            * proximal_Elastic_net(sqrt(2 * q_hat) * ξ, 2 * V_hat, 0.5 * P_hat, reg_param)
         )
 
 
@@ -64,23 +65,24 @@ def q_integral_hastie_L2_reg_Linf_attack(
             * Z_w_Bayes_gaussian_prior(sqrt(η_hat_red) * ξ, η_hat_red, 0, 1)
             * (
                 proximal_Elastic_net(
-                    sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, 0.5 * reg_param
+                    sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, reg_param
                 )
                 ** 2
             )
         )
         second_term = gaussian(ξ, 0, 1) * (
             proximal_Elastic_net(
-                sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, 0.5 * reg_param
+                sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, reg_param
             )
             ** 2
         )
-        return (1 + gamma) * first_term + (1 - gamma**2) / gamma * second_term
+        return 0.5 * ((1 + gamma) * first_term + (1 - gamma**2) / gamma * second_term)
     else:
-        return 2 * (
+        η_hat_red = η_hat / 2
+        return (
             gaussian(ξ, 0, 1)
-            * Z_w_Bayes_gaussian_prior(sqrt(η_hat) * ξ, η_hat, 0, 1)
-            * proximal_Elastic_net(sqrt(2 * q_hat) * ξ, 2 * V_hat, P_hat, 0.5 * reg_param) ** 2
+            * Z_w_Bayes_gaussian_prior(sqrt(η_hat_red) * ξ, η_hat_red, 0, 1)
+            * proximal_Elastic_net(sqrt(2 * q_hat) * ξ, 2 * V_hat, 0.5 * P_hat, reg_param) ** 2
         )
 
 
@@ -97,23 +99,24 @@ def V_integral_hastie_L2_reg_Linf_attack(
     η_hat = m_hat**2 / q_hat
     if gamma <= 1:
         η_hat_red = η_hat / (1 + gamma)
-        gamma_tilde = 1 + 1 / gamma
+        gamma_tilde = 1 + (1 / gamma)
         first_term = (
             gaussian(ξ, 0, 1)
             * Z_w_Bayes_gaussian_prior(sqrt(η_hat_red) * ξ, η_hat_red, 0, 1)
             * DƔ_proximal_Elastic_net(
-                sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, 0.5 * reg_param
+                sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, reg_param
             )
         )
         second_term = gaussian(ξ, 0, 1) * DƔ_proximal_Elastic_net(
-            sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, 0.5 * reg_param
+            sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, reg_param
         )
-        return (1 + gamma) * first_term + (1 - gamma**2) / gamma * second_term
+        return 0.5 * ((1 + gamma) * first_term + (1 - gamma**2) / gamma * second_term)
     else:
-        return 2 * (
+        η_hat_red = η_hat / 2
+        return (
             gaussian(ξ, 0, 1)
-            * Z_w_Bayes_gaussian_prior(sqrt(η_hat) * ξ, η_hat, 0, 1)
-            * DƔ_proximal_Elastic_net(sqrt(2 * q_hat) * ξ, 2 * V_hat, P_hat, 0.5 * reg_param)
+            * Z_w_Bayes_gaussian_prior(sqrt(η_hat_red) * ξ, η_hat_red, 0, 1)
+            * DƔ_proximal_Elastic_net(sqrt(2 * q_hat) * ξ, 2 * V_hat, 0.5 * P_hat, reg_param)
         )
 
 
@@ -136,21 +139,22 @@ def P_integral_hastie_L2_reg_Linf_attack(
             * Z_w_Bayes_gaussian_prior(sqrt(η_hat_red) * ξ, η_hat_red, 0, 1)
             * abs(
                 proximal_Elastic_net(
-                    sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, 0.5 * reg_param
+                    sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, reg_param
                 )
             )
         )
         second_term = gaussian(ξ, 0, 1) * abs(
             proximal_Elastic_net(
-                sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, 0.5 * reg_param
+                sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, reg_param
             )
         )
-        return gamma * first_term + (1 - gamma) * second_term
+        return 0.5 * (gamma * first_term + (1 - gamma) * second_term)
     else:
-        return (
+        η_hat_red = η_hat / 2
+        return 0.5 * (
             gaussian(ξ, 0, 1)
-            * Z_w_Bayes_gaussian_prior(sqrt(η_hat) * ξ, η_hat, 0, 1)
-            * abs(proximal_Elastic_net(sqrt(2 * q_hat) * ξ, 2 * V_hat, P_hat, 0.5 * reg_param))
+            * Z_w_Bayes_gaussian_prior(sqrt(η_hat_red) * ξ, η_hat_red, 0, 1)
+            * abs(proximal_Elastic_net(sqrt(2 * q_hat) * ξ, 2 * V_hat, 0.5 * P_hat, reg_param))
         )
 
 
@@ -178,8 +182,11 @@ def f_hastie_L2_reg_Linf_attack(
         ]
     else:
         domains = [
-            (-BIG_NUMBER * ((1 + sqrt(η_hat) / (η_hat + 1)) ** (-1)), -P_hat / sqrt(2 * q_hat)),
-            (P_hat / sqrt(2 * q_hat), BIG_NUMBER * ((1 + sqrt(η_hat) / (η_hat + 1)) ** (-1))),
+            (
+                -BIG_NUMBER * ((1 + sqrt(η_hat) / (η_hat + 1)) ** (-1)),
+                -0.5 * P_hat / sqrt(2 * q_hat),
+            ),
+            (0.5 * P_hat / sqrt(2 * q_hat), BIG_NUMBER * ((1 + sqrt(η_hat) / (η_hat + 1)) ** (-1))),
         ]
 
     int_value_m = 0.0
@@ -190,7 +197,7 @@ def f_hastie_L2_reg_Linf_attack(
             domain[1],
             args=(q_hat, m_hat, V_hat, P_hat, reg_param, gamma),
         )[0]
-    m = int_value_m
+    m = int_value_m / sqrt(gamma)
 
     int_value_q = 0.0
     for domain in domains:
@@ -200,7 +207,7 @@ def f_hastie_L2_reg_Linf_attack(
             domain[1],
             args=(q_hat, m_hat, V_hat, P_hat, reg_param, gamma),
         )[0]
-    q = int_value_q
+    q = 2 * int_value_q
 
     int_value_V = 0.0
     for domain in domains:
@@ -210,7 +217,7 @@ def f_hastie_L2_reg_Linf_attack(
             domain[1],
             args=(q_hat, m_hat, V_hat, P_hat, reg_param, gamma),
         )[0]
-    V = int_value_V
+    V = 2 * int_value_V
 
     int_value_P = 0.0
     for domain in domains:
@@ -220,6 +227,6 @@ def f_hastie_L2_reg_Linf_attack(
             domain[1],
             args=(q_hat, m_hat, V_hat, P_hat, reg_param, gamma),
         )[0]
-    P = int_value_P
+    P = 2 * int_value_P
 
     return m, q, V, P

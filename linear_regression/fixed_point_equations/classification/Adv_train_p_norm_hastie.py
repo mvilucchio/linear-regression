@@ -9,7 +9,7 @@ from ...aux_functions.moreau_proximals import (
     Dω_proximal_Logistic_adversarial,
 )
 
-BIG_NUMBER = 35
+BIG_NUMBER = 10
 
 
 # -----------------------------------
@@ -64,8 +64,9 @@ def P_int_Adv_Logistic_no_noise_classif(
 ) -> float:
     η = m**2 / q
     proximal = proximal_Logistic_adversarial(y, sqrt(q) * ξ, V, P, ε)
-    return 0.5 * (
-        gaussian(ξ, 0, 1)
+    return (
+        0.5
+        * gaussian(ξ, 0, 1)
         * (1 + y * erf(sqrt(η) * ξ / sqrt(2 * (1 - η))))
         * y
         * (proximal - sqrt(q) * ξ)
@@ -114,6 +115,6 @@ def f_hat_Logistic_no_noise_Linf_adv_classif(m, q, V, P, ε, alpha, gamma):
             domain[1],
             args=(y_val, q, m, V, P, ε),
         )[0]
-    P_hat = ε * alpha * gamma * int_value_P_hat
+    P_hat = 2.0 * ε * alpha * gamma * int_value_P_hat
 
     return m_hat, q_hat, V_hat, P_hat

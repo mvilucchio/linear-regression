@@ -3,7 +3,7 @@ import numpy as np
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.aux_functions.misc import classification_adversarial_error
 from linear_regression.fixed_point_equations.regularisation.hastie_model_pstar_attacks import (
-    f_hastie_L2_reg_Lp_attack,
+    f_hastie_L2_reg_Linf_attack,
 )
 from linear_regression.fixed_point_equations.classification.Adv_train_p_norm_hastie import (
     f_hat_Logistic_no_noise_Linf_adv_classif,
@@ -61,7 +61,7 @@ for j, gamma in enumerate(gammas):
     f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": eps_t}
 
     ms_found[j], qs_found[j], Vs_found[j], Ps_found[j] = fixed_point_finder(
-        f_hastie_L2_reg_Lp_attack,
+        f_hastie_L2_reg_Linf_attack,
         f_hat_Logistic_no_noise_Linf_adv_classif,
         initial_condition,
         f_kwargs,
@@ -112,14 +112,14 @@ np.savetxt(
     comments="",
 )
 
-plt.plot(
-    gammas,
-    adversarial_errors_found,
-    label="Adversarial Error",
-    color="blue",
-)
-plt.plot(gammas, gen_errors_se, label="Generalization Error", color="orange")
-plt.legend()
-plt.xlabel("$\\gamma$")
-plt.ylabel("Error")
-plt.show()
+# plt.plot(
+#     gammas,
+#     adversarial_errors_found,
+#     label="Adversarial Error",
+#     color="blue",
+# )
+# plt.plot(gammas, gen_errors_se, label="Generalization Error", color="orange")
+# plt.legend()
+# plt.xlabel("$\\gamma$")
+# plt.ylabel("Error")
+# plt.show()

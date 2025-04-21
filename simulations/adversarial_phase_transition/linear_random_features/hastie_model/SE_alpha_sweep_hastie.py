@@ -3,7 +3,7 @@ import numpy as np
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.aux_functions.misc import classification_adversarial_error
 from linear_regression.fixed_point_equations.regularisation.hastie_model_pstar_attacks import (
-    f_hastie_L2_reg_Lp_attack,
+    f_hastie_L2_reg_Linf_attack,
 )
 from linear_regression.fixed_point_equations.classification.Adv_train_p_norm_hastie import (
     f_hat_Logistic_no_noise_Linf_adv_classif,
@@ -23,9 +23,10 @@ if len(sys.argv) > 1:
         float(sys.argv[6]),
     )
 else:
-    alpha_min, alpha_max, n_alphas, gamma, eps_t, reg_param = (0.1, 5.0, 60, 0.5, 0.1, 1e-3)
+    alpha_min, alpha_max, n_alphas, gamma, eps_t, reg_param = (0.1, 5.0, 100, 2.0, 0.0, 1e-2)
 
-pstar = 1
+# DO NOT CHANGE, NOT IMPLEMENTED FOR OTHERS
+pstar = 1.0
 
 data_folder = "./data/hastie_model_training"
 file_name = f"SE_training_gamma_{gamma:.2f}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_eps_{eps_t:.2f}_reg_param_{reg_param:.1e}_pstar_{pstar:.1f}.csv"
@@ -45,16 +46,19 @@ gen_errors_se = np.empty((n_alphas,))
 flipped_fairs_se = np.empty((n_alphas,))
 misclas_fairs_se = np.empty((n_alphas,))
 
-initial_condition = (0.6, 1.6, 1.05, 1.1)
+initial_condition = (0.6, 1.6, 1.05, 2.7)
+# initial_condition = (0.533069, 1.806296, 0.597970, 0.717633)
 
 for j, alpha in enumerate(alphas):
+    # j = n_alphas - jprime - 1
+    # alpha = alphas[j]
     print(f"Alpha: {alpha:.2f} / {alpha_max:.2f}")
 
-    f_kwargs = {"reg_param": reg_param, "pstar": pstar, "gamma": gamma}
+    f_kwargs = {"reg_param": reg_param, "gamma": gamma}
     f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": eps_t}
 
     ms_found[j], qs_found[j], Vs_found[j], Ps_found[j] = fixed_point_finder(
-        f_hastie_L2_reg_Lp_attack,
+        f_hastie_L2_reg_Linf_attack,
         f_hat_Logistic_no_noise_Linf_adv_classif,
         initial_condition,
         f_kwargs,
@@ -105,19 +109,19 @@ np.savetxt(
     comments="",
 )
 
-plt.plot(
-    alphas,
-    adversarial_errors_found,
-    label="Adversarial Error",
-    color="blue",
-)
-plt.plot(
-    alphas,
-    gen_errors_se,
-    label="Generalization Error",
-    color="orange",
-)
-plt.legend()
-plt.xlabel("Alpha")
-plt.ylabel("Error")
-plt.show()
+# plt.plot(
+#     alphas,
+#     adversarial_errors_found,
+#     label="Adversarial Error",
+#     color="blue",
+# )
+# plt.plot(
+#     alphas,
+#     gen_errors_se,
+#     label="Generalization Error",
+#     color="orange",
+# )
+# plt.legend()
+# plt.xlabel("Alpha")
+# plt.ylabel("Error")
+# plt.show()

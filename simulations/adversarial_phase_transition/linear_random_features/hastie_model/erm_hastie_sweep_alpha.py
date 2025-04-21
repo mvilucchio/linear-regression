@@ -28,13 +28,13 @@ if len(sys.argv) > 1:
         float(sys.argv[7]),
     )
 else:
-    alpha_min, alpha_max, n_alphas = 0.1, 5.0, 20
-    gamma = 0.5
-    eps_t = 0.1
+    alpha_min, alpha_max, n_alphas = 0.1, 5.0, 15
+    gamma = 2.0
+    eps_t = 0.0
     delta = 0.0
-    reg_param = 1e-3
+    reg_param = 1e-2
 
-d = 1000
+d = 300
 reps = 20
 n_gen = 1000
 
@@ -86,7 +86,7 @@ for i, alpha in enumerate(alpha_list):
 
         m_vals.append(np.dot(wstar, F.T @ w) / (p * np.sqrt(gamma)))
         q_vals.append(np.dot(F.T @ w, F.T @ w) / p + np.dot(w, w) / p)
-        P_vals.append(np.sum(np.abs(w) ** pstar) / p)
+        P_vals.append(np.mean(np.abs(w)))
 
         yhat_gen = np.sign(np.dot(xs_gen, w))
 
