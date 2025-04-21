@@ -9,10 +9,9 @@ from ...aux_functions.prior_regularization_funcs import (
 from ...aux_functions.moreau_proximals import (
     proximal_Elastic_net,
     DƔ_proximal_Elastic_net,
-    Dlambdaq_moreau_loss_sum_absolute,
 )
 
-BIG_NUMBER = 10
+BIG_NUMBER = 15
 
 
 @njit(error_model="numpy", fastmath=False)
@@ -71,12 +70,9 @@ def q_integral_hastie_L2_reg_Linf_attack(
             )
         )
         second_term = gaussian(ξ, 0, 1) * (
-            proximal_Elastic_net(
-                sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, reg_param
-            )
-            ** 2
+            proximal_Elastic_net(sqrt(q_hat) * ξ, V_hat, 0.5 * P_hat, reg_param) ** 2
         )
-        return 0.5 * ((1 + gamma) * first_term + (1 - gamma**2) / gamma * second_term)
+        return 0.5 * ((1 + gamma) * first_term + (1 - gamma) * second_term)
     else:
         η_hat_red = η_hat / 2
         return (
@@ -108,9 +104,9 @@ def V_integral_hastie_L2_reg_Linf_attack(
             )
         )
         second_term = gaussian(ξ, 0, 1) * DƔ_proximal_Elastic_net(
-            sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, reg_param
+            sqrt(q_hat) * ξ, V_hat, 0.5 * P_hat, reg_param
         )
-        return 0.5 * ((1 + gamma) * first_term + (1 - gamma**2) / gamma * second_term)
+        return 0.5 * ((1 + gamma) * first_term + (1 - gamma) * second_term)
     else:
         η_hat_red = η_hat / 2
         return (
@@ -133,7 +129,7 @@ def P_integral_hastie_L2_reg_Linf_attack(
     η_hat = m_hat**2 / q_hat
     if gamma <= 1:
         η_hat_red = η_hat / (1 + gamma)
-        gamma_tilde = 1 + 1 / gamma
+        gamma_tilde = 1 + (1 / gamma)
         first_term = (
             gaussian(ξ, 0, 1)
             * Z_w_Bayes_gaussian_prior(sqrt(η_hat_red) * ξ, η_hat_red, 0, 1)
@@ -144,9 +140,7 @@ def P_integral_hastie_L2_reg_Linf_attack(
             )
         )
         second_term = gaussian(ξ, 0, 1) * abs(
-            proximal_Elastic_net(
-                sqrt(q_hat * gamma_tilde) * ξ, V_hat * gamma_tilde, 0.5 * P_hat, reg_param
-            )
+            proximal_Elastic_net(sqrt(q_hat) * ξ, V_hat, 0.5 * P_hat, reg_param)
         )
         return 0.5 * (gamma * first_term + (1 - gamma) * second_term)
     else:
