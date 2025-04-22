@@ -23,7 +23,7 @@ if len(sys.argv) > 1:
         float(sys.argv[6]),
     )
 else:
-    alpha_min, alpha_max, n_alphas, gamma, eps_t, reg_param = (0.1, 5.0, 100, 2.0, 0.0, 1e-2)
+    alpha_min, alpha_max, n_alphas, gamma, eps_t, reg_param = (0.1, 5.0, 100, 0.5, 0.1, 1e-2)
 
 # DO NOT CHANGE, NOT IMPLEMENTED FOR OTHERS
 pstar = 1.0

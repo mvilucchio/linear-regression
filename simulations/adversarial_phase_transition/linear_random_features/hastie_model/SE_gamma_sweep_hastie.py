@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.aux_functions.misc import classification_adversarial_error
@@ -8,7 +7,6 @@ from linear_regression.fixed_point_equations.regularisation.hastie_model_pstar_a
 from linear_regression.fixed_point_equations.classification.Adv_train_p_norm_hastie import (
     f_hat_Logistic_no_noise_Linf_adv_classif,
 )
-import pickle
 from os.path import join, exists
 import os
 import sys
@@ -23,14 +21,7 @@ if len(sys.argv) > 1:
         float(sys.argv[6]),
     )
 else:
-    gamma_min, gamma_max, n_gammas, alpha, eps_t, reg_param = (
-        0.5,
-        2.0,
-        60,
-        2.0,
-        0.1,
-        1e-3,
-    )
+    gamma_min, gamma_max, n_gammas, alpha, eps_t, reg_param = (0.5, 2.0, 60, 2.0, 0.1, 1e-3)
 
 pstar = 1
 
@@ -57,7 +48,7 @@ initial_condition = (0.6, 1.6, 1.05, 1.1)
 for j, gamma in enumerate(gammas):
     print(f"Gamma: {gamma:.2f} / {gamma_max:.2f}")
 
-    f_kwargs = {"reg_param": reg_param, "pstar": pstar, "gamma": gamma}
+    f_kwargs = {"reg_param": reg_param, "gamma": gamma}
     f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": eps_t}
 
     ms_found[j], qs_found[j], Vs_found[j], Ps_found[j] = fixed_point_finder(
@@ -66,7 +57,7 @@ for j, gamma in enumerate(gammas):
         initial_condition,
         f_kwargs,
         f_hat_kwargs,
-        abs_tol=1e-4,
+        abs_tol=1e-5,
         min_iter=10,
         verbose=False,
         print_every=1,
@@ -111,15 +102,3 @@ np.savetxt(
     header=header,
     comments="",
 )
-
-# plt.plot(
-#     gammas,
-#     adversarial_errors_found,
-#     label="Adversarial Error",
-#     color="blue",
-# )
-# plt.plot(gammas, gen_errors_se, label="Generalization Error", color="orange")
-# plt.legend()
-# plt.xlabel("$\\gamma$")
-# plt.ylabel("Error")
-# plt.show()
