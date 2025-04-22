@@ -18,14 +18,15 @@ import os
 import sys
 
 if len(sys.argv) > 1:
-    gamma_min, gamma_max, n_gammas, alpha, eps_t, delta, reg_param = (
+    gamma_min, gamma_max, n_gammas, d, alpha, eps_t, delta, reg_param = (
         float(sys.argv[1]),
         float(sys.argv[2]),
         int(sys.argv[3]),
-        float(sys.argv[4]),
+        int(sys.argv[4]),
         float(sys.argv[5]),
         float(sys.argv[6]),
         float(sys.argv[7]),
+        float(sys.argv[8]),
     )
 else:
     gamma_min, gamma_max, n_gammas = 0.5, 5.0, 20
@@ -33,8 +34,8 @@ else:
     eps_t = 0.1
     delta = 0.0
     reg_param = 1e-3
-
-d = 1000
+    d = 300
+    
 reps = 20
 n_gen = 1000
 
