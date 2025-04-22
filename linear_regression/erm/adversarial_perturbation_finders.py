@@ -32,37 +32,12 @@ def find_adversarial_perturbation_direct_space(
     ε: float,
     p: float,
 ) -> ndarray:
-    """
-    Find adversarial perturbations in the direct input space using convex optimization.
-    Solves the problem: maximize w^T δ subject to ||δ||_p ≤ ε and δ ⊥ w*.
-    Uses CVXPY to find the optimal perturbation and applies it to each sample.
-
-    Parameters:
-    -----------
-    ys : ndarray of shape (n_samples,)
-        Labels (+1/-1) for each sample
-    xs : ndarray of shape (n_samples, n_features)
-        Input samples to perturb
-    w : ndarray of shape (n_features,)
-        Model weights
-    wstar : ndarray of shape (n_features,)
-        Vector to maintain orthogonality with perturbations
-    ε : float
-        Maximum p-norm of perturbations
-    p : float
-        Norm type (usually 2 or inf)
-
-    Returns:
-    --------
-    ndarray of shape (n_samples, n_features)
-        Adversarial perturbations for each sample
-    """
     delta = Variable(len(w))
 
     if float(p) == inf:
-        constraints = [norm(delta, "inf") <= ε, wstar @ delta == 0]
+        constraints = [norm(delta, "inf") <= ε, wstar.T @ delta == 0]
     else:
-        constraints = [norm(delta, p) <= ε, wstar @ delta == 0]
+        constraints = [norm(delta, p) <= ε, wstar.T @ delta == 0]
 
     objective = Minimize(w @ delta)
 
@@ -84,33 +59,6 @@ def find_adversarial_perturbation_linear_rf(
     ε: float,
     p: float,
 ) -> ndarray:
-    """
-    Find adversarial perturbations for a linear random features model using convex optimization.
-    Solves the problem: maximize (Fw)^T δ subject to ||δ||_p ≤ ε and δ ⊥ w*.
-    Uses CVXPY to find the optimal perturbation for the linearized model.
-
-    Parameters:
-    -----------
-    ys : ndarray of shape (n_samples,)
-        Labels (+1/-1) for each sample
-    cs : ndarray of shape (n_samples, n_features)
-        Input samples to perturb
-    w : ndarray of shape (n_random_features,)
-        Model weights in random feature space
-    F : ndarray of shape (n_features, n_random_features)
-        Random feature matrix
-    wstar : ndarray of shape (n_features,)
-        Vector to maintain orthogonality with perturbations
-    ε : float
-        Maximum p-norm of perturbations
-    p : float
-        Norm type (usually 2 or inf)
-
-    Returns:
-    --------
-    ndarray of shape (n_samples, n_features)
-        Adversarial perturbations for each sample
-    """
     _, d = cs.shape
     delta = Variable(d)
     if float(p) == inf:
