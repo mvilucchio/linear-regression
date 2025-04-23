@@ -26,7 +26,7 @@ DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
 BETA = 0.0
-C_TUKEY = 0.00001
+C_TUKEY = 0.001
 
 # Hyperparamètres fixés pour le balayage en alpha
 REG_PARAM = 2.0
@@ -35,8 +35,8 @@ print(f"Hyperparamètres fixes : lambda={REG_PARAM:.2f}, tau={TAU:.2f}")
 
 # Plage pour alpha
 ALPHA_MIN =30
-ALPHA_MAX = 100000
-N_ALPHA_PTS = 1000
+ALPHA_MAX = 500
+N_ALPHA_PTS = 100
 
 # Options d'intégration (utilisées pour RS si CALCULATE_RS=True)
 INTEGRATION_BOUND = 5

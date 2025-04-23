@@ -202,7 +202,7 @@ def gaussian_2d_xigamma_Tukey(xi, gamma, J_beta, delta_prime):
         + xi**2 
         + (J_beta*xi-gamma)**2 / delta_prime
     )
-    normalisation = 1 / 2 * pi * sqrt(delta_prime)
+    normalisation = 1 / (2 * pi * sqrt(delta_prime))
     return normalisation*exp(exponent)
 
 SMALL_NUMBER = 1e-20

@@ -43,13 +43,13 @@ IMG_FORMATS = ["pdf", "png"]
 # Doivent correspondre à ceux du script de calcul !
 NOM_LOSS = "Tukey_mod_xigamma"
 ALPHA_MIN = 30
-ALPHA_MAX = 100000
-N_ALPHA_PTS = 1000
+ALPHA_MAX = 500
+N_ALPHA_PTS = 100
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
 BETA = 0.0
-C_TUKEY = 0.00001
+C_TUKEY = 0.001
 REG_PARAM = 2.0
 TAU = 1.0
 
