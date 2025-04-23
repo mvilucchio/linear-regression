@@ -263,11 +263,7 @@ class TestProximalL1(TestFunctionComparison):
             true_proximal_l1,
             num_points=100,
             tolerance=1e2 * self.tol,
-            arg_signatures=(
-                "n",
-                "+",
-                "+",
-            ),
+            arg_signatures=("n", "+", "+"),
         )
 
 
@@ -294,11 +290,7 @@ class TestDProximalL1(TestFunctionComparison):
             true_DƔ_proximal_L1,
             num_points=100,
             tolerance=1e2 * self.tol,
-            arg_signatures=(
-                "n",
-                "+",
-                "+",
-            ),
+            arg_signatures=("n", "+", "+"),
         )
 
 
@@ -319,11 +311,7 @@ class TestProximalL2(TestFunctionComparison):
             true_proximal_l2,
             num_points=100,
             tolerance=1e2 * self.tol,
-            arg_signatures=(
-                "n",
-                "+",
-                "+",
-            ),
+            arg_signatures=("n", "+", "+"),
         )
 
 
@@ -350,11 +338,63 @@ class TestDProximalL2(TestFunctionComparison):
             true_DƔ_proximal_L2,
             num_points=100,
             tolerance=1e2 * self.tol,
-            arg_signatures=(
-                "n",
-                "+",
-                "+",
-            ),
+            arg_signatures=("n", "+", "+"),
+        )
+
+
+class TestProximalElasticNet(TestFunctionComparison):
+    def setUp(self) -> None:
+        self.tol = 1e-9
+        self.small_tol = 1e-12
+
+    def test_values(self) -> None:
+        def true_proximal_elastic_net(gamma, Λ, reg_param_1, reg_param_2):
+            return minimize_scalar(
+                lambda z: reg_param_1 * abs(z)
+                + 0.5 * reg_param_2 * z**2
+                + 0.5 * Λ * z**2
+                - gamma * z,
+                tol=self.small_tol,
+            )["x"]
+
+        self.compare_two_functions(
+            mpl.proximal_Elastic_net,
+            true_proximal_elastic_net,
+            num_points=100,
+            tolerance=1e2 * self.tol,
+            arg_signatures=("n", "+", "+", "+"),
+        )
+
+
+class TestDProximalElasticNet(TestFunctionComparison):
+    def setUp(self) -> None:
+        self.tol = 1e-9
+        self.small_tol = 1e-12
+        self.eps_derivative = 1e-3
+
+    def test_values(self) -> None:
+        def true_proximal_elastic_net(gamma, Λ, reg_param_1, reg_param_2):
+            return minimize_scalar(
+                lambda z: reg_param_1 * abs(z)
+                + 0.5 * reg_param_2 * z**2
+                + 0.5 * Λ * z**2
+                - gamma * z,
+                tol=self.small_tol,
+            )["x"]
+
+        def true_DƔ_proximal_elastic_net(gamma, Λ, reg_param_1, reg_param_2):
+            return stencil_derivative_1d(
+                lambda gamma: true_proximal_elastic_net(gamma, Λ, reg_param_1, reg_param_2),
+                self.eps_derivative,
+                gamma,
+            )
+
+        self.compare_two_functions(
+            mpl.DƔ_proximal_Elastic_net,
+            true_DƔ_proximal_elastic_net,
+            num_points=100,
+            tolerance=1e2 * self.tol,
+            arg_signatures=("n", "+", "+", "+"),
         )
 
 
