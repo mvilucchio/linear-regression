@@ -476,11 +476,14 @@ def f_hat_xigamma_mod_Tukey_decorrelated_noise(
     epsabs=1e-12,
     epsrel=1e-8,
 ):
-    gamma_dom = [0, tau]
 
     mu_in, mu_out, J_beta_in, J_beta_out,delta_prime_in,delta_prime_out = mu(q, m, V, delta_in, delta_out, percentage, beta, tau)
     var_in = integration_bound *sqrt(mu_in)**(-1) # Nombre d'écarts-types pour l'intégration en u
     var_out = integration_bound *sqrt(mu_out)**(-1) # Nombre d'écarts-types pour l'intégration en u
+    
+    gamma_dom_in = [0, tau+3*sqrt(delta_prime_in+J_beta_in**2)]
+    gamma_dom_out = [0, tau+3*sqrt(delta_prime_out+ J_beta_out**2)]
+    
     def center_in(x):
         return J_beta_in*x/(delta_prime_in*mu_in)
     def center_out(x):
@@ -488,8 +491,8 @@ def f_hat_xigamma_mod_Tukey_decorrelated_noise(
 
     int_value_m_hat_in = dblquad(
         m_star_int_xigamma_Tukey,
-        gamma_dom[0],
-        gamma_dom[1],
+        gamma_dom_in[0],
+        gamma_dom_in[1],
         lambda x: -var_in+center_in(x),
         lambda x: var_in +center_in(x),
         args=(q, m, V, delta_in, 1, tau, c),epsabs=epsabs, epsrel=epsrel
@@ -497,8 +500,8 @@ def f_hat_xigamma_mod_Tukey_decorrelated_noise(
 
     int_value_m_hat_out = dblquad(
         m_star_int_xigamma_Tukey,
-        gamma_dom[0],
-        gamma_dom[1],
+        gamma_dom_out[0],
+        gamma_dom_out[1],
         lambda x: -var_out +center_out(x),
         lambda x: var_out +center_out(x),
         args=(q, m, V, delta_out, beta, tau, c),epsabs=epsabs, epsrel=epsrel
@@ -507,8 +510,8 @@ def f_hat_xigamma_mod_Tukey_decorrelated_noise(
     
     int_value_q_hat_in = dblquad(
         q_star_int_xigamma_Tukey,
-        gamma_dom[0],
-        gamma_dom[1],
+        gamma_dom_in[0],
+        gamma_dom_in[1],
         lambda x: -var_in +center_in(x),
         lambda x: var_in +center_in(x),
         args=(q, m, V, delta_in, 1, tau, c),epsabs=epsabs, epsrel=epsrel
@@ -516,8 +519,8 @@ def f_hat_xigamma_mod_Tukey_decorrelated_noise(
 
     int_value_q_hat_out = dblquad(
         q_star_int_xigamma_Tukey,
-        gamma_dom[0],
-        gamma_dom[1],
+        gamma_dom_out[0],
+        gamma_dom_out[1],
         lambda x: -var_out +center_out(x),
         lambda x: var_out  +center_out(x),
         args=(q, m, V, delta_out, beta, tau, c),epsabs=epsabs, epsrel=epsrel
@@ -526,8 +529,8 @@ def f_hat_xigamma_mod_Tukey_decorrelated_noise(
     
     int_value_V_hat_in = dblquad(
         V_star_int_xigamma_Tukey,
-        gamma_dom[0],
-        gamma_dom[1],
+        gamma_dom_in[0],
+        gamma_dom_in[1],
         lambda x: -var_in +center_in(x),
         lambda x: var_in +center_in(x),
         args=(q, m, V, delta_in, 1, tau, c),epsabs=epsabs, epsrel=epsrel
@@ -535,8 +538,8 @@ def f_hat_xigamma_mod_Tukey_decorrelated_noise(
 
     int_value_V_hat_out = dblquad(
         V_star_int_xigamma_Tukey,
-        gamma_dom[0],
-        gamma_dom[1],
+        gamma_dom_out[0],
+        gamma_dom_out[1],
         lambda x: -var_out +center_out(x),
         lambda x: var_out +center_out(x),
         args=(q, m, V, delta_out, beta, tau, c),epsabs=epsabs, epsrel=epsrel

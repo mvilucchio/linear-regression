@@ -21,7 +21,7 @@ from linear_regression.fixed_point_equations import TOL_FPE, MAX_ITER_FPE, BLEND
 CALCULATE_RS = True
 
 # Paramètres physiques fixes
-NOM_LOSS = "Tukey_mod_xigamma"
+NOM_LOSS = "Tukey_mod_xigamma_extended"
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
@@ -34,24 +34,24 @@ TAU = 1.0
 print(f"Hyperparamètres fixes : lambda={REG_PARAM:.2f}, tau={TAU:.2f}")
 
 # Plage pour alpha
-ALPHA_MIN =30
-ALPHA_MAX = 500
+ALPHA_MIN =2
+ALPHA_MAX = 300
 N_ALPHA_PTS = 100
 
 # Options d'intégration (utilisées pour RS si CALCULATE_RS=True)
 INTEGRATION_BOUND = 5
 INTEGRATION_EPSABS = 1e-7
 INTEGRATION_EPSREL = 1e-4
-DEFAULT_N_STD = 7 # Nombre d'écarts-types pour l'intégration en w
+DEFAULT_N_STD = 4 # Nombre d'écarts-types pour l'intégration en w
 
 # Options pour le solveur de point fixe
-#FPE_ABS_TOL = 1e-7
+FPE_ABS_TOL = 1e-8
 #FPE_MAX_ITER = 10000
 #FPE_BLEND = 0.85
 #FPE_MIN_ITER = 50
 
 # Condition initiale pour le premier alpha
-initial_cond_fpe = (9.95947940e-01,9.92170537e-01,4.04138236e-03)
+initial_cond_fpe = (4.95947940e-01,3.92170537e-01,4.04138236e-01)
 
 # Configuration sauvegarde
 DATA_FOLDER = "./data/alpha_sweeps_tukey" # Dossier dédié
@@ -115,7 +115,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Balayage Alpha")):
             initial_condition=current_initial_cond,
             f_kwargs=f_kwargs,
             f_hat_kwargs=f_hat_kwargs,
-            #abs_tol=FPE_ABS_TOL,
+            abs_tol=FPE_ABS_TOL,
             #max_iter=FPE_MAX_ITER,
             #min_iter=FPE_MIN_ITER,
             #update_function=lambda new, old, b: tuple(b * n + (1 - b) * o for n, o in zip(new, old)),
