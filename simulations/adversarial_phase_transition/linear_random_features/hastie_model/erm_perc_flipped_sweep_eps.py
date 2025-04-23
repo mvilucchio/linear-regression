@@ -40,8 +40,8 @@ else:
         0.1,
         10.0,
         15,
-        1.0,
-        1.0,
+        0.7,
+        1.2,
         1e-2,
         0.0,
     )
@@ -85,13 +85,15 @@ for d in tqdm(dimensions, desc="dim", leave=False):
         assert zs.shape == (n, d)
         assert F.shape == (p, d)
 
-        # if eps_training == 0.0:
-        #     w = find_coefficients_Logistic(ys, xs, reg_param)
-        # else:
-        #     w = find_coefficients_Logistic_adv(
-        #         ys, xs, 0.5 * reg_param, eps_training, 2.0, pstar_t, wstar
-        #     )
-        w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, 0.5 * reg_param, eps_training)
+        print("all checks passed")
+
+        if eps_training == 0.0:
+            w = find_coefficients_Logistic(ys, xs, reg_param)
+        else:
+            w = find_coefficients_Logistic_adv(
+                ys, xs, 0.5 * reg_param, eps_training, 2.0, pstar_t, wstar
+            )
+        # w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, 0.5 * reg_param, eps_training)
 
         estim_vals_rho[j] = np.sum(wstar**2) / d
         estim_vals_m[j] = np.dot(wstar, F.T @ w) / (p * np.sqrt(gamma))
@@ -104,10 +106,10 @@ for d in tqdm(dimensions, desc="dim", leave=False):
 
         for i, eps_i in enumerate(tqdm(epss_rescaled, desc="eps", leave=False)):
             adv_perturbation = find_adversarial_perturbation_linear_rf(
-                yhat_gen, zs_gen, w, F, wstar, eps_i, "inf"
+                yhat_gen, zs_gen, w, F.T, wstar, eps_i, "inf"
             )
 
-            flipped = np.mean(np.sign(yhat_gen) != np.sign((zs_gen + adv_perturbation) @ F @ w))
+            flipped = np.mean(np.sign(yhat_gen) != np.sign((zs_gen + adv_perturbation) @ F.T @ w))
 
             vals[j, i] = flipped
 
