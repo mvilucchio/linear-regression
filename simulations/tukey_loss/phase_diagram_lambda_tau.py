@@ -9,7 +9,7 @@ import pickle
 try:
     from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
     from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
-    from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import f_hat_mod_Tukey_decorrelated_noise
+    from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import (f_hat_mod_Tukey_decorrelated_noise, f_hat_xigamma_mod_Tukey_decorrelated_noise)
     from linear_regression.utils.errors import ConvergenceError
     from linear_regression.fixed_point_equations import TOL_FPE, MAX_ITER_FPE, BLEND_FPE
 except ImportError as e:
@@ -21,7 +21,7 @@ except Exception as e:
 
 # --- Paramètres de la Simulation ---
 
-NOM_LOSS = "Tukey_mod"
+NOM_LOSS = "Tukey_mod_xigamma"
 
 # Paramètres physiques fixes
 ALPHA = 10.0
@@ -125,7 +125,7 @@ for i_iter, reg_param in enumerate(tqdm(reg_params_iter, desc="Progression Lambd
             # Appel du solveur
             m, q, V = fixed_point_finder(
                 f_func=f_L2_reg,
-                f_hat_func=f_hat_mod_Tukey_decorrelated_noise,
+                f_hat_func=f_hat_xigamma_mod_Tukey_decorrelated_noise,
                 initial_condition=current_initial_cond,
                 f_kwargs=local_f_kwargs,
                 f_hat_kwargs=local_f_hat_kwargs,
@@ -138,7 +138,7 @@ for i_iter, reg_param in enumerate(tqdm(reg_params_iter, desc="Progression Lambd
             )
 
             # Recalculer les chapeaux
-            m_hat, q_hat, V_hat = f_hat_mod_Tukey_decorrelated_noise(m, q, V, **local_f_hat_kwargs)
+            m_hat, q_hat, V_hat = f_hat_xigamma_mod_Tukey_decorrelated_noise(m, q, V, **local_f_hat_kwargs)
 
             point_end_time = time.time()
             point_duration = point_end_time - point_start_time

@@ -53,7 +53,7 @@ FIG_WIDTH = 469.75502 # Largeur standard LaTeX
 IMG_FORMATS = ["pdf", "png"]
 
 # --- Paramètres de la Simulation (pour retrouver le fichier) ---
-NOM_LOSS = "Tukey_mod"
+NOM_LOSS = "Tukey_mod_xigamma"
 ALPHA = 10.0
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
