@@ -269,38 +269,34 @@ def Dω_proximal_Logistic_loss(y: float, omega: float, V: float) -> float:
 # ------------------------- adversarial logistic loss ------------------------ #
 @njit(error_model="numpy", fastmath=False)
 def moreau_loss_Logistic_adversarial(
-    x: float, y: float, omega: float, V: float, P: float, eps_t: float
+    x: float, y: float, omega: float, V: float, P: float, ε: float
 ) -> float:
-    return (x - omega) ** 2 / (2 * V) + logistic_loss(y, x - y * P * eps_t)
+    return (x - omega) ** 2 / (2 * V) + logistic_loss(y, x - y * P * ε)
 
 
 @njit(error_model="numpy", fastmath=False)
-def proximal_Logistic_adversarial(
-    y: float, omega: float, V: float, P: float, eps_t: float
-) -> float:
+def proximal_Logistic_adversarial(y: float, omega: float, V: float, P: float, ε: float) -> float:
     return brent_minimize_scalar(
         moreau_loss_Logistic_adversarial,
         -BIG_NUMBER,
         BIG_NUMBER,
         TOL_BRENT_MINIMIZE,
         MAX_ITER_BRENT_MINIMIZE,
-        (y, omega, V, P, eps_t),
+        (y, omega, V, P, ε),
     )[0]
 
 
 @njit(error_model="numpy", fastmath=False)
-def Dω_proximal_Logistic_adversarial(
-    y: float, omega: float, V: float, P: float, eps_t: float
-) -> float:
+def Dω_proximal_Logistic_adversarial(y: float, omega: float, V: float, P: float, ε: float) -> float:
     proximal = brent_minimize_scalar(
         moreau_loss_Logistic_adversarial,
         -BIG_NUMBER,
         BIG_NUMBER,
         TOL_BRENT_MINIMIZE,
         MAX_ITER_BRENT_MINIMIZE,
-        (y, omega, V, P, eps_t),
+        (y, omega, V, P, ε),
     )[0]
-    return 1 / (1 + V * DDz_logistic_loss(y, proximal - y * eps_t * P))
+    return 1 / (1 + V * DDz_logistic_loss(y, proximal - y * ε * P))
 
 
 # ----------------------------- exponential loss ----------------------------- #
