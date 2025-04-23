@@ -34,14 +34,14 @@ except Exception as e:
 
 
 # --- Paramètres pour la visualisation ---
-alpha, m_vis, q_vis, V_vis = 9.57620994e+01,9.44942365e-01,8.94955912e-01,1.98984646e-02
+alpha, m_vis, q_vis, V_vis = 3.86170730e+00,5.79394816e-01,3.51861875e-01,3.53164220e-01
 #m_vis = 0.4
 #q_vis = 0.7
 #V_vis = 0.8
 lambda_vis = 2.0
 tau_vis = 1.0
 BIG_NUMBER = 15
-DEFAULT_N_STD = 7 # Nombre d'écarts-types pour l'intégration en w
+DEFAULT_N_STD = 4 # Nombre d'écarts-types pour l'intégration en w
 
 # Paramètres physiques
 DELTA_IN = 0.1
@@ -81,7 +81,7 @@ xi_min_axis_in, xi_max_axis_in = -DEFAULT_N_STD*var_mu_in+min(0,center_in), DEFA
 xi_min_axis_out, xi_max_axis_out = - DEFAULT_N_STD*var_mu_out+min(0,center_out),DEFAULT_N_STD*var_mu_out+max(0,center_out)
 xi_min_in, xi_max_in = PLOT_RANGE_EXTENSION * xi_min_axis_in, PLOT_RANGE_EXTENSION * xi_max_axis_in
 xi_min_out, xi_max_out = PLOT_RANGE_EXTENSION * xi_min_axis_out, PLOT_RANGE_EXTENSION * xi_max_axis_out
-gamma_min, gamma_max = -PLOT_RANGE_EXTENSION * delta_prime_in/10, PLOT_RANGE_EXTENSION * delta_prime_in * 15
+gamma_min, gamma_max = -PLOT_RANGE_EXTENSION * delta_prime_in/10, PLOT_RANGE_EXTENSION * (tau_vis+ delta_prime_in * 3)
 
 #v_grid = np.linspace(v_min, v_max, GRID_POINTS)
 #u_grid = np.linspace(u_min_in, u_max_in, GRID_POINTS)
@@ -180,7 +180,7 @@ for i, (Z, title, cmap) in enumerate(zip(integrands, titles, cmaps)):
     #ax.set_xlim(-BIG_NUMBER, BIG_NUMBER)
     ax.set_xlim(xi_min_axis_in, xi_max_axis_in) # changer in /out
     #ax.set_ylim(-BIG_NUMBER, BIG_NUMBER)
-    ax.set_ylim(0, 15*delta_prime_in) # changer in /out
+    ax.set_ylim(0, tau_vis+3*delta_prime_in) # changer in /out
 
     # Ajuster l'angle de vue
     # ax.view_init(elev=20., azim=-65)
