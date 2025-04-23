@@ -91,7 +91,7 @@ for d in tqdm(dimensions, desc="dim", leave=False):
             w = find_coefficients_Logistic(ys, xs, reg_param)
         else:
             w = find_coefficients_Logistic_adv(
-                ys, xs, 0.5 * reg_param, eps_training, 2.0, pstar_t, wstar
+                ys, xs, 0.5 * reg_param, eps_training, 2.0, pstar_t, F @ wstar
             )
         # w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, 0.5 * reg_param, eps_training)
 
