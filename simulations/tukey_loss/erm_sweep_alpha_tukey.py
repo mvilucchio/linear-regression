@@ -37,9 +37,9 @@ if len(sys.argv) > 1:
         float(sys.argv[12]),
     )
 else:
-    d = 300
+    d = 500
     reps = 30
-    alpha_min, alpha_max, n_alpha_pts = 1.0, 10, 15
+    alpha_min, alpha_max, n_alpha_pts = 1.0, 300, 25
     tau, c = 1.0, 0.001
     reg_param = 2.0
 
@@ -89,7 +89,12 @@ for i, alpha in enumerate(tqdm(alphas)):
         q_list.append(q)
 
         estim_error_list.append(np.sum(np.abs(w - wstar) ** 2) / d)
-        gen_error_list.append(np.mean((xs_gen @ w / np.sqrt(d) - ys_gen) ** 2))
+        gen_error_list.append(
+            np.mean((ys_gen - xs_gen @ w / np.sqrt(d)) ** 2)
+            - np.mean(
+                (ys_gen - (1 - percentage + percentage * beta) * xs_gen @ wstar / np.sqrt(d)) ** 2
+            )
+        )
         rep += 1
         pbar.update(1)
 
@@ -123,10 +128,10 @@ np.savetxt(
 )
 
 plt.figure(figsize=(7.5, 7.5))
-# plt.errorbar(alphas, ms[:, 0], yerr=ms[:, 1], fmt=".-", label="m")
-# plt.errorbar(alphas, qs[:, 0], yerr=qs[:, 1], fmt=".-", label="q")
+plt.errorbar(alphas, ms[:, 0], yerr=ms[:, 1], fmt=".-", label="m")
+plt.errorbar(alphas, qs[:, 0], yerr=qs[:, 1], fmt=".-", label="q")
 plt.errorbar(alphas, estim_error[:, 0], yerr=estim_error[:, 1], fmt=".-", label="estim error")
-# plt.errorbar(alphas, gen_error[:, 0], yerr=gen_error[:, 1], fmt=".-", label="gen error")
+plt.errorbar(alphas, gen_error[:, 0], yerr=gen_error[:, 1], fmt=".-", label="gen error")
 plt.xscale("log")
 plt.xlabel(r"$\alpha$")
 plt.yscale("log")
