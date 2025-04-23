@@ -161,6 +161,20 @@ def V_prime(q, m, V,delta_in, delta_out, percentage, beta, tau):
     return sqrt(V_prime_in), sqrt(V_prime_out)
 
 @njit(error_model="numpy", fastmath=False)
+def mu(q, m, V,delta_in, delta_out, percentage, beta, tau):
+    """Donne la variance pour l'intégrale sur xi"""
+    eta = m**2 / q
+    J_beta_out = beta*sqrt(eta) - sqrt(q) # Jacobien de la transformation
+    delta_prime_beta_out = (1-eta)*beta**2 + delta_out
+    mu_out = 1+J_beta_out**2 / delta_prime_beta_out
+
+    J_beta_in = 1.0*sqrt(eta) - sqrt(q) # Jacobien de la transformation
+    delta_prime_beta_in = (1-eta) + delta_in
+    mu_in = 1+J_beta_in**2 / delta_prime_beta_in
+
+    return mu_in, mu_out, J_beta_in, J_beta_out, delta_prime_beta_in, delta_prime_beta_out
+
+@njit(error_model="numpy", fastmath=False)
 def gaussian_2d_uv_Tukey(u, v, J_beta, delta_prime):
     """Calcule la densité de la gaussienne 2D en (u,v)."""
     exponent = -0.5 * (
@@ -173,16 +187,25 @@ def gaussian_2d_uv_Tukey(u, v, J_beta, delta_prime):
 
 @njit(error_model="numpy", fastmath=False)
 def gaussian_2d_wv_Tukey(w, v, J_beta, delta_prime):
-    """Calcule la densité de la gaussienne 2D en (u,v)."""
+    """Calcule la densité de la gaussienne 2D en (w,v)."""
     exponent = -0.5 * (
         + (w+v)**2 / delta_prime
         + (1.0 / J_beta**2) * (w)**2
     )
     normalisation = 1 / (2 * pi * sqrt(delta_prime)*J_beta)
-    # La constante de normalisation est gérée par Z_norm dans les intégrandes
     return normalisation*exp(exponent)
 
-SMALL_NUMBER = 1e-10
+@njit(error_model="numpy", fastmath=False)
+def gaussian_2d_xigamma_Tukey(xi, gamma, J_beta, delta_prime):
+    """Calcule la densité de la gaussienne 2D en (xi,gamma)."""
+    exponent = -0.5 * (
+        + xi**2 
+        + (J_beta*xi-gamma)**2 / delta_prime
+    )
+    normalisation = 1 / 2 * pi * sqrt(delta_prime)
+    return normalisation*exp(exponent)
+
+SMALL_NUMBER = 1e-20
 
 @njit(error_model="numpy", fastmath=False)
 def m_star_int_uv_Tukey(u, v, q, m, V, delta, beta, tau, c):
@@ -190,10 +213,6 @@ def m_star_int_uv_Tukey(u, v, q, m, V, delta, beta, tau, c):
     if beta ==0 : return 0
     eta = m**2 / q
     J_beta = beta*sqrt(eta) - sqrt(q) # Jacobien de la transformation
-
-    if abs(J_beta) < SMALL_NUMBER: 
-        print("J_beta < SMALL_NUMBER, retour de 0.0")
-        return 0.0
 
     delta_prime = (1-eta)*beta**2 + delta
 
@@ -214,10 +233,6 @@ def m_star_int_wv_Tukey(w, v, q, m, V, delta, beta, tau, c):
     eta = m**2 / q
     J_beta = beta*sqrt(eta) - sqrt(q) # Jacobien de la transformation
 
-    if abs(J_beta) < SMALL_NUMBER: 
-        print("J_beta < SMALL_NUMBER, retour de 0.0")
-        return 0.0
-
     delta_prime = (1-eta)*beta**2 + delta
 
     weight = gaussian_2d_wv_Tukey(w, v, J_beta, delta_prime)* beta*(w+v)/delta_prime
@@ -235,14 +250,27 @@ def m_int_uv_Tukey(u, v, q, m, V, delta_in, delta_out, percentage, beta, tau, c)
     return (1-percentage)*m_star_int_uv_Tukey(u, v, q, m, V, delta_in, 1, tau, c) + percentage*m_star_int_uv_Tukey(u, v, q, m, V, delta_out, beta, tau, c)
 
 @njit(error_model="numpy", fastmath=False)
+def m_star_int_xigamma_Tukey(xi, gamma, q, m, V, delta, beta, tau, c):
+    """Intégrande pour le calcul de m_hat_star dans les coordonnées (xi,gamma)"""
+    if beta ==0 : return 0
+    eta = m**2 / q
+    J_beta = beta*sqrt(eta) - sqrt(q) # Jacobien
+
+    delta_prime = (1-eta)*beta**2 + delta
+    omega = sqrt(q) * xi
+    y = gamma +sqrt(q) * xi
+
+    weight = gaussian_2d_xigamma_Tukey(xi, gamma, J_beta, delta_prime)* beta*(y-beta*omega)/delta_prime
+
+    prox = proximal_Tukey_modified_quad(y, omega, V, tau, c)
+    f_out = (prox - omega) / V
+    return  weight*f_out
+
+@njit(error_model="numpy", fastmath=False)
 def q_star_int_uv_Tukey(u, v, q, m, V, delta, beta, tau, c):
     """Intégrande pour le calcul de q_hat_star dans les coordonnées (u,v)"""
     eta = m**2 / q
     J_beta = beta*sqrt(eta) - sqrt(q) # Jacobien de la transformation
-
-    if abs(J_beta) < SMALL_NUMBER: 
-        print("J_beta < SMALL_NUMBER, retour de 0.0")
-        return 0.0
 
     delta_prime = (1-eta)*beta**2 + delta
 
@@ -262,10 +290,6 @@ def q_star_int_wv_Tukey(w, v, q, m, V, delta, beta, tau, c):
     eta = m**2 / q
     J_beta = beta*sqrt(eta) - sqrt(q) # Jacobien de la transformation
 
-    if abs(J_beta) < SMALL_NUMBER: 
-        print("J_beta < SMALL_NUMBER, retour de 0.0")
-        return 0.0
-
     delta_prime = (1-eta)*beta**2 + delta
 
     weight = gaussian_2d_wv_Tukey(w, v, J_beta, delta_prime)
@@ -283,14 +307,25 @@ def q_int_uv_Tukey(u, v, q, m, V, delta_in, delta_out, percentage, beta, tau, c)
     return (1-percentage)*q_star_int_uv_Tukey(u, v, q, m, V, delta_in, 1, tau, c) + percentage*q_star_int_uv_Tukey(u, v, q, m, V, delta_out, beta, tau, c)
 
 @njit(error_model="numpy", fastmath=False)
+def q_star_int_xigamma_Tukey(xi, gamma, q, m, V, delta, beta, tau, c):
+    """Intégrande pour le calcul de q_hat_star dans les coordonnées (xi,gamma)"""
+    eta = m**2 / q
+    J_beta = beta*sqrt(eta) - sqrt(q) # Jacobien
+
+    delta_prime = (1-eta)*beta**2 + delta
+    omega = sqrt(q) * xi
+    y = gamma +sqrt(q) * xi
+
+    weight = gaussian_2d_xigamma_Tukey(xi, gamma, J_beta, delta_prime)
+    prox = proximal_Tukey_modified_quad(y, omega, V, tau, c)
+    f_out = (prox - omega) / V
+    return  weight*f_out**2
+
+@njit(error_model="numpy", fastmath=False)
 def V_star_int_uv_Tukey(u, v, q, m, V, delta, beta, tau, c):
     """Intégrande pour le calcul de q_hat_star dans les coordonnées (w,v)"""
     eta = m**2 / q
     J_beta = beta*sqrt(eta) - sqrt(q) # Jacobien de la transformation
-
-    if abs(J_beta) < SMALL_NUMBER: 
-        print("J_beta < SMALL_NUMBER, retour de 0.0")
-        return 0.0
 
     delta_prime = (1-eta)*beta**2 + delta
 
@@ -311,10 +346,6 @@ def V_star_int_wv_Tukey(w, v, q, m, V, delta, beta, tau, c):
     eta = m**2 / q
     J_beta = beta*sqrt(eta) - sqrt(q) # Jacobien de la transformation
 
-    if abs(J_beta) < SMALL_NUMBER: 
-        print("J_beta < SMALL_NUMBER, retour de 0.0")
-        return 0.0
-
     delta_prime = (1-eta)*beta**2 + delta
 
     weight = gaussian_2d_wv_Tukey(w, v, J_beta, delta_prime)
@@ -331,6 +362,22 @@ def V_star_int_wv_Tukey(w, v, q, m, V, delta, beta, tau, c):
 @njit(error_model="numpy", fastmath=False)
 def V_int_uv_Tukey(u, v, q, m, V, delta_in, delta_out, percentage, beta, tau, c):
     return (1-percentage)*V_star_int_uv_Tukey(u, v, q, m, V, delta_in, 1, tau, c) + percentage*V_star_int_uv_Tukey(u, v, q, m, V, delta_out, beta, tau, c)
+
+@njit(error_model="numpy", fastmath=False)
+def V_star_int_xigamma_Tukey(xi, gamma, q, m, V, delta, beta, tau, c):
+    """Intégrande pour le calcul de V_hat_star dans les coordonnées (xi,gamma)"""
+    eta = m**2 / q
+    J_beta = beta*sqrt(eta) - sqrt(q) # Jacobien
+
+    delta_prime = (1-eta)*beta**2 + delta
+    omega = sqrt(q) * xi
+    y = gamma +sqrt(q) * xi
+
+    weight = gaussian_2d_xigamma_Tukey(xi, gamma, J_beta, delta_prime)
+    prox = proximal_Tukey_modified_quad(y, omega, V, tau, c)
+    Dproximal = (1 + V * DDz_mod_tukey_loss_cubic(y, prox, tau, c)) ** (-1)
+
+    return  weight*(Dproximal - 1)/ V
 
 DEFAULT_N_STD = 10.0 # Nombre d'écarts-types pour l'intégration en u
 
@@ -408,6 +455,90 @@ def f_hat_wv_mod_Tukey_decorrelated_noise(
         v_dom[1],
         lambda x: -var_out,
         lambda x: var_out,
+        args=(q, m, V, delta_out, beta, tau, c),epsabs=epsabs, epsrel=epsrel
+    )[0]
+    V_hat = -2*alpha * ((1-percentage)*int_value_V_hat_in+ percentage*int_value_V_hat_out)
+    
+    return m_hat, q_hat, V_hat
+
+def f_hat_xigamma_mod_Tukey_decorrelated_noise(
+    m,
+    q,
+    V,
+    alpha,
+    delta_in,
+    delta_out,
+    percentage,
+    beta,
+    tau,
+    c,
+    integration_bound=DEFAULT_N_STD,
+    epsabs=1e-12,
+    epsrel=1e-8,
+):
+    gamma_dom = [0, tau]
+
+    mu_in, mu_out, J_beta_in, J_beta_out,delta_prime_in,delta_prime_out = mu(q, m, V, delta_in, delta_out, percentage, beta, tau)
+    var_in = integration_bound *sqrt(mu_in)**(-1) # Nombre d'écarts-types pour l'intégration en u
+    var_out = integration_bound *sqrt(mu_out)**(-1) # Nombre d'écarts-types pour l'intégration en u
+    def center_in(x):
+        return J_beta_in*x/(delta_prime_in*mu_in)
+    def center_out(x):
+        return J_beta_out*x/(delta_prime_out*mu_out)
+
+    int_value_m_hat_in = dblquad(
+        m_star_int_xigamma_Tukey,
+        gamma_dom[0],
+        gamma_dom[1],
+        lambda x: -var_in+center_in(x),
+        lambda x: var_in +center_in(x),
+        args=(q, m, V, delta_in, 1, tau, c),epsabs=epsabs, epsrel=epsrel
+    )[0]
+
+    int_value_m_hat_out = dblquad(
+        m_star_int_xigamma_Tukey,
+        gamma_dom[0],
+        gamma_dom[1],
+        lambda x: -var_out +center_out(x),
+        lambda x: var_out +center_out(x),
+        args=(q, m, V, delta_out, beta, tau, c),epsabs=epsabs, epsrel=epsrel
+    )[0]
+    m_hat = 2*alpha * ((1-percentage)*int_value_m_hat_in+ percentage*int_value_m_hat_out)
+    
+    int_value_q_hat_in = dblquad(
+        q_star_int_xigamma_Tukey,
+        gamma_dom[0],
+        gamma_dom[1],
+        lambda x: -var_in +center_in(x),
+        lambda x: var_in +center_in(x),
+        args=(q, m, V, delta_in, 1, tau, c),epsabs=epsabs, epsrel=epsrel
+    )[0]
+
+    int_value_q_hat_out = dblquad(
+        q_star_int_xigamma_Tukey,
+        gamma_dom[0],
+        gamma_dom[1],
+        lambda x: -var_out +center_out(x),
+        lambda x: var_out  +center_out(x),
+        args=(q, m, V, delta_out, beta, tau, c),epsabs=epsabs, epsrel=epsrel
+    )[0]
+    q_hat = 2*alpha * ((1-percentage)*int_value_q_hat_in+ percentage*int_value_q_hat_out)
+    
+    int_value_V_hat_in = dblquad(
+        V_star_int_xigamma_Tukey,
+        gamma_dom[0],
+        gamma_dom[1],
+        lambda x: -var_in +center_in(x),
+        lambda x: var_in +center_in(x),
+        args=(q, m, V, delta_in, 1, tau, c),epsabs=epsabs, epsrel=epsrel
+    )[0]
+
+    int_value_V_hat_out = dblquad(
+        V_star_int_xigamma_Tukey,
+        gamma_dom[0],
+        gamma_dom[1],
+        lambda x: -var_out +center_out(x),
+        lambda x: var_out +center_out(x),
         args=(q, m, V, delta_out, beta, tau, c),epsabs=epsabs, epsrel=epsrel
     )[0]
     V_hat = -2*alpha * ((1-percentage)*int_value_V_hat_in+ percentage*int_value_V_hat_out)

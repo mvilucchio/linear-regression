@@ -21,6 +21,10 @@ try:
         m_star_int_wv_Tukey,
         q_star_int_wv_Tukey,
         V_star_int_wv_Tukey,
+        mu,
+        m_star_int_xigamma_Tukey,
+        q_star_int_xigamma_Tukey,
+        V_star_int_xigamma_Tukey,
     )
     from linear_regression.aux_functions.stability_functions import RS_int_mod_Tukey_decorrelated_noise
     print(f"BIG_NUMBER importé du module: {BIG_NUMBER}")
@@ -30,7 +34,7 @@ except Exception as e:
 
 
 # --- Paramètres pour la visualisation ---
-alpha, m_vis, q_vis, V_vis = 4.29800121e+01,9.12645510e-01,8.35766582e-01,4.59043777e-02
+alpha, m_vis, q_vis, V_vis = 9.57620994e+01,9.44942365e-01,8.94955912e-01,1.98984646e-02
 #m_vis = 0.4
 #q_vis = 0.7
 #V_vis = 0.8
@@ -46,10 +50,17 @@ PERCENTAGE = 0.1
 BETA = 0.0
 C_TUKEY = 0.001
 
-var_in, var_out = V_prime(q_vis,m_vis,V_vis,DELTA_IN,DELTA_OUT,PERCENTAGE,BETA,tau_vis)
+#var_in, var_out = V_prime(q_vis,m_vis,V_vis,DELTA_IN,DELTA_OUT,PERCENTAGE,BETA,tau_vis)
+mu_in, mu_out,J_beta_in,J_beta_out,delta_prime_in,delta_prime_out = mu(q_vis,m_vis,V_vis,DELTA_IN,DELTA_OUT,PERCENTAGE,BETA,tau_vis)
+var_mu_in = np.sqrt(mu_in)**(-1)
+var_mu_out = np.sqrt(mu_out)**(-1)
+center_in=J_beta_in*tau_vis/(delta_prime_in*mu_in)
+center_out=J_beta_out*tau_vis/(delta_prime_out*mu_out)
+
+print(f"var_mu_in: {var_mu_in:.2f}, var_mu_out: {var_mu_out:.2f}, J_beta_in: {J_beta_in:.2f}, J_beta_out: {J_beta_out:.2f}, delta_prime_in: {delta_prime_in:.2f}, delta_prime_out: {delta_prime_out:.2f}, center_in: {center_in:.2f}, center_out: {center_out:.2f}")
 
 # Paramètres de la grille de visualisation
-GRID_POINTS = 300
+GRID_POINTS = 100
 PLOT_RANGE_EXTENSION = 1.2 # Garder une petite extension pour voir les bords
 
 # --- Création de la grille ---
@@ -60,45 +71,59 @@ PLOT_RANGE_EXTENSION = 1.2 # Garder une petite extension pour voir les bords
 #y_grid = np.linspace(y_min, y_max, GRID_POINTS)
 #XI, Y = np.meshgrid(xi_grid, y_grid)
 
-v_min, v_max = -tau_vis/10 * PLOT_RANGE_EXTENSION, tau_vis * PLOT_RANGE_EXTENSION
+#v_min, v_max = -tau_vis/10 * PLOT_RANGE_EXTENSION, tau_vis * PLOT_RANGE_EXTENSION
 #u_min_in, u_max_in = -DEFAULT_N_STD*var_in * PLOT_RANGE_EXTENSION, (tau_vis +DEFAULT_N_STD*var_in) * PLOT_RANGE_EXTENSION
 #u_min_out, u_max_out = -DEFAULT_N_STD*var_out * PLOT_RANGE_EXTENSION, (tau_vis+DEFAULT_N_STD*var_out) * PLOT_RANGE_EXTENSION
-w_min_in, w_max_in = -DEFAULT_N_STD*var_in * PLOT_RANGE_EXTENSION, DEFAULT_N_STD*var_in * PLOT_RANGE_EXTENSION
-w_min_out, w_max_out = -DEFAULT_N_STD*var_out * PLOT_RANGE_EXTENSION, DEFAULT_N_STD*var_out * PLOT_RANGE_EXTENSION
+#w_min_in, w_max_in = -DEFAULT_N_STD*var_in * PLOT_RANGE_EXTENSION, DEFAULT_N_STD*var_in * PLOT_RANGE_EXTENSION
+#w_min_out, w_max_out = -DEFAULT_N_STD*var_out * PLOT_RANGE_EXTENSION, DEFAULT_N_STD*var_out * PLOT_RANGE_EXTENSION
 
-v_grid = np.linspace(v_min, v_max, GRID_POINTS)
+xi_min_axis_in, xi_max_axis_in = -DEFAULT_N_STD*var_mu_in+min(0,center_in), DEFAULT_N_STD*var_mu_in+max(0,center_in)
+xi_min_axis_out, xi_max_axis_out = - DEFAULT_N_STD*var_mu_out+min(0,center_out),DEFAULT_N_STD*var_mu_out+max(0,center_out)
+xi_min_in, xi_max_in = PLOT_RANGE_EXTENSION * xi_min_axis_in, PLOT_RANGE_EXTENSION * xi_max_axis_in
+xi_min_out, xi_max_out = PLOT_RANGE_EXTENSION * xi_min_axis_out, PLOT_RANGE_EXTENSION * xi_max_axis_out
+gamma_min, gamma_max = -PLOT_RANGE_EXTENSION * tau_vis/10, PLOT_RANGE_EXTENSION * tau_vis
+
+#v_grid = np.linspace(v_min, v_max, GRID_POINTS)
 #u_grid = np.linspace(u_min_in, u_max_in, GRID_POINTS)
-w_grid_in = np.linspace(w_min_in, w_max_in, GRID_POINTS)
-w_grid_out = np.linspace(w_min_out, w_max_out, GRID_POINTS)
-w_axis, v_axis = np.meshgrid(w_grid_in,v_grid) # changer in / out
+#w_grid_in = np.linspace(w_min_in, w_max_in, GRID_POINTS)
+#w_grid_out = np.linspace(w_min_out, w_max_out, GRID_POINTS)
+#w_axis, v_axis = np.meshgrid(w_grid_in,v_grid) # changer in / out
+
+xi_grid_in = np.linspace(xi_min_in, xi_max_in, GRID_POINTS)
+xi_grid_out = np.linspace(xi_min_out, xi_max_out, GRID_POINTS)
+gamma_grid = np.linspace(gamma_min, gamma_max, GRID_POINTS)
+xi_axis, gamma_axis = np.meshgrid(xi_grid_out, gamma_grid) # changer in / out
+
+print(f"Grille créée avec {GRID_POINTS} points dans chaque direction. Plage de xi: [{xi_min_in:.2f}, {xi_max_in:.2f}] (in), [{xi_min_out:.2f}, {xi_max_out:.2f}] (out), Plage de gamma: [{gamma_min:.2f}, {gamma_max:.2f}]")
 
 # --- Évaluation des intégrandes ---
 args = (q_vis, m_vis, V_vis, DELTA_IN, DELTA_OUT, PERCENTAGE, BETA, tau_vis, C_TUKEY)
 args_in = (q_vis, m_vis, V_vis, DELTA_IN, 1, tau_vis, C_TUKEY)
 args_out = (q_vis, m_vis, V_vis, DELTA_OUT, BETA, tau_vis, C_TUKEY)
-Z_m = np.zeros_like(w_axis) # Remplacer par u_axis si nécessaire
-Z_q = np.zeros_like(w_axis) # Remplacer par u_axis si nécessaire
-Z_V = np.zeros_like(w_axis) # Remplacer par u_axis si nécessaire
-Z_RS = np.zeros_like(w_axis) # Remplacer par u_axis si nécessaire
+Z_m = np.zeros_like(xi_axis) # Remplacer par u_axis si nécessaire
+Z_q = np.zeros_like(xi_axis) # Remplacer par u_axis si nécessaire
+Z_V = np.zeros_like(xi_axis) # Remplacer par u_axis si nécessaire
+Z_RS = np.zeros_like(xi_axis) # Remplacer par u_axis si nécessaire
 
 print("Évaluation des intégrandes sur la grille...")
 for i in range(GRID_POINTS):
     for j in range(GRID_POINTS):
         #xi_val = XI[i, j]
         #y_val = Y[i, j]
-        v_val = v_axis[i, j]
-        w_val = w_axis[i, j] # Remplacer par u_axis si nécessaire
+        gamma_val = gamma_axis[i, j]
+        xi_val = xi_axis[i, j] # Remplacer par u_axis si nécessaire
+        #print(f"Évaluation des intégrandes pour xi={xi_val:.2f}, gamma={gamma_val:.2f}...")
         try:
             #Z_m[i, j] = m_int_mod_Tukey_decorrelated_noise(xi_val, y_val, *args)
-            Z_m[i, j] = 2*m_star_int_wv_Tukey(w_val, v_val, *args_in) # changer in / out
+            Z_m[i, j] = 2*m_star_int_xigamma_Tukey(xi_val, gamma_val, *args_out) # changer in / out
         except Exception: Z_m[i, j] = np.nan
         try:
             #Z_q[i, j] = q_int_mod_Tukey_decorrelated_noise(xi_val, y_val, *args)
-            Z_q[i, j] = 2*q_star_int_wv_Tukey(w_val, v_val, *args_in) # changer in / out
+            Z_q[i, j] = 2*q_star_int_xigamma_Tukey(xi_val, gamma_val, *args_out) # changer in / out
         except Exception: Z_q[i, j] = np.nan
         try:
             #Z_V[i, j] = V_int_mod_Tukey_decorrelated_noise(xi_val, y_val, *args)
-            Z_V[i, j] = -2*V_star_int_wv_Tukey(w_val, v_val, *args_in) # changer in / out
+            Z_V[i, j] = -2*V_star_int_xigamma_Tukey(xi_val, gamma_val, *args_out) # changer in / out
         except Exception: Z_V[i, j] = np.nan
         #try:
             #Z_RS[i, j] = alpha*RS_int_mod_Tukey_decorrelated_noise(xi_val, y_val, *args)
@@ -128,7 +153,7 @@ for i, (Z, title, cmap) in enumerate(zip(integrands, titles, cmaps)):
 
     # Tracer la surface
     # rstride/cstride contrôlent la densité du maillage affiché (plus petit = plus dense)
-    surf = ax.plot_surface(w_axis, v_axis, Z, cmap=cmap, linewidth=0, antialiased=False, rstride=1, cstride=1) # changer les axes
+    surf = ax.plot_surface(xi_axis, gamma_axis, Z, cmap=cmap, linewidth=0, antialiased=False, rstride=1, cstride=1) # changer les axes
 
     # Ajouter une barre de couleur
     fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10, pad=0.1)
@@ -137,7 +162,7 @@ for i, (Z, title, cmap) in enumerate(zip(integrands, titles, cmaps)):
     z_min = np.nanmin(Z) if np.any(np.isfinite(Z)) else 0
     try:
          if np.any(np.isfinite(Z)) and np.nanstd(Z) > 1e-9:
-              cset = ax.contour(w_val, v_val, Z, zdir='z', offset=z_min, cmap=cmap, linewidths=0.5, alpha=0.5) # changer les axes
+              cset = ax.contour(xi_val, gamma_val, Z, zdir='z', offset=z_min, cmap=cmap, linewidths=0.5, alpha=0.5) # changer les axes
          else:
              print(f"Contours non tracés pour '{title}' (données non finies ou constantes)")
     except Exception as e:
@@ -146,14 +171,14 @@ for i, (Z, title, cmap) in enumerate(zip(integrands, titles, cmaps)):
 
     ax.set_title(title)
     #ax.set_xlabel(r'$\xi$')
-    ax.set_xlabel(r'$w$')
+    ax.set_xlabel(r'$\xi$')
     #ax.set_ylabel(r'$y$')
-    ax.set_ylabel(r'$v$')
+    ax.set_ylabel(r'$\gamma$')
     ax.set_zlabel('Valeur Intégrande')
 
     # Limiter les axes x et y aux bornes d'intégration pour se concentrer sur la zone pertinente
     #ax.set_xlim(-BIG_NUMBER, BIG_NUMBER)
-    ax.set_xlim(-DEFAULT_N_STD*var_in, DEFAULT_N_STD*var_in) # changer in /out
+    ax.set_xlim(xi_min_axis_out, xi_max_axis_out) # changer in /out
     #ax.set_ylim(-BIG_NUMBER, BIG_NUMBER)
     ax.set_ylim(0, tau_vis)
 
@@ -161,7 +186,7 @@ for i, (Z, title, cmap) in enumerate(zip(integrands, titles, cmaps)):
     # ax.view_init(elev=20., azim=-65)
 
 fig.suptitle(
-    f'Visualisation 3D des Intégrandes inliers (Tukey Mod.) pour τ={tau_vis:.2f}, c={C_TUKEY:.3f}, λ={lambda_vis:.2f}, δ_in={DELTA_IN:.2f}, δ_out={DELTA_OUT:.2f}, β={BETA:.2f}, alpha={alpha:.2f}',
+    f'Visualisation 3D des Intégrandes outliers (Tukey Mod.) pour τ={tau_vis:.2f}, c={C_TUKEY:.3f}, λ={lambda_vis:.2f}, δ_in={DELTA_IN:.2f}, δ_out={DELTA_OUT:.2f}, β={BETA:.2f}, alpha={alpha:.2f}',
     fontsize=11
 ) #changer in / out
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])

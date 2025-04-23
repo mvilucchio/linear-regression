@@ -8,7 +8,7 @@ import warnings
 
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
-from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import (f_hat_mod_Tukey_decorrelated_noise, f_hat_wv_mod_Tukey_decorrelated_noise)
+from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import (f_hat_mod_Tukey_decorrelated_noise, f_hat_wv_mod_Tukey_decorrelated_noise, f_hat_xigamma_mod_Tukey_decorrelated_noise)
 from linear_regression.aux_functions.stability_functions import RS_E2_mod_Tukey_decorrelated_noise
 from linear_regression.aux_functions.moreau_proximals import DƔ_proximal_L2
 from linear_regression.aux_functions.misc import excess_gen_error
@@ -18,15 +18,15 @@ from linear_regression.fixed_point_equations import TOL_FPE, MAX_ITER_FPE, BLEND
 # --- Paramètres de la Simulation ---
 
 # Contrôle des calculs coûteux
-CALCULATE_RS = False
+CALCULATE_RS = True
 
 # Paramètres physiques fixes
-NOM_LOSS = "Tukey_mod_wv"
+NOM_LOSS = "Tukey_mod_xigamma"
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
 BETA = 0.0
-C_TUKEY = 0.001
+C_TUKEY = 0.00001
 
 # Hyperparamètres fixés pour le balayage en alpha
 REG_PARAM = 2.0
@@ -34,9 +34,9 @@ TAU = 1.0
 print(f"Hyperparamètres fixes : lambda={REG_PARAM:.2f}, tau={TAU:.2f}")
 
 # Plage pour alpha
-ALPHA_MIN = 10
-ALPHA_MAX = 1000
-N_ALPHA_PTS = 500
+ALPHA_MIN =30
+ALPHA_MAX = 100000
+N_ALPHA_PTS = 1000
 
 # Options d'intégration (utilisées pour RS si CALCULATE_RS=True)
 INTEGRATION_BOUND = 5
@@ -51,7 +51,7 @@ DEFAULT_N_STD = 7 # Nombre d'écarts-types pour l'intégration en w
 #FPE_MIN_ITER = 50
 
 # Condition initiale pour le premier alpha
-initial_cond_fpe = (3.51584311e-01,1.51750452e-01,3.31756761e-01)
+initial_cond_fpe = (9.95947940e-01,9.92170537e-01,4.04138236e-03)
 
 # Configuration sauvegarde
 DATA_FOLDER = "./data/alpha_sweeps_tukey" # Dossier dédié
@@ -111,7 +111,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Balayage Alpha")):
         # Recherche du point fixe
         m, q, V = fixed_point_finder(
             f_func=f_L2_reg,
-            f_hat_func=f_hat_wv_mod_Tukey_decorrelated_noise,
+            f_hat_func=f_hat_xigamma_mod_Tukey_decorrelated_noise,
             initial_condition=current_initial_cond,
             f_kwargs=f_kwargs,
             f_hat_kwargs=f_hat_kwargs,
@@ -126,7 +126,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Balayage Alpha")):
         # Si convergence, calculer les autres quantités
         if np.all(np.isfinite([m, q, V])):
             # Calculer les chapeaux
-            m_hat, q_hat, V_hat = f_hat_wv_mod_Tukey_decorrelated_noise(m, q, V, **f_hat_kwargs)
+            m_hat, q_hat, V_hat = f_hat_xigamma_mod_Tukey_decorrelated_noise(m, q, V, **f_hat_kwargs)
 
             # Calculer l'erreur de généralisation
             gen_err = excess_gen_error(m, q, V, DELTA_IN, DELTA_OUT, PERCENTAGE, BETA) # Ou autre mesure

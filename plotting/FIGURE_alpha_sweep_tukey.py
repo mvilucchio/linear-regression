@@ -33,7 +33,7 @@ def set_size(width, fraction=1, subplots=(1, 1)):
     return (fig_width_in, fig_height_in)
 
 # --- Configuration du Plot ---
-LOAD_FROM_PKL = False # Privilégier PKL
+LOAD_FROM_PKL = True # Privilégier PKL
 SAVE_PLOT = True
 STYLE_FILE = "./plotting/latex_ready.mplstyle" # Ajustez si nécessaire
 FIG_WIDTH = 469.75502 # Largeur LaTeX standard
@@ -41,15 +41,15 @@ IMG_FORMATS = ["pdf", "png"]
 
 # --- Paramètres de la Simulation (pour retrouver le fichier) ---
 # Doivent correspondre à ceux du script de calcul !
-NOM_LOSS = "Tukey_mod_wv"
-ALPHA_MIN = 10
-ALPHA_MAX = 1000
-N_ALPHA_PTS = 500
+NOM_LOSS = "Tukey_mod_xigamma"
+ALPHA_MIN = 30
+ALPHA_MAX = 100000
+N_ALPHA_PTS = 1000
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
 BETA = 0.0
-C_TUKEY = 0.001
+C_TUKEY = 0.00001
 REG_PARAM = 2.0
 TAU = 1.0
 
@@ -115,12 +115,24 @@ Vs = results_dict['Vs']
 gen_error = results_dict['gen_error']
 rs_values = results_dict.get('rs_values', np.full_like(alphas, np.nan)) # Utilise .get pour compatibilité
 
-# Création des données m^2/q
+# Création des données 1-m^2/q
 
 m2_q = np.full_like(alphas, np.nan)
 for i in range(len(alphas)):
     if ms[i] > 0 and qs[i] > 0:
         m2_q[i] = np.abs(1-(ms[i]**2) / qs[i])
+
+one_ms = np.full_like(alphas, np.nan)
+for i in range(len(alphas)):
+    one_ms[i] = 1-ms[i]
+
+one_qs = np.full_like(alphas, np.nan)
+for i in range(len(alphas)):
+    one_qs[i] = 1-qs[i]
+
+estim_err = np.full_like(alphas, np.nan)
+for i in range(len(alphas)):
+    estim_err[i]= 1+qs[i] - 2*ms[i]
 
 # --- Préparation du Plot ---
 #if os.path.exists(STYLE_FILE):
@@ -131,10 +143,11 @@ fig, ax1 = plt.subplots(figsize=(fig_width_in, fig_height_in))
 
 # --- Tracé des Données (Axe Y Principal) ---
 ax1.plot(alphas, gen_error, marker='.', linestyle='-', markersize=3, color='tab:blue', label='$E_{gen}$')
-ax1.plot(alphas, ms, marker='.', linestyle='-', markersize=3, color='tab:green', label='$m$')
-ax1.plot(alphas, qs, marker='.', linestyle='-', markersize=3, color='tab:red', label='$q$')
+ax1.plot(alphas, one_ms, marker='.', linestyle='-', markersize=3, color='tab:green', label='$1-m$')
+ax1.plot(alphas, one_qs, marker='.', linestyle='-', markersize=3, color='tab:red', label='$1-q$')
 ax1.plot(alphas, Vs, marker='.', linestyle='-', markersize=3, color='tab:purple', label='$V$')
 ax1.plot(alphas, m2_q, marker='.', linestyle='-', markersize=3, color='tab:cyan', label='$1-m^2/q$')
+ax1.plot(alphas, estim_err, marker='.', linestyle='-', markersize=3, color='tab:orange', label='$E_estim$')
 
 # Configuration de l'axe Y principal
 ax1.set_xlabel(r'$\alpha = n/d$')
