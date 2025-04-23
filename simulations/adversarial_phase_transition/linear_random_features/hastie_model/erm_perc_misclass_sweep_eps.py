@@ -70,7 +70,9 @@ for d in tqdm(dimensions, desc="dim", leave=False):
     estim_vals_rho = np.empty((reps,))
     estim_vals_P = np.empty((reps,))
 
-    for j in tqdm(range(reps), desc="reps", leave=False):
+    j = 0
+    # for j in tqdm(range(reps), desc="reps", leave=False):
+    while j < reps:
         xs, ys, zs, xs_gen, ys_gen, zs_gen, wstar, F = data_generation_hastie(
             measure_gen_no_noise_clasif,
             d=d,
@@ -85,13 +87,16 @@ for d in tqdm(dimensions, desc="dim", leave=False):
         assert zs.shape == (n, d)
         assert F.shape == (p, d)
 
-        if eps_training == 0.0:
-            w = find_coefficients_Logistic(ys, xs, reg_param)
-        else:
-            w = find_coefficients_Logistic_adv(
-                ys, xs, 0.5 * reg_param, eps_training, 2.0, pstar_t, F @ wstar
-            )
-        # w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, 0.5 * reg_param, eps_training)
+        try:
+            if eps_training == 0.0:
+                w = find_coefficients_Logistic(ys, xs, reg_param)
+            else:
+                w = find_coefficients_Logistic_adv(
+                    ys, xs, 0.5 * reg_param, eps_training, 2.0, pstar_t, F @ wstar
+                )
+        except ValueError as e:
+            print("Error in finding coefficients:", e)
+            continue
 
         estim_vals_rho[j] = np.sum(wstar**2) / d
         estim_vals_m[j] = np.dot(wstar, F.T @ w) / (p * np.sqrt(gamma))
@@ -110,6 +115,8 @@ for d in tqdm(dimensions, desc="dim", leave=False):
             flipped = np.mean(np.sign(ys_gen) != np.sign((zs_gen + adv_perturbation) @ F.T @ w))
 
             vals[j, i] = flipped
+
+        j += 1
 
     mean_m, std_m = np.mean(estim_vals_m), np.std(estim_vals_m)
     mean_q, std_q = np.mean(estim_vals_q), np.std(estim_vals_q)
