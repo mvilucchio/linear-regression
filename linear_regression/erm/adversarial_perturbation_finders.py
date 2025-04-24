@@ -70,7 +70,15 @@ def find_adversarial_perturbation_linear_rf(
     objective = Minimize(wtilde.T @ delta)
 
     problem = Problem(objective, constraints)
-    problem.solve()
+    # problem.solve()
+    # Solve with high accuracy
+    solver_opts = {
+        "abstol": 1e-10,  # Absolute tolerance
+        "reltol": 1e-10,  # Relative tolerance
+        "feastol": 1e-10,  # Feasibility tolerance
+        "max_iters": 10_000,  # Maximum iterations
+    }
+    problem.solve(solver="ECOS", verbose=False, **solver_opts)
 
     return ys[:, None] * tile(delta.value, (len(ys), 1))
 

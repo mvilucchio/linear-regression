@@ -203,6 +203,7 @@ def percentage_error_from_true(
                 sign(ys) != sign(non_linearity(xs_pertubed @ projection_matrix / sqrt(d)) @ w)
             )
 
+    print("passed_here")
     return mean(sign(ys) != sign(xs_pertubed @ w))
 
 

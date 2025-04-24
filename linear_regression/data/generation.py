@@ -149,6 +149,7 @@ def data_generation_hastie(
     gamma: float = 1.0,
     theta_0_teacher: ndarray = None,
     Σx: ndarray = None,
+    noi=False,
 ):
     rng = default_rng()
 
@@ -176,13 +177,18 @@ def data_generation_hastie(
     ys = measure_fun(rng, theta_0_teacher, zs, *measure_fun_args)
     ys_gen = measure_fun(rng, theta_0_teacher, zs_gen, *measure_fun_args)
 
-    xs = zs @ projector.T + rng.multivariate_normal(
+    noise = rng.multivariate_normal(
         zeros(p, dtype=float32), eye(p, dtype=float32), size=(n,)
     ).astype(float32)
-    xs_gen = zs_gen @ projector.T + rng.multivariate_normal(
+    xs = zs @ projector.T + noise
+
+    noise_gen = rng.multivariate_normal(
         zeros(p, dtype=float32), eye(p, dtype=float32), size=(n_gen,)
     ).astype(float32)
+    xs_gen = zs_gen @ projector.T + noise_gen
 
+    if noi:
+        return xs, ys, zs, xs_gen, ys_gen, zs_gen, theta_0_teacher, projector, noise, noise_gen
     return xs, ys, zs, xs_gen, ys_gen, zs_gen, theta_0_teacher, projector
 
 
