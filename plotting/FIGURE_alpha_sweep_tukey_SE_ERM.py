@@ -48,14 +48,14 @@ IMG_FORMATS = ["pdf", "png"]
 # --- Paramètres de la Simulation (pour retrouver le fichier) ---
 # Doivent correspondre à ceux du script de calcul !
 NOM_LOSS = "Tukey_mod_xigamma"
-ALPHA_MIN = 2.0
+ALPHA_MIN = 0.5
 ALPHA_MAX = 1000
 N_ALPHA_PTS = 100
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
 BETA = 0.0
-C_TUKEY = 0.00001
+C_TUKEY = 0.001
 REG_PARAM = 2.0
 TAU = 1.0
 
@@ -168,10 +168,10 @@ ax1.set_xlim(min(alphas), max(alphas))
 # --- ERM Donne ---
 
 reps = 10
-ALPHA_MIN = 1
-ALPHA_MAX = 300
-N_ALPHA_PTS = 25
-d = 1000
+ALPHA_MIN = .5
+ALPHA_MAX = 1000
+N_ALPHA_PTS = 20
+d = 500
 c_tukey_ERM = 0.001
 
 DATA_FOLDER_ERM = "./data/mod_Tukey_decorrelated_noise"  # Répertoire spécifique
