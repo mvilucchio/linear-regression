@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from scipy.special import erf, erfc
 from linear_regression.data.generation import (
     measure_gen_no_noise_clasif,
     data_generation,
@@ -16,6 +18,7 @@ from linear_regression.erm.erm_solvers import (
 from linear_regression.erm.adversarial_perturbation_finders import (
     find_adversarial_perturbation_linear_rf,
 )
+from scipy.integrate import quad
 from tqdm.auto import tqdm
 import os
 import sys
@@ -49,7 +52,7 @@ else:
 # DO NOT CHANGE, NOT IMPLEMENTED FOR OTHERS
 pstar_t = 1.0
 
-dimensions = [int(2**a) for a in range(8, 10)]
+dimensions = [int(2**a) for a in range(8, 11)]
 reps = 10
 
 epss = np.logspace(np.log10(eps_min), np.log10(eps_max), n_epss)
@@ -59,27 +62,31 @@ file_name = f"ERM_misclass_Hastie_Linf_d_{{:d}}_alpha_{alpha:.1f}_gamma_{gamma:.
 
 for d in tqdm(dimensions, desc="dim", leave=False):
     p = int(d / gamma)
-    n = int(p * alpha)
+    n = int(d * alpha)
 
     # works for p = "inf"
-    epss_rescaled = epss * (p ** (-1 / 2))
+    # epss_rescaled = epss * (p ** (-1 / 2))
+    epss_rescaled = epss / np.sqrt(d)
 
     vals = np.empty((reps, len(epss)))
     estim_vals_m = np.empty((reps,))
     estim_vals_q = np.empty((reps,))
+    estim_vals_q_latent = np.empty((reps,))
+    estim_vals_q_feature = np.empty((reps,))
     estim_vals_rho = np.empty((reps,))
     estim_vals_P = np.empty((reps,))
 
     j = 0
     # for j in tqdm(range(reps), desc="reps", leave=False):
     while j < reps:
-        xs, ys, zs, xs_gen, ys_gen, zs_gen, wstar, F = data_generation_hastie(
+        xs, ys, zs, xs_gen, ys_gen, zs_gen, wstar, F, noise, noise_gen = data_generation_hastie(
             measure_gen_no_noise_clasif,
             d=d,
             n=max(n, 1),
             n_gen=1000,
             measure_fun_args={},
             gamma=gamma,
+            noi=True,
         )
 
         assert xs.shape == (n, p)
@@ -101,25 +108,40 @@ for d in tqdm(dimensions, desc="dim", leave=False):
         estim_vals_rho[j] = np.sum(wstar**2) / d
         estim_vals_m[j] = np.dot(wstar, F.T @ w) / (p * np.sqrt(gamma))
         estim_vals_q[j] = np.dot(F.T @ w, F.T @ w) / p + np.dot(w, w) / p
+        estim_vals_q_latent[j] = np.dot(F.T @ w, F.T @ w) / d
+        estim_vals_q_feature[j] = np.dot(w, w) / p
         estim_vals_P[j] = np.mean(np.abs(w))
 
         yhat = np.repeat(np.sign(xs @ w).reshape(-1, 1), d, axis=1)
 
         yhat_gen = np.sign(xs_gen @ w)
 
-        for i, eps_i in enumerate(tqdm(epss_rescaled, desc="eps", leave=False)):
-            adv_perturbation = find_adversarial_perturbation_linear_rf(
-                ys_gen, zs_gen, w, F.T, wstar, eps_i, "inf"
+        i = 0
+        while i < len(epss_rescaled):
+            eps_i = epss_rescaled[i]
+            try:
+                adv_perturbation = find_adversarial_perturbation_linear_rf(
+                    ys_gen, zs_gen, w, F.T, wstar, eps_i, "inf"
+                )
+            except (ValueError, UserWarning) as e:
+                print("Error in finding adversarial perturbation:", e)
+                vals[j, i] = np.nan
+                i += 1
+                continue
+            flipped = np.mean(
+                ys_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w)
             )
 
-            flipped = np.mean(np.sign(ys_gen) != np.sign((zs_gen + adv_perturbation) @ F.T @ w))
-
             vals[j, i] = flipped
+            i += 1
 
         j += 1
 
     mean_m, std_m = np.mean(estim_vals_m), np.std(estim_vals_m)
     mean_q, std_q = np.mean(estim_vals_q), np.std(estim_vals_q)
+    mean_q_latent, std_q_latent = np.mean(estim_vals_q_latent), np.std(estim_vals_q_latent)
+    mean_q_feature, std_q_feature = np.mean(estim_vals_q_feature), np.std(estim_vals_q_feature)
+    mean_P, std_P = np.mean(estim_vals_P), np.std(estim_vals_P)
     mean_rho, std_rho = np.mean(estim_vals_rho), np.std(estim_vals_rho)
     mean_misclass, std_misclass = np.mean(vals, axis=0), np.std(vals, axis=0)
 
@@ -130,6 +152,12 @@ for d in tqdm(dimensions, desc="dim", leave=False):
         "std_m": std_m,
         "mean_q": mean_q,
         "std_q": std_q,
+        "mean_q_latent": mean_q_latent,
+        "std_q_latent": std_q_latent,
+        "mean_q_feature": mean_q_feature,
+        "std_q_feature": std_q_feature,
+        "mean_P": mean_P,
+        "std_P": std_P,
         "mean_rho": mean_rho,
         "std_rho": std_rho,
         "mean_misclass": mean_misclass,
@@ -141,3 +169,54 @@ for d in tqdm(dimensions, desc="dim", leave=False):
     # save with pickle
     with open(data_file, "wb") as f:
         pickle.dump(data, f)
+
+    plt.errorbar(
+        epss, mean_misclass, yerr=std_misclass, linestyle="", marker=".", label=f"$d = {d}$"
+    )
+
+if gamma <= 1:
+    AA = epss * np.sqrt(mean_q_latent - mean_m**2 / gamma) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
+else:
+    AA = epss * np.sqrt(mean_q_feature - mean_m**2 / gamma) / np.sqrt(gamma) * np.sqrt(2 / np.pi)
+
+out_theory = np.empty((len(epss),))
+for i, eps in enumerate(epss):
+    int_val_1 = quad(
+        lambda x: np.exp(-(x**2) / (2 * mean_q))
+        / np.sqrt(2 * np.pi * mean_q)
+        * erfc(
+            mean_m
+            / np.sqrt(gamma)
+            * x
+            / np.sqrt(2 * mean_q * (mean_q * mean_rho - mean_m**2 / gamma))
+        )
+        * np.heaviside(-AA[i] - x, 0),
+        -np.inf,
+        np.inf,
+    )[0]
+    int_val_2 = quad(
+        lambda x: np.exp(-(x**2) / (2 * mean_q))
+        / np.sqrt(2 * np.pi * mean_q)
+        * (
+            1
+            + erf(
+                mean_m
+                / np.sqrt(gamma)
+                * x
+                / np.sqrt(2 * mean_q * (mean_q * mean_rho - mean_m**2 / gamma))
+            )
+        )
+        * np.heaviside(x - AA[i], 0),
+        -np.inf,
+        np.inf,
+    )[0]
+    out_theory[i] = 1 - 0.5 * (int_val_1 + int_val_2)
+
+plt.plot(epss, out_theory, label="theoretical", linestyle="--")
+
+plt.xlabel(r"$\epsilon$")
+plt.ylabel(r"$\mathbb{P}(\hat{y} \neq y)$")
+plt.xscale("log")
+plt.grid(which="both")
+plt.legend()
+plt.show()
