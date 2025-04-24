@@ -21,7 +21,7 @@ from linear_regression.fixed_point_equations import TOL_FPE, MAX_ITER_FPE, BLEND
 CALCULATE_RS = True
 
 # Paramètres physiques fixes
-NOM_LOSS = "Tukey_mod_xigamma_extended"
+NOM_LOSS = "Tukey_mod_xigamma_wide"
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
@@ -34,15 +34,15 @@ TAU = 1.0
 print(f"Hyperparamètres fixes : lambda={REG_PARAM:.2f}, tau={TAU:.2f}")
 
 # Plage pour alpha
-ALPHA_MIN =2
-ALPHA_MAX = 300
-N_ALPHA_PTS = 100
+ALPHA_MIN =0.5
+ALPHA_MAX = 1000
+N_ALPHA_PTS = 300
 
 # Options d'intégration (utilisées pour RS si CALCULATE_RS=True)
 INTEGRATION_BOUND = 5
 INTEGRATION_EPSABS = 1e-7
 INTEGRATION_EPSREL = 1e-4
-DEFAULT_N_STD = 4 # Nombre d'écarts-types pour l'intégration en w
+DEFAULT_N_STD = 7 # Nombre d'écarts-types pour l'intégration en w
 
 # Options pour le solveur de point fixe
 FPE_ABS_TOL = 1e-8

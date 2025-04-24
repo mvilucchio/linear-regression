@@ -257,13 +257,12 @@ def m_star_int_xigamma_Tukey(xi, gamma, q, m, V, delta, beta, tau, c):
     J_beta = beta*sqrt(eta) - sqrt(q) # Jacobien
 
     delta_prime = (1-eta)*beta**2 + delta
-    omega = sqrt(q) * xi
     y = gamma +sqrt(q) * xi
 
-    weight = gaussian_2d_xigamma_Tukey(xi, gamma, J_beta, delta_prime)* beta*(y-beta*omega)/delta_prime
+    weight = gaussian_2d_xigamma_Tukey(xi, gamma, J_beta, delta_prime)* beta*(y-beta*sqrt(eta)*xi)/delta_prime
 
-    prox = proximal_Tukey_modified_quad(y, omega, V, tau, c)
-    f_out = (prox - omega) / V
+    prox = proximal_Tukey_modified_quad(y, sqrt(q)*xi, V, tau, c)
+    f_out = (prox - sqrt(q)*xi) / V
     return  weight*f_out
 
 @njit(error_model="numpy", fastmath=False)
@@ -313,12 +312,11 @@ def q_star_int_xigamma_Tukey(xi, gamma, q, m, V, delta, beta, tau, c):
     J_beta = beta*sqrt(eta) - sqrt(q) # Jacobien
 
     delta_prime = (1-eta)*beta**2 + delta
-    omega = sqrt(q) * xi
     y = gamma +sqrt(q) * xi
 
     weight = gaussian_2d_xigamma_Tukey(xi, gamma, J_beta, delta_prime)
-    prox = proximal_Tukey_modified_quad(y, omega, V, tau, c)
-    f_out = (prox - omega) / V
+    prox = proximal_Tukey_modified_quad(y, sqrt(q)*xi, V, tau, c)
+    f_out = (prox - sqrt(q)*xi) / V
     return  weight*f_out**2
 
 @njit(error_model="numpy", fastmath=False)
@@ -370,16 +368,15 @@ def V_star_int_xigamma_Tukey(xi, gamma, q, m, V, delta, beta, tau, c):
     J_beta = beta*sqrt(eta) - sqrt(q) # Jacobien
 
     delta_prime = (1-eta)*beta**2 + delta
-    omega = sqrt(q) * xi
     y = gamma +sqrt(q) * xi
 
     weight = gaussian_2d_xigamma_Tukey(xi, gamma, J_beta, delta_prime)
-    prox = proximal_Tukey_modified_quad(y, omega, V, tau, c)
+    prox = proximal_Tukey_modified_quad(y, sqrt(q)*xi, V, tau, c)
     Dproximal = (1 + V * DDz_mod_tukey_loss_cubic(y, prox, tau, c)) ** (-1)
 
     return  weight*(Dproximal - 1)/ V
 
-DEFAULT_N_STD = 10.0 # Nombre d'écarts-types pour l'intégration en u
+DEFAULT_N_STD = 7 # Nombre d'écarts-types pour l'intégration en u
 
 def f_hat_wv_mod_Tukey_decorrelated_noise(
     m,
@@ -481,8 +478,8 @@ def f_hat_xigamma_mod_Tukey_decorrelated_noise(
     var_in = integration_bound *sqrt(mu_in)**(-1) # Nombre d'écarts-types pour l'intégration en u
     var_out = integration_bound *sqrt(mu_out)**(-1) # Nombre d'écarts-types pour l'intégration en u
     
-    gamma_dom_in = [0, tau+3*sqrt(delta_prime_in+J_beta_in**2)]
-    gamma_dom_out = [0, tau+3*sqrt(delta_prime_out+ J_beta_out**2)]
+    gamma_dom_in = [0, integration_bound*sqrt(delta_prime_in+J_beta_in**2)]
+    gamma_dom_out = [0, integration_bound*sqrt(delta_prime_out+ J_beta_out**2)]
     
     def center_in(x):
         return J_beta_in*x/(delta_prime_in*mu_in)

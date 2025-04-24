@@ -81,7 +81,7 @@ xi_min_axis_in, xi_max_axis_in = -DEFAULT_N_STD*var_mu_in+min(0,center_in), DEFA
 xi_min_axis_out, xi_max_axis_out = - DEFAULT_N_STD*var_mu_out+min(0,center_out),DEFAULT_N_STD*var_mu_out+max(0,center_out)
 xi_min_in, xi_max_in = PLOT_RANGE_EXTENSION * xi_min_axis_in, PLOT_RANGE_EXTENSION * xi_max_axis_in
 xi_min_out, xi_max_out = PLOT_RANGE_EXTENSION * xi_min_axis_out, PLOT_RANGE_EXTENSION * xi_max_axis_out
-gamma_min, gamma_max = -PLOT_RANGE_EXTENSION * delta_prime_in/10, PLOT_RANGE_EXTENSION * (tau_vis+ delta_prime_in * 3)
+gamma_min, gamma_max = -PLOT_RANGE_EXTENSION * delta_prime_in/10, PLOT_RANGE_EXTENSION * (DEFAULT_N_STD*np.sqrt(delta_prime_in*mu_in)) # changer in / out
 
 #v_grid = np.linspace(v_min, v_max, GRID_POINTS)
 #u_grid = np.linspace(u_min_in, u_max_in, GRID_POINTS)
@@ -162,7 +162,7 @@ for i, (Z, title, cmap) in enumerate(zip(integrands, titles, cmaps)):
     z_min = np.nanmin(Z) if np.any(np.isfinite(Z)) else 0
     try:
          if np.any(np.isfinite(Z)) and np.nanstd(Z) > 1e-9:
-              cset = ax.contour(xi_val, gamma_val, Z, zdir='z', offset=z_min, cmap=cmap, linewidths=0.5, alpha=0.5) # changer les axes
+              cset = ax.contour(xi_axis , gamma_axis, Z, zdir='z', offset=z_min, cmap=cmap, linewidths=0.5, alpha=0.5) # changer les axes
          else:
              print(f"Contours non tracés pour '{title}' (données non finies ou constantes)")
     except Exception as e:
@@ -180,7 +180,7 @@ for i, (Z, title, cmap) in enumerate(zip(integrands, titles, cmaps)):
     #ax.set_xlim(-BIG_NUMBER, BIG_NUMBER)
     ax.set_xlim(xi_min_axis_in, xi_max_axis_in) # changer in /out
     #ax.set_ylim(-BIG_NUMBER, BIG_NUMBER)
-    ax.set_ylim(0, tau_vis+3*delta_prime_in) # changer in /out
+    ax.set_ylim(0, DEFAULT_N_STD*np.sqrt(delta_prime_in*mu_in )) # changer in /out
 
     # Ajuster l'angle de vue
     # ax.view_init(elev=20., azim=-65)
