@@ -67,9 +67,6 @@ FILE_PATH_PKL = os.path.join(DATA_FOLDER_SE, FILE_NAME_BASE + ".pkl")
 FILE_PATH_CSV = os.path.join(
     DATA_FOLDER_SE, FILE_NAME_BASE + ".csv")  # Fallback
 
-FILE_PATH_PKL = "./data/alpha_sweeps_tukey/alpha_sweep_Tukey_mod_lambda_2.0_tau_1.0_cin_0.1_cout_1.0_eps_0.1_beta_0.0_c_0.001.pkl"
-FILE_PATH_CSV = "./data/alpha_sweeps_tukey/alpha_sweep_Tukey_mod_lambda_2.0_tau_1.0_cin_0.1_cout_1.0_eps_0.1_beta_0.0_c_0.001.csv"
-
 data_loaded = False
 results_dict = None
 
