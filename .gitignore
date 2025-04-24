@@ -5,6 +5,7 @@
 # data folder
 data/
 !data/.gitkeep
+!/linear_regression/data/
 
 # datasets folder
 datasets/**
