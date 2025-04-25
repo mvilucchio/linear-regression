@@ -29,14 +29,14 @@ if len(sys.argv) > 1:
         float(sys.argv[8]),
     )
 else:
-    gamma_min, gamma_max, n_gammas = 0.5, 5.0, 20
+    gamma_min, gamma_max, n_gammas = 0.5, 2.0, 15
     alpha = 0.5
     eps_t = 0.1
     delta = 0.0
-    reg_param = 1e-3
+    reg_param = 1e-2
     d = 300
-    
-reps = 20
+
+reps = 10
 n_gen = 1000
 
 pstar = 1.0
@@ -51,6 +51,8 @@ if not os.path.exists(data_folder):
 
 ms = np.empty((n_gammas, 2))
 qs = np.empty((n_gammas, 2))
+q_latent = np.empty((n_gammas, 2))
+q_feature = np.empty((n_gammas, 2))
 Ps = np.empty((n_gammas, 2))
 gen_errs = np.empty((n_gammas, 2))
 adv_errs = np.empty((n_gammas, 2))
@@ -64,6 +66,8 @@ for i, gamma in enumerate(gamma_list):
 
     m_vals = []
     q_vals = []
+    q_latent_vals = []
+    q_feature_vals = []
     P_vals = []
     gen_err_vals = []
     adv_err_vals = []
@@ -87,7 +91,9 @@ for i, gamma in enumerate(gamma_list):
 
         m_vals.append(np.dot(wstar, F.T @ w) / (p * np.sqrt(gamma)))
         q_vals.append(np.dot(F.T @ w, F.T @ w) / p + np.dot(w, w) / p)
-        P_vals.append(np.sum(np.abs(w) ** pstar) / p)
+        q_latent_vals.append(np.dot(F.T @ w, F.T @ w) / d)
+        q_feature_vals.append(np.dot(w, w) / p)
+        P_vals.append(np.mean(np.abs(w)))
 
         yhat_gen = np.sign(np.dot(xs_gen, w))
 
@@ -96,7 +102,7 @@ for i, gamma in enumerate(gamma_list):
 
         # calculation of flipped perturbation
         adv_perturbation = find_adversarial_perturbation_direct_space(
-            yhat_gen, xs_gen, w, F @ wstar, eps_t * p ** (-1 / 2), "inf"
+            yhat_gen, xs_gen, w, F @ wstar, eps_t / np.sqrt(d), "inf"
         )
         flipped = percentage_flipped_labels_estim(
             yhat_gen,
@@ -109,7 +115,7 @@ for i, gamma in enumerate(gamma_list):
 
         # calculation of perturbation
         adv_perturbation = find_adversarial_perturbation_direct_space(
-            ys_gen, xs_gen, w, F @ wstar, eps_t * p ** (-1 / 2), "inf"
+            ys_gen, xs_gen, w, F @ wstar, eps_t / np.sqrt(d), "inf"
         )
         misclass = percentage_error_from_true(
             ys_gen,
@@ -125,6 +131,8 @@ for i, gamma in enumerate(gamma_list):
 
     ms[i, 0], ms[i, 1] = np.mean(m_vals), np.std(m_vals)
     qs[i, 0], qs[i, 1] = np.mean(q_vals), np.std(q_vals)
+    q_latent[i, 0], q_latent[i, 1] = np.mean(q_latent_vals), np.std(q_latent_vals)
+    q_feature[i, 0], q_feature[i, 1] = np.mean(q_feature_vals), np.std(q_feature_vals)
     Ps[i, 0], Ps[i, 1] = np.mean(P_vals), np.std(P_vals)
     gen_errs[i, 0], gen_errs[i, 1] = np.mean(gen_err_vals), np.std(gen_err_vals)
     adv_errs[i, 0], adv_errs[i, 1] = np.mean(adv_err_vals), np.std(adv_err_vals)
@@ -142,6 +150,10 @@ np.savetxt(
             ms[:, 1],
             qs[:, 0],
             qs[:, 1],
+            q_latent[:, 0],
+            q_latent[:, 1],
+            q_feature[:, 0],
+            q_feature[:, 1],
             Ps[:, 0],
             Ps[:, 1],
             gen_errs[:, 0],
@@ -155,7 +167,7 @@ np.savetxt(
         )
     ),
     delimiter=",",
-    header="gamma,m-mean,m-std,q-mean,q-std,P-mean,P-std,gen_err-mean,gen_err-std,adv_err-mean,adv_err-std,flipped_fair-mean,flipped_fair-std,misclass_fair-mean,misclass_fair-std",
+    header="gamma,m_mean,m_std,q_mean,q_std,q_latent_mean,q_latent_std,q_feature_mean,q_feature_std,P_mean,P_std,gen_err_mean,gen_err_std,adv_err_mean,adv_err_std,flipped_fair_mean,flipped_fair_std,misclas_fair_mean,misclas_fair_std",
 )
 
 print("data saved.")

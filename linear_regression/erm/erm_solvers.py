@@ -571,8 +571,8 @@ def find_coefficients_Logistic_adv_Linf_L2(ys: ndarray, xs: ndarray, reg_param: 
 
     objective = Minimize(loss_term + reg_param * l2_reg)
     problem = Problem(objective)
-    # solver_opts = {"abstol": 1e-10, "reltol": 1e-10, "feastol": 1e-10, "max_iters": 1000}
-    # problem.solve(solver="ECOS", verbose=False, **solver_opts)
-    problem.solve(verbose=False)
+    solver_opts = {"abstol": 1e-10, "reltol": 1e-10, "feastol": 1e-10, "max_iters": 1000}
+    problem.solve(solver="ECOS", verbose=False, **solver_opts)
+    # problem.solve(verbose=False)
 
     return w.value
