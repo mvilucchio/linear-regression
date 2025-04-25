@@ -21,7 +21,7 @@ except Exception as e:
 
 # --- Paramètres de la Simulation ---
 
-NOM_LOSS = "Tukey_mod_xigamma"
+NOM_LOSS = "Tukey_mod_xigamma_c0"
 
 # Paramètres physiques fixes
 ALPHA = 10.0
@@ -29,19 +29,19 @@ DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
 BETA = 0.0
-C_TUKEY = 0.001
+C_TUKEY = 0.0
 
 # Paramètres de la grille
-N_REG_PARAM_PTS = 10
-N_TAU_PTS = 10
+N_REG_PARAM_PTS = 100
+N_TAU_PTS = 100
 
 # Gamme pour reg_param (lambda)
-REG_PARAM_MIN = 10.0
-REG_PARAM_MAX = 11.0
+REG_PARAM_MIN = .5
+REG_PARAM_MAX = 2
 USE_REG_LOGSPACE = False
 
 # Gamme pour tau
-TAU_MIN = 1.0
+TAU_MIN = .4
 TAU_MAX = 2.0
 USE_TAU_LOGSPACE = False
 

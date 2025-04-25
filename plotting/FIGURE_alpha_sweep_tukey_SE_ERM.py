@@ -47,7 +47,7 @@ IMG_FORMATS = ["pdf", "png"]
 
 # --- Paramètres de la Simulation (pour retrouver le fichier) ---
 # Doivent correspondre à ceux du script de calcul !
-NOM_LOSS = "Tukey_mod_xigamma"
+NOM_LOSS = "Tukey_mod_xigamma_c0"
 ALPHA_MIN = 0.5
 ALPHA_MAX = 1000
 N_ALPHA_PTS = 100
@@ -55,7 +55,7 @@ DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
 BETA = 0.0
-C_TUKEY = 0.001
+C_TUKEY = 0
 REG_PARAM = 2.0
 TAU = 1.0
 
@@ -81,9 +81,10 @@ if LOAD_FROM_PKL and os.path.exists(FILE_PATH_PKL):
         print(
             f"Erreur lors du chargement PKL : {e}. Tentative avec CSV si disponible.")
 
+print(f"Chargement depuis {FILE_PATH_CSV}...")
+
 # Fallback CSV (lecture basique, à adapter si besoin)
 if not data_loaded and os.path.exists(FILE_PATH_CSV):
-    print(f"Chargement et reconstruction depuis {FILE_PATH_CSV}...")
     try:
         # Attention: cette lecture suppose que le CSV contient les colonnes dans cet ordre précis
         # et qu'il n'y a pas de lignes manquantes. La reconstruction est fragile.
@@ -122,7 +123,7 @@ qs = results_dict['qs']
 Vs = results_dict['Vs']
 gen_error = results_dict['gen_error']
 
-# Création des données 1 - m^2/q
+# Création des données
 
 m2_q = np.full_like(alphas, np.nan)
 for i in range(len(alphas)):
@@ -141,6 +142,8 @@ estim_err = np.full_like(alphas, np.nan)
 for i in range(len(alphas)):
     estim_err[i] = 1+qs[i] - 2*ms[i]
 
+angle = np.arccos(np.clip(ms**2 / qs, -1, 1)) / np.pi
+
 # --- Préparation du Plot ---
 # if os.path.exists(STYLE_FILE):
 #    plt.style.use(STYLE_FILE)
@@ -153,6 +156,8 @@ ax1.plot(alphas, gen_error, marker='.', linestyle='-',
          markersize=3, color='tab:blue', label='$E_{gen}$')
 ax1.plot(alphas, estim_err, marker='.', linestyle='-',
          markersize=3, color='tab:orange', label='$E_estim$')
+ax1.plot(alphas, angle, marker='.', linestyle='-',
+         markersize=3, color='tab:green', label=r'$\theta$')
 
 # Configuration de l'axe Y principal
 ax1.set_xlabel(r'$\alpha = n/d$')
@@ -165,14 +170,14 @@ ax1.tick_params(axis='y', labelcolor='black')
 # ax1.set_ylim(1e-3, 1e2)
 ax1.set_xlim(min(alphas), max(alphas))
 
-# --- ERM Donne ---
+# --- ERM Donnees ---
 
 reps = 10
 ALPHA_MIN = .5
-ALPHA_MAX = 1000
+ALPHA_MAX = 300
 N_ALPHA_PTS = 20
 d = 500
-c_tukey_ERM = 0.001
+c_tukey_ERM = 0.0
 
 DATA_FOLDER_ERM = "./data/mod_Tukey_decorrelated_noise"  # Répertoire spécifique
 FILE_NAME_ERM = f"ERM_mod_Tukey_{TAU:.2f}_{c_tukey_ERM:.2e}_alpha_sweep_{ALPHA_MIN:.2f}_{ALPHA_MAX:.3f}_{N_ALPHA_PTS:d}_reps_{reps:d}_d_{d:d}_decorrelated_noise_{DELTA_IN:.2f}_{DELTA_OUT:.2f}_{PERCENTAGE:.2f}_{BETA:.2f}.pkl"
@@ -211,10 +216,6 @@ ax1.errorbar(
 
 
 # --- Finalisation (Légendes, Titre, Sauvegarde) ---
-# Combine les légendes des deux axes
-# lines1, labels1 = ax1.get_legend_handles_labels()
-# # lines2, labels2 = ax2.get_legend_handles_labels()
-# ax1.legend(lines1 + lines2, labels1 + labels2, loc='best', fontsize=8)
 
 ax1.legend(loc='best', fontsize=8)
 
@@ -228,5 +229,6 @@ if SAVE_PLOT:
     save_plot(fig, plot_filename_base,
               formats=IMG_FORMATS, directory=IMG_DIRECTORY)
 
-plt.show()
 print("Script de tracé terminé.")
+plt.show()
+

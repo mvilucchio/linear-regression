@@ -39,10 +39,10 @@ if len(sys.argv) > 1:
 else:
     d = 500
     reps = 10
-    alpha_min, alpha_max, n_alpha_pts = 5, 300, 25
-    tau, c = 1.0, 0.001
+    alpha_min, alpha_max, n_alpha_pts = 0.5, 300, 20
+    tau, c = 1.0, 0.0
     reg_param = 2.0
-    delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0.1
+    delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0.0
 
 data_folder = "./data/mod_Tukey_decorrelated_noise/"
 file_name = f"ERM_mod_Tukey_{tau:.2f}_{c:.2e}_alpha_sweep_{alpha_min:.2f}_{alpha_max:.3f}_{n_alpha_pts:d}_reps_{reps:d}_d_{d:d}_decorrelated_noise_{delta_in:.2f}_{delta_out:.2f}_{percentage:.2f}_{beta:.2f}.pkl"
@@ -80,7 +80,7 @@ for i, alpha in enumerate(tqdm(alphas)):
             w = find_coefficients_mod_Tukey(ys, xs, reg_param, tau, c, initial_w=w_init)
         except ValueError as e:
             print("Error in finding coefficients:", e)
-            rep += 1
+            #rep += 1
             continue
 
         m, q = np.dot(w, wstar) / d, np.sum(w**2) / d
@@ -94,7 +94,7 @@ for i, alpha in enumerate(tqdm(alphas)):
                 (ys_gen - (1 - percentage + percentage * beta) * xs_gen @ wstar / np.sqrt(d)) ** 2
             )
         )
-        # rep += 1
+        rep += 1
         pbar.update(1)
 
     pbar.close()
@@ -126,6 +126,8 @@ np.savetxt(
     comments="",
 )
 
+print("Data saved to", join(data_folder, file_name))
+
 plt.figure(figsize=(7.5, 7.5))
 plt.errorbar(alphas, ms[:, 0], yerr=ms[:, 1], fmt=".-", label="m")
 plt.errorbar(alphas, qs[:, 0], yerr=qs[:, 1], fmt=".-", label="q")
@@ -136,4 +138,4 @@ plt.xlabel(r"$\alpha$")
 plt.yscale("log")
 plt.legend()
 
-# plt.show()
+plt.show()

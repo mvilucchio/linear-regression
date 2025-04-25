@@ -41,15 +41,15 @@ IMG_FORMATS = ["pdf", "png"]
 
 # --- Paramètres de la Simulation (pour retrouver le fichier) ---
 # Doivent correspondre à ceux du script de calcul !
-NOM_LOSS = "Tukey_mod_xigamma"
-ALPHA_MIN = 30
-ALPHA_MAX = 500
-N_ALPHA_PTS = 100
+NOM_LOSS = "Tukey_mod_xigamma_c0"
+ALPHA_MIN = 1000
+ALPHA_MAX = 1000000
+N_ALPHA_PTS = 1000
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
 BETA = 0.0
-C_TUKEY = 0.001
+C_TUKEY = 0
 REG_PARAM = 2.0
 TAU = 1.0
 

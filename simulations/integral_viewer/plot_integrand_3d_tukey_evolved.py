@@ -10,9 +10,9 @@ try:
         m_int_mod_Tukey_decorrelated_noise,
         q_int_mod_Tukey_decorrelated_noise,
         V_int_mod_Tukey_decorrelated_noise,
-        m_star_int_uv_Tukey,
-        q_star_int_uv_Tukey,
-        V_star_int_uv_Tukey,
+        m_star_int_xigamma_Tukey,
+        q_star_int_xigamma_Tukey,
+        V_star_int_xigamma_Tukey,
         BIG_NUMBER,
     )
     from linear_regression.aux_functions.stability_functions import RS_int_mod_Tukey_decorrelated_noise

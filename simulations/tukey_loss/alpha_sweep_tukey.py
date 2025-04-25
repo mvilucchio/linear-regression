@@ -21,12 +21,12 @@ from linear_regression.fixed_point_equations import TOL_FPE, MAX_ITER_FPE, BLEND
 CALCULATE_RS = True
 
 # Paramètres physiques fixes
-NOM_LOSS = "Tukey_mod_xigamma_wide"
+NOM_LOSS = "Tukey_mod_xigamma_c0"
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
 BETA = 0.0
-C_TUKEY = 0.001
+C_TUKEY = 0 #attention au nombre de décimales
 
 # Hyperparamètres fixés pour le balayage en alpha
 REG_PARAM = 2.0
@@ -34,15 +34,15 @@ TAU = 1.0
 print(f"Hyperparamètres fixes : lambda={REG_PARAM:.2f}, tau={TAU:.2f}")
 
 # Plage pour alpha
-ALPHA_MIN =0.5
-ALPHA_MAX = 1000
-N_ALPHA_PTS = 300
+ALPHA_MIN =1000
+ALPHA_MAX = 1000000
+N_ALPHA_PTS = 1000
 
 # Options d'intégration (utilisées pour RS si CALCULATE_RS=True)
 INTEGRATION_BOUND = 5
 INTEGRATION_EPSABS = 1e-7
 INTEGRATION_EPSREL = 1e-4
-DEFAULT_N_STD = 7 # Nombre d'écarts-types pour l'intégration en w
+DEFAULT_N_STD = 4 # Nombre d'écarts-types pour l'intégration en w
 
 # Options pour le solveur de point fixe
 FPE_ABS_TOL = 1e-8
@@ -51,7 +51,7 @@ FPE_ABS_TOL = 1e-8
 #FPE_MIN_ITER = 50
 
 # Condition initiale pour le premier alpha
-initial_cond_fpe = (4.95947940e-01,3.92170537e-01,4.04138236e-01)
+initial_cond_fpe = (9.91940240e-01,9.84089626e-01,2.01330592e-03)
 
 # Configuration sauvegarde
 DATA_FOLDER = "./data/alpha_sweeps_tukey" # Dossier dédié
