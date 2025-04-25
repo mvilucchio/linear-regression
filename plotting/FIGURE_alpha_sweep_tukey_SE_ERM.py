@@ -142,7 +142,7 @@ estim_err = np.full_like(alphas, np.nan)
 for i in range(len(alphas)):
     estim_err[i] = 1+qs[i] - 2*ms[i]
 
-angle = np.arccos(np.clip(ms**2 / qs, -1, 1)) / np.pi
+angle = np.arccos(np.clip(ms / np.sqrt(qs), -1, 1)) / np.pi
 
 # --- Préparation du Plot ---
 # if os.path.exists(STYLE_FILE):
