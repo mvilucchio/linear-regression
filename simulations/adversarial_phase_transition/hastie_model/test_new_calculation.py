@@ -16,14 +16,12 @@ from linear_regression.erm.erm_solvers import (
 )
 from linear_regression.erm.adversarial_perturbation_finders import (
     find_adversarial_perturbation_linear_rf,
+    find_adversarial_perturbation_linear_rf_new,
 )
 from scipy.special import erf
 from tqdm.auto import tqdm
-import os
 import sys
-from itertools import product
 import warnings
-import pickle
 
 warnings.filterwarnings("error")
 
@@ -41,18 +39,18 @@ else:
     eps_min, eps_max, n_epss, alpha, gamma, reg_param, eps_training = (
         0.1,
         10.0,
-        25,
-        1.8,
-        3.5,
+        15,
+        0.3,
+        0.2,
         1e-2,
-        0.1,
+        0.2,
     )
 
 # DO NOT CHANGE, NOT IMPLEMENTED FOR OTHERS
 pstar_t = 1.0
 
-dimensions = [int(2**a) for a in range(8, 9)]
-reps = 10
+dimensions = [int(2**a) for a in range(9, 10)]
+reps = 5
 
 epss = np.logspace(np.log10(eps_min), np.log10(eps_max), n_epss)
 
@@ -62,6 +60,8 @@ file_name = f"ERM_flipped_Hastie_Linf_d_{{:d}}_alpha_{alpha:.1f}_gamma_{gamma:.1
 for d in tqdm(dimensions, desc="dim", leave=False):
     p = int(d / gamma)
     n = int(d * alpha)
+
+    print(f"p: {p}, d: {d}, n: {n}")
 
     # works for p = "inf"
     # epss_rescaled = epss * (d ** (-1 / 2))
@@ -100,14 +100,14 @@ for d in tqdm(dimensions, desc="dim", leave=False):
             #     w = find_coefficients_Logistic_adv(
             #         ys, xs, 0.5 * reg_param, eps_training, 2.0, pstar_t, F @ wstar
             #     )
-
             w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, 0.5 * reg_param, eps_training)
+            print("j", j)
         except (ValueError, UserWarning) as e:
-            print("Error in finding coefficients:", e)
+            print(f"Error in finding coefficients {j}:", e)
             continue
 
         estim_vals_rho[j] = np.sum(wstar**2) / d
-        estim_vals_m[j] = np.dot(wstar, F.T @ w) / (p * np.sqrt(gamma))
+        estim_vals_m[j] = np.dot(wstar, F.T @ w) / (d)
         estim_vals_q[j] = np.dot(F.T @ w, F.T @ w) / p + np.dot(w, w) / p
         estim_vals_q_latent[j] = np.dot(F.T @ w, F.T @ w) / d
         estim_vals_q_feature[j] = np.dot(w, w) / p
@@ -117,7 +117,6 @@ for d in tqdm(dimensions, desc="dim", leave=False):
 
         yhat_gen = np.sign(np.dot(xs_gen, w))
 
-        # for i, eps_i in enumerate(tqdm(epss_rescaled, desc="eps", leave=False)):
         i = 0
         while i < len(epss_rescaled):
             eps_i = epss_rescaled[i]
@@ -128,8 +127,9 @@ for d in tqdm(dimensions, desc="dim", leave=False):
             except (ValueError, UserWarning) as e:
                 print("Error in finding adversarial perturbation:", e)
                 vals[j, i] = np.nan
-                i += 1
+                # i += 1
                 continue
+
             flipped = np.mean(
                 yhat_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w)
             )
@@ -147,46 +147,25 @@ for d in tqdm(dimensions, desc="dim", leave=False):
     mean_rho, std_rho = np.mean(estim_vals_rho), np.std(estim_vals_rho)
     mean_flipped, std_flipped = np.mean(vals, axis=0), np.std(vals, axis=0)
 
-    data = {
-        "eps": epss,
-        "vals": vals,
-        "mean_m": mean_m,
-        "std_m": std_m,
-        "mean_q": mean_q,
-        "std_q": std_q,
-        "mean_q_latent": mean_q_latent,
-        "std_q_latent": std_q_latent,
-        "mean_q_feature": mean_q_feature,
-        "std_q_feature": std_q_feature,
-        "mean_P": mean_P,
-        "std_P": std_P,
-        "mean_rho": mean_rho,
-        "std_rho": std_rho,
-        "mean_flipped": mean_flipped,
-        "std_flipped": std_flipped,
-    }
-
-    print()
-
-    data_file = os.path.join(data_folder, file_name.format(d))
-
-    # save with pickle
-    with open(data_file, "wb") as f:
-        pickle.dump(data, f)
+    print(
+        f"m = {mean_m:.4f} ± {std_m:.4f}, q = {mean_q:.4f} ± {std_q:.4f},\n"
+        f"q_latent = {mean_q_latent:.4f} ± {std_q_latent:.4f}, q_feature = {mean_q_feature:.4f} ± {std_q_feature:.4f},\n"
+        f"rho = {mean_rho:.4f} ± {std_rho:.4f}, P = {mean_P:.4f} ± {std_P:.4f},\n"
+    )
 
     plt.errorbar(epss, mean_flipped, yerr=std_flipped, linestyle="", marker=".", label=f"$d = {d}$")
 
-if gamma <= 1:
+if gamma < 1:
     plt.plot(
         epss,
         erf(
             epss
-            * np.sqrt(mean_q_latent - mean_m**2 / gamma)
+            * np.sqrt(mean_q_latent - mean_m**2)
             * np.sqrt(1 / np.pi)
             / np.sqrt(mean_q)
             * np.sqrt(gamma)
         ),
-        label="theoretical",
+        label="theoretical gamma < 1",
         linestyle="--",
     )
 else:
@@ -194,18 +173,20 @@ else:
         epss,
         erf(
             epss
-            * np.sqrt(mean_q_feature - mean_m**2 / gamma)
+            * np.sqrt(mean_q_feature - mean_m**2)
             / np.sqrt(gamma)
             * np.sqrt(1 / np.pi)
             / np.sqrt(mean_q)
         ),
-        label="theoretical",
+        label="theoretical gamma > 1",
         linestyle="--",
     )
 
+plt.title(f"gamma = {gamma:.2f}")
 plt.xlabel(r"$\epsilon$")
 plt.ylabel(r"$\mathbb{P}(\hat{y} \neq y)$")
 plt.xscale("log")
+plt.yscale("log")
 plt.grid(which="both")
 plt.legend()
 plt.show()

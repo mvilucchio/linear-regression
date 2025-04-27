@@ -396,6 +396,7 @@ def find_coefficients_Logistic(ys, xs, reg_param):
 
 
 # --------------------------- adversarial training --------------------------- #
+# there is a problem in the scaling of d for pstar != 1
 @jit
 def _loss_Logistic_adv(
     w, xs_norm, ys, reg_param: float, ε: float, reg_order: float, pstar: float, d: int
@@ -434,7 +435,7 @@ def find_coefficients_Logistic_adv(
         jac=_grad_loss_Logistic_adv,
         hess=_hess_loss_Logistic_adv,
         args=(xs_norm, ys, reg_param, ε, reg_order, pstar, d),
-        options={"maxiter": MAX_ITER_MINIMIZE, "xtol": 1e-4},
+        options={"maxiter": MAX_ITER_MINIMIZE, "xtol": 5e-5},
     )
 
     if opt_res.status == 2:
@@ -571,7 +572,7 @@ def find_coefficients_Logistic_adv_Linf_L2(ys: ndarray, xs: ndarray, reg_param: 
 
     objective = Minimize(loss_term + reg_param * l2_reg)
     problem = Problem(objective)
-    solver_opts = {"abstol": 1e-10, "reltol": 1e-10, "feastol": 1e-10, "max_iters": 1000}
+    solver_opts = {"abstol": 1e-6, "reltol": 1e-6, "feastol": 1e-6, "max_iters": 1000}
     problem.solve(solver="ECOS", verbose=False, **solver_opts)
     # problem.solve(verbose=False)
 
