@@ -1,6 +1,6 @@
 from math import pi, sqrt, erf, exp, erfc, inf
 from math import gamma as gamma_fun
-from scipy.integrate import quad
+from scipy.integrate import quad, dblquad
 import numpy as np
 from numba import njit
 
@@ -66,25 +66,37 @@ def percentage_flipped_hastie_model(
     gamma: float,
     p,
 ) -> float:
-    if float(p) == inf:
-        if gamma <= 1:
-            return erf(
-                epsilon
-                * np.sqrt(q_latent - m**2 / gamma)
-                * np.sqrt(1 / np.pi)
-                / np.sqrt(q)
-                * np.sqrt(gamma)
-            )
-        else:
-            return erf(
-                epsilon
-                * np.sqrt(q_features - m**2 / gamma)
-                / np.sqrt(gamma)
-                * np.sqrt(1 / np.pi)
-                / np.sqrt(q)
-            )
+    # if float(p) == inf:
+    if gamma <= 1:
+        AA = epsilon * np.sqrt(q_latent - m**2 / gamma) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
     else:
-        raise NotImplementedError
+        AA = epsilon * np.sqrt(q_features - m**2 / gamma) * np.sqrt(2 / np.pi) / np.sqrt(gamma)
+
+    return quad(
+        lambda x: np.exp(-(x**2) / (2 * q))
+        / np.sqrt(2 * np.pi * q)
+        * np.heaviside(+AA - np.sign(x) * x, 0),
+        -np.inf,
+        np.inf,
+    )[0]
+    # if gamma <= 1:
+    #     return erf(
+    #         epsilon
+    #         * np.sqrt(q_latent - m**2 / gamma)
+    #         * np.sqrt(1 / np.pi)
+    #         / np.sqrt(q)
+    #         * np.sqrt(gamma)
+    #     )
+    # else:
+    #     return erf(
+    #         epsilon
+    #         * np.sqrt(q_features - m**2 / gamma)
+    #         / np.sqrt(gamma)
+    #         * np.sqrt(1 / np.pi)
+    #         / np.sqrt(q)
+    #     )
+    # else:
+    #     raise NotImplementedError
 
 
 def percentage_misclassified_hastie_model(
@@ -101,6 +113,20 @@ def percentage_misclassified_hastie_model(
         AA = epsilon * np.sqrt(q_latent - m**2 / gamma) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
     else:
         AA = epsilon * np.sqrt(q_features - m**2 / gamma) / np.sqrt(gamma) * np.sqrt(2 / np.pi)
+
+    return dblquad(
+        lambda nu, lamb: (
+            exp((-2 * m * lamb * nu + q * nu**2 + lamb**2 * rho) / (2.0 * (m**2 - q * rho)))
+            * np.heaviside(+AA - lamb * np.sign(nu), 0.0)
+        )
+        / (2.0 * np.pi * sqrt(-(m**2) + q * rho)),
+        -np.inf,
+        np.inf,
+        lambda nu: -np.inf,
+        lambda nu: np.inf,
+        epsabs=1e-3,
+        epsrel=1e-3,
+    )[0]
 
     int_val_1 = quad(
         lambda x: np.exp(-(x**2) / (2 * q))
@@ -119,36 +145,6 @@ def percentage_misclassified_hastie_model(
         np.inf,
     )[0]
     return 1 - 0.5 * (int_val_1 + int_val_2)
-
-    # η = m**2 / (q * rho)
-    # if float(p) == inf:
-    #     A = epsilon / sqrt(pi) * sqrt(2 * q) * sqrt(1 - η)
-    # else:
-    #     pstar = 1 / (1 - 1 / p)
-    #     A = (
-    #         (gamma_fun((pstar + 1) / 2) / sqrt(pi)) ** (1 / pstar)
-    #         * epsilon
-    #         * sqrt(2 * q)
-    #         * sqrt(1 - η)
-    #     )
-
-    # int_val_1 = quad(
-    #     lambda x: exp(-(x**2) / (2 * q))
-    #     / sqrt(2 * pi * q)
-    #     * erfc(m * x / sqrt(2 * q * (q * rho - m**2)))
-    #     * np.heaviside(-A - x, 0),
-    #     -np.inf,
-    #     np.inf,
-    # )[0]
-    # int_val_2 = quad(
-    #     lambda x: exp(-(x**2) / (2 * q))
-    #     / sqrt(2 * pi * q)
-    #     * (1 + erf(m * x / sqrt(2 * q * (q * rho - m**2))))
-    #     * np.heaviside(x - A, 0),
-    #     -np.inf,
-    #     np.inf,
-    # )[0]
-    # return 1 - 0.5 * (int_val_1 + int_val_2)
 
 
 # ------------------------------ Linear Features ----------------------------- #

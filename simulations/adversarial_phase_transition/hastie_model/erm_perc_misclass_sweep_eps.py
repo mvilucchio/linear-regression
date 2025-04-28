@@ -6,6 +6,7 @@ from linear_regression.data.generation import (
     data_generation,
     data_generation_hastie,
 )
+from linear_regression.aux_functions.percentage_flipped import percentage_misclassified_hastie_model
 from linear_regression.erm.metrics import (
     percentage_flipped_labels_estim,
     percentage_error_from_true,
@@ -22,11 +23,8 @@ from scipy.integrate import quad
 from tqdm.auto import tqdm
 import os
 import sys
-from itertools import product
-import warnings
+from cvxpy.error import SolverError
 import pickle
-
-warnings.filterwarnings("error")
 
 if len(sys.argv) > 1:
     eps_min, eps_max, n_epss, alpha, gamma, reg_param, eps_training = (
@@ -43,16 +41,16 @@ else:
         0.1,
         10.0,
         15,
-        1.0,
-        1.0,
+        1.5,
+        0.5,
         1e-2,
-        1.0,
+        0.1,
     )
 
 # DO NOT CHANGE, NOT IMPLEMENTED FOR OTHERS
 pstar_t = 1.0
 
-dimensions = [int(2**a) for a in range(9, 11)]
+dimensions = [int(2**a) for a in range(9, 10)]
 reps = 10
 
 epss = np.logspace(np.log10(eps_min), np.log10(eps_max), n_epss)
@@ -63,6 +61,8 @@ file_name = f"ERM_misclass_Hastie_Linf_d_{{:d}}_alpha_{alpha:.1f}_gamma_{gamma:.
 for d in tqdm(dimensions, desc="dim", leave=False):
     p = int(d / gamma)
     n = int(d * alpha)
+
+    print(f"p: {p}, d: {d}, n: {n}")
 
     # works for p = "inf"
     # epss_rescaled = epss * (p ** (-1 / 2))
@@ -77,7 +77,6 @@ for d in tqdm(dimensions, desc="dim", leave=False):
     estim_vals_P = np.empty((reps,))
 
     j = 0
-    # for j in tqdm(range(reps), desc="reps", leave=False):
     while j < reps:
         xs, ys, zs, xs_gen, ys_gen, zs_gen, wstar, F, noise, noise_gen = data_generation_hastie(
             measure_gen_no_noise_clasif,
@@ -95,13 +94,8 @@ for d in tqdm(dimensions, desc="dim", leave=False):
         assert F.shape == (p, d)
 
         try:
-            if eps_training == 0.0:
-                w = find_coefficients_Logistic(ys, xs, reg_param)
-            else:
-                w = find_coefficients_Logistic_adv(
-                    ys, xs, 0.5 * reg_param, eps_training, 2.0, pstar_t, F @ wstar
-                )
-        except ValueError as e:
+            w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, 0.5 * reg_param, eps_training)
+        except (ValueError, UserWarning, SolverError) as e:
             print("Error in finding coefficients:", e)
             continue
 
@@ -123,19 +117,18 @@ for d in tqdm(dimensions, desc="dim", leave=False):
                 adv_perturbation = find_adversarial_perturbation_linear_rf(
                     ys_gen, zs_gen, w, F.T, wstar, eps_i, "inf"
                 )
-            except (ValueError, UserWarning) as e:
+            except (ValueError, UserWarning, SolverError) as e:
                 print("Error in finding adversarial perturbation:", e)
-                vals[j, i] = np.nan
-                i += 1
-                continue
+                break
+
             flipped = np.mean(
                 ys_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w)
             )
-
+            print(f"i : {i}, j : {j}")
             vals[j, i] = flipped
             i += 1
-
-        j += 1
+        else:
+            j += 1
 
     mean_m, std_m = np.mean(estim_vals_m), np.std(estim_vals_m)
     mean_q, std_q = np.mean(estim_vals_q), np.std(estim_vals_q)
@@ -166,7 +159,6 @@ for d in tqdm(dimensions, desc="dim", leave=False):
 
     data_file = os.path.join(data_folder, file_name.format(d))
 
-    # save with pickle
     with open(data_file, "wb") as f:
         pickle.dump(data, f)
 
@@ -174,45 +166,12 @@ for d in tqdm(dimensions, desc="dim", leave=False):
         epss, mean_misclass, yerr=std_misclass, linestyle="", marker=".", label=f"$d = {d}$"
     )
 
-if gamma <= 1:
-    AA = epss * np.sqrt(mean_q_latent - mean_m**2 / gamma) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
-else:
-    AA = epss * np.sqrt(mean_q_feature - mean_m**2 / gamma) / np.sqrt(gamma) * np.sqrt(2 / np.pi)
-
-out_theory = np.empty((len(epss),))
-for i, eps in enumerate(epss):
-    int_val_1 = quad(
-        lambda x: np.exp(-(x**2) / (2 * mean_q))
-        / np.sqrt(2 * np.pi * mean_q)
-        * erfc(
-            mean_m
-            / np.sqrt(gamma)
-            * x
-            / np.sqrt(2 * mean_q * (mean_q * mean_rho - mean_m**2 / gamma))
-        )
-        * np.heaviside(-AA[i] - x, 0),
-        -np.inf,
-        np.inf,
-    )[0]
-    int_val_2 = quad(
-        lambda x: np.exp(-(x**2) / (2 * mean_q))
-        / np.sqrt(2 * np.pi * mean_q)
-        * (
-            1
-            + erf(
-                mean_m
-                / np.sqrt(gamma)
-                * x
-                / np.sqrt(2 * mean_q * (mean_q * mean_rho - mean_m**2 / gamma))
-            )
-        )
-        * np.heaviside(x - AA[i], 0),
-        -np.inf,
-        np.inf,
-    )[0]
-    out_theory[i] = 1 - 0.5 * (int_val_1 + int_val_2)
-
-plt.plot(epss, out_theory, label="theoretical", linestyle="--")
+out = np.empty_like(epss)
+for i, eps_i in enumerate(epss):
+    out[i] = percentage_misclassified_hastie_model(
+        mean_m, mean_q, mean_q_latent, mean_q_feature, mean_rho, eps_i, gamma, "inf"
+    )
+plt.plot(epss, out, label=f"$\\gamma = $ {gamma:.1f}", linestyle="--")
 
 plt.xlabel(r"$\epsilon$")
 plt.ylabel(r"$\mathbb{P}(\hat{y} \neq y)$")

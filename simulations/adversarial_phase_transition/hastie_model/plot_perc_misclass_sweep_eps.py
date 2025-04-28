@@ -8,7 +8,7 @@ from linear_regression.aux_functions.percentage_flipped import (
     percentage_flipped_hastie_model,
 )
 
-gammas = [1.0]
+gammas = [0.5, 1.0, 1.5]
 alphas = [1.0]
 reps = 10
 eps_training = 0.2

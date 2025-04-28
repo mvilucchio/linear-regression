@@ -21,11 +21,8 @@ from scipy.special import erf
 from tqdm.auto import tqdm
 import os
 import sys
-from itertools import product
-import warnings
+from cvxpy.error import SolverError
 import pickle
-
-warnings.filterwarnings("error")
 
 if len(sys.argv) > 1:
     eps_min, eps_max, n_epss, alpha, gamma, reg_param, eps_training = (
@@ -51,7 +48,7 @@ else:
 # DO NOT CHANGE, NOT IMPLEMENTED FOR OTHERS
 pstar_t = 1.0
 
-dimensions = [int(2**a) for a in range(10, 11)]
+dimensions = [int(2**a) for a in range(9, 10)]
 reps = 10
 
 epss = np.logspace(np.log10(eps_min), np.log10(eps_max), n_epss)
@@ -76,7 +73,6 @@ for d in tqdm(dimensions, desc="dim", leave=False):
     estim_vals_P = np.empty((reps,))
 
     j = 0
-    # for j in tqdm(range(reps), desc="reps", leave=False):
     while j < reps:
         xs, ys, zs, xs_gen, ys_gen, zs_gen, wstar, F, noise, noise_gen = data_generation_hastie(
             measure_gen_no_noise_clasif,
@@ -94,15 +90,8 @@ for d in tqdm(dimensions, desc="dim", leave=False):
         assert F.shape == (p, d)
 
         try:
-            if eps_training == 0.0:
-                w = find_coefficients_Logistic(ys, xs, reg_param)
-            else:
-                w = find_coefficients_Logistic_adv(
-                    ys, xs, 0.5 * reg_param, eps_training, 2.0, pstar_t, F @ wstar
-                )
-            # w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, 0.5 * reg_param, eps_training)
-            print("j", j)
-        except (ValueError, UserWarning) as e:
+            w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, 0.5 * reg_param, eps_training)
+        except (ValueError, UserWarning, SolverError) as e:
             print(f"Error in finding coefficients {j}:", e)
             continue
 
@@ -117,7 +106,6 @@ for d in tqdm(dimensions, desc="dim", leave=False):
 
         yhat_gen = np.sign(np.dot(xs_gen, w))
 
-        # for i, eps_i in enumerate(tqdm(epss_rescaled, desc="eps", leave=False)):
         i = 0
         while i < len(epss_rescaled):
             print("i", i)
@@ -126,19 +114,17 @@ for d in tqdm(dimensions, desc="dim", leave=False):
                 adv_perturbation = find_adversarial_perturbation_linear_rf(
                     yhat_gen, zs_gen, w, F.T, wstar, eps_i, "inf"
                 )
-            except (ValueError, UserWarning) as e:
+            except (ValueError, UserWarning, SolverError) as e:
                 print("Error in finding adversarial perturbation:", e)
-                vals[j, i] = np.nan
-                # i += 1
-                continue
+                break
             flipped = np.mean(
                 yhat_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w)
             )
-
+            print(f"i : {i}, j : {j}")
             vals[j, i] = flipped
             i += 1
-
-        j += 1
+        else:
+            j += 1
 
     mean_m, std_m = np.mean(estim_vals_m), np.std(estim_vals_m)
     mean_q, std_q = np.mean(estim_vals_q), np.std(estim_vals_q)
@@ -174,38 +160,38 @@ for d in tqdm(dimensions, desc="dim", leave=False):
 
     print("saved data to", data_file)
 
-    plt.errorbar(epss, mean_flipped, yerr=std_flipped, linestyle="", marker=".", label=f"$d = {d}$")
+#     plt.errorbar(epss, mean_flipped, yerr=std_flipped, linestyle="", marker=".", label=f"$d = {d}$")
 
-if gamma <= 1:
-    plt.plot(
-        epss,
-        erf(
-            epss
-            * np.sqrt(mean_q_latent - mean_m**2 / gamma)
-            * np.sqrt(1 / np.pi)
-            / np.sqrt(mean_q)
-            * np.sqrt(gamma)
-        ),
-        label="theoretical",
-        linestyle="--",
-    )
-else:
-    plt.plot(
-        epss,
-        erf(
-            epss
-            * np.sqrt(mean_q_feature - mean_m**2 / gamma)
-            / np.sqrt(gamma)
-            * np.sqrt(1 / np.pi)
-            / np.sqrt(mean_q)
-        ),
-        label="theoretical",
-        linestyle="--",
-    )
+# if gamma <= 1:
+#     plt.plot(
+#         epss,
+#         erf(
+#             epss
+#             * np.sqrt(mean_q_latent - mean_m**2 / gamma)
+#             * np.sqrt(1 / np.pi)
+#             / np.sqrt(mean_q)
+#             * np.sqrt(gamma)
+#         ),
+#         label="theoretical",
+#         linestyle="--",
+#     )
+# else:
+#     plt.plot(
+#         epss,
+#         erf(
+#             epss
+#             * np.sqrt(mean_q_feature - mean_m**2 / gamma)
+#             / np.sqrt(gamma)
+#             * np.sqrt(1 / np.pi)
+#             / np.sqrt(mean_q)
+#         ),
+#         label="theoretical",
+#         linestyle="--",
+#     )
 
-plt.xlabel(r"$\epsilon$")
-plt.ylabel(r"$\mathbb{P}(\hat{y} \neq y)$")
-plt.xscale("log")
-plt.grid(which="both")
-plt.legend()
-plt.show()
+# plt.xlabel(r"$\epsilon$")
+# plt.ylabel(r"$\mathbb{P}(\hat{y} \neq y)$")
+# plt.xscale("log")
+# plt.grid(which="both")
+# plt.legend()
+# plt.show()

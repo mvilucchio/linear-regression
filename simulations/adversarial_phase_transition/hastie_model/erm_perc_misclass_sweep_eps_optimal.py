@@ -51,6 +51,7 @@ else:
     eps_min, eps_max, n_epss, alpha, gamma = (0.1, 10.0, 15, 2.0, 0.5)
 
 pstar_t = 1.0
+eps_test = 1.0
 
 dimensions = [int(2**a) for a in range(10, 11)]
 reps = 10
@@ -71,7 +72,7 @@ def fun_to_min(reg_param):
     f_kwargs = {"reg_param": reg_param, "gamma": gamma}
     f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": 0.0}
 
-    print(f_kwargs, f_hat_kwargs)
+    # print(f_kwargs, f_hat_kwargs)
 
     m_se, q_se, V_se, P_se = fixed_point_finder(
         f_hastie_L2_reg_Linf_attack,
@@ -91,28 +92,9 @@ def fun_to_min(reg_param):
         m_hat, q_hat, V_hat, P_hat, reg_param, gamma
     )
 
-    if gamma <= 1:
-        AA = np.sqrt(q_latent_se - m_se**2 / gamma) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
-    else:
-        AA = np.sqrt(q_features_se - m_se**2 / gamma) / np.sqrt(gamma) * np.sqrt(2 / np.pi)
-
-    int_val_1 = quad(
-        lambda x: np.exp(-(x**2) / (2 * q_se))
-        / np.sqrt(2 * np.pi * q_se)
-        * erfc(m_se / np.sqrt(gamma) * x / np.sqrt(2 * q_se * (q_se * 1.0 - m_se**2 / gamma)))
-        * np.heaviside(-AA - x, 0),
-        -np.inf,
-        np.inf,
-    )[0]
-    int_val_2 = quad(
-        lambda x: np.exp(-(x**2) / (2 * q_se))
-        / np.sqrt(2 * np.pi * q_se)
-        * (1 + erf(m_se / np.sqrt(gamma) * x / np.sqrt(2 * q_se * (q_se * 1.0 - m_se**2 / gamma))))
-        * np.heaviside(x - AA, 0),
-        -np.inf,
-        np.inf,
-    )[0]
-    return 1 - 0.5 * (int_val_1 + int_val_2)
+    return percentage_misclassified_hastie_model(
+        m_se, q_se, q_latent_se, q_features_se, 1.0, eps_test, gamma, "inf"
+    )
 
 
 def fun_to_min_2(x):
@@ -142,28 +124,9 @@ def fun_to_min_2(x):
         m_hat, q_hat, V_hat, P_hat, reg_param, gamma
     )
 
-    if gamma <= 1:
-        AA = np.sqrt(q_latent_se - m_se**2 / gamma) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
-    else:
-        AA = np.sqrt(q_features_se - m_se**2 / gamma) / np.sqrt(gamma) * np.sqrt(2 / np.pi)
-
-    int_val_1 = quad(
-        lambda x: np.exp(-(x**2) / (2 * q_se))
-        / np.sqrt(2 * np.pi * q_se)
-        * erfc(m_se / np.sqrt(gamma) * x / np.sqrt(2 * q_se * (q_se * 1.0 - m_se**2 / gamma)))
-        * np.heaviside(-AA - x, 0),
-        -np.inf,
-        np.inf,
-    )[0]
-    int_val_2 = quad(
-        lambda x: np.exp(-(x**2) / (2 * q_se))
-        / np.sqrt(2 * np.pi * q_se)
-        * (1 + erf(m_se / np.sqrt(gamma) * x / np.sqrt(2 * q_se * (q_se * 1.0 - m_se**2 / gamma))))
-        * np.heaviside(x - AA, 0),
-        -np.inf,
-        np.inf,
-    )[0]
-    return 1 - 0.5 * (int_val_1 + int_val_2)
+    return percentage_misclassified_hastie_model(
+        m_se, q_se, q_latent_se, q_features_se, 1.0, eps_test, gamma, "inf"
+    )
 
 
 # Find the optimal reg_param
@@ -179,7 +142,7 @@ print(res.fun, res.x)
 
 res = minimize(
     fun_to_min_2,
-    (reg_param_noadv_opt, 0.01),
+    (reg_param_noadv_opt, 0.1),
     bounds=((1e-5, 1e0), (0.0, 5e-1)),
     method="Nelder-Mead",
     options={"xatol": 1e-5, "disp": True},
@@ -251,7 +214,7 @@ for d in tqdm(dimensions, desc="dim", leave=False):
                 )
             except (ValueError, UserWarning) as e:
                 print("Error in finding adversarial perturbation:", e)
-                break  # Restart the outer loop
+                break
             flipped = np.mean(
                 ys_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w)
             )
@@ -259,7 +222,7 @@ for d in tqdm(dimensions, desc="dim", leave=False):
             vals[j, i] = flipped
             i += 1
         else:
-            j += 1  # Only increment j if the inner loop completes successfully
+            j += 1
 
     mean_m, std_m = np.mean(estim_vals_m), np.std(estim_vals_m)
     mean_q, std_q = np.mean(estim_vals_q), np.std(estim_vals_q)
@@ -296,31 +259,31 @@ for d in tqdm(dimensions, desc="dim", leave=False):
 
     print("saved data to", data_file)
 
-    plt.errorbar(
-        epss, mean_misclass, yerr=std_misclass, linestyle="", marker=".", label=f"$d = {d}$"
-    )
+#     plt.errorbar(
+#         epss, mean_misclass, yerr=std_misclass, linestyle="", marker=".", label=f"$d = {d}$"
+#     )
 
-out_theory = np.empty((len(epss),))
-for i, eps in enumerate(epss):
-    out_theory[i] = percentage_misclassified_hastie_model(
-        mean_m,
-        mean_q,
-        mean_q_latent,
-        mean_q_feature,
-        mean_rho,
-        eps,
-        gamma,
-        p,
-    )
+# out_theory = np.empty((len(epss),))
+# for i, eps in enumerate(epss):
+#     out_theory[i] = percentage_misclassified_hastie_model(
+#         mean_m,
+#         mean_q,
+#         mean_q_latent,
+#         mean_q_feature,
+#         mean_rho,
+#         eps,
+#         gamma,
+#         p,
+#     )
 
-plt.plot(epss, out_theory, label="theoretical", linestyle="--")
+# plt.plot(epss, out_theory, label="theoretical", linestyle="--")
 
-plt.xlabel(r"$\epsilon$")
-plt.ylabel(r"$\mathbb{P}(\hat{y} \neq y)$")
-plt.xscale("log")
-plt.grid(which="both")
-plt.legend()
-plt.show()
+# plt.xlabel(r"$\epsilon$")
+# plt.ylabel(r"$\mathbb{P}(\hat{y} \neq y)$")
+# plt.xscale("log")
+# plt.grid(which="both")
+# plt.legend()
+# plt.show()
 
 
 for d in tqdm(dimensions, desc="dim", leave=False):
@@ -433,28 +396,28 @@ for d in tqdm(dimensions, desc="dim", leave=False):
         pickle.dump(data, f)
 
     print("saved data to", data_file)
-    plt.errorbar(
-        epss, mean_misclass, yerr=std_misclass, linestyle="", marker=".", label=f"$d = {d}$"
-    )
+#     plt.errorbar(
+#         epss, mean_misclass, yerr=std_misclass, linestyle="", marker=".", label=f"$d = {d}$"
+#     )
 
-    out_theory = np.empty((len(epss),))
-    for i, eps in enumerate(epss):
-        out_theory[i] = percentage_misclassified_hastie_model(
-            mean_m,
-            mean_q,
-            mean_q_latent,
-            mean_q_feature,
-            mean_rho,
-            eps,
-            gamma,
-            p,
-        )
+#     out_theory = np.empty((len(epss),))
+#     for i, eps in enumerate(epss):
+#         out_theory[i] = percentage_misclassified_hastie_model(
+#             mean_m,
+#             mean_q,
+#             mean_q_latent,
+#             mean_q_feature,
+#             mean_rho,
+#             eps,
+#             gamma,
+#             p,
+#         )
 
-plt.plot(epss, out_theory, label="theoretical", linestyle="--")
+# plt.plot(epss, out_theory, label="theoretical", linestyle="--")
 
-plt.xlabel(r"$\epsilon$")
-plt.ylabel(r"$\mathbb{P}(\hat{y} \neq y)$")
-plt.xscale("log")
-plt.grid(which="both")
-plt.legend()
-plt.show()
+# plt.xlabel(r"$\epsilon$")
+# plt.ylabel(r"$\mathbb{P}(\hat{y} \neq y)$")
+# plt.xscale("log")
+# plt.grid(which="both")
+# plt.legend()
+# plt.show()

@@ -13,6 +13,10 @@ from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic,
     find_coefficients_Logistic_adv,
 )
+from linear_regression.aux_functions.percentage_flipped import (
+    percentage_flipped_hastie_model,
+    percentage_misclassified_hastie_model,
+)
 from linear_regression.erm.adversarial_perturbation_finders import (
     find_adversarial_perturbation_linear_rf,
 )
@@ -35,6 +39,8 @@ from linear_regression.fixed_point_equations.classification.Adv_train_p_norm_has
 
 alpha_min, alpha_max, n_alphas = 0.1, 1.5, 15
 gamma_min, gamma_max, n_gammas = 0.1, 1.5, 15
+
+eps_test = 0.1
 
 
 def fun_to_min(reg_param, alpha, gamma):
@@ -63,20 +69,9 @@ def fun_to_min(reg_param, alpha, gamma):
         m_hat, q_hat, V_hat, P_hat, reg_param, gamma
     )
 
-    if gamma <= 1:
-        return (
-            np.sqrt(q_latent_se - m_se**2 / gamma)
-            * np.sqrt(1 / np.pi)
-            / np.sqrt(q_se)
-            * np.sqrt(gamma)
-        )
-    else:
-        return (
-            np.sqrt(q_features_se - m_se**2 / gamma)
-            / np.sqrt(gamma)
-            * np.sqrt(1 / np.pi)
-            / np.sqrt(q_se)
-        )
+    return percentage_flipped_hastie_model(
+        m_se, q_se, q_latent_se, q_features_se, 1.0, eps_test, gamma, "inf"
+    )
 
 
 def fun_to_min_2(x, alpha, gamma):
@@ -106,20 +101,9 @@ def fun_to_min_2(x, alpha, gamma):
         m_hat, q_hat, V_hat, P_hat, reg_param, gamma
     )
 
-    if gamma <= 1:
-        return (
-            np.sqrt(q_latent_se - m_se**2 / gamma)
-            * np.sqrt(1 / np.pi)
-            / np.sqrt(q_se)
-            * np.sqrt(gamma)
-        )
-    else:
-        return (
-            np.sqrt(q_features_se - m_se**2 / gamma)
-            / np.sqrt(gamma)
-            * np.sqrt(1 / np.pi)
-            / np.sqrt(q_se)
-        )
+    return percentage_flipped_hastie_model(
+        m_se, q_se, q_latent_se, q_features_se, 1.0, eps_test, gamma, "inf"
+    )
 
 
 alphas = np.linspace(alpha_min, alpha_max, n_alphas)
@@ -153,8 +137,8 @@ for i, alpha in enumerate(alphas):
         res = minimize(
             fun_to_min_2,
             # (old_reg_param, old_eps_training),
-            (np.random.uniform(1e-6, 1e1), np.random.uniform(1.0, 1e1)),
-            bounds=((1e-6, 1e1), (0.0, 1e1)),
+            (np.random.uniform(1e-6, 1e1), np.random.uniform(0.0, 0.5)),
+            bounds=((1e-6, 1e1), (0.0, 0.5)),
             method="Nelder-Mead",
             args=(alpha, gamma),
             options={"xatol": 1e-8, "disp": False},
@@ -173,62 +157,63 @@ for i, alpha in enumerate(alphas):
         optimal_eps_training[i, j] = eps_training_opt
         flipped_percentages_adv[i, j] = res.fun
 
-ALPHAS, GAMMAS = np.meshgrid(alphas, gammas)
-# create three subplots and show with controurf and contour the difference of the values
-fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-im0 = axs[0].contourf(
-    ALPHAS,
-    GAMMAS,
-    flipped_percentages_noadv.T - flipped_percentages_adv.T,
-    levels=np.linspace(0, 1, 20),
-    cmap="viridis",
-)
-fig.colorbar(im0, ax=axs[0], label="Difference")
+# ALPHAS, GAMMAS = np.meshgrid(alphas, gammas)
+# # create three subplots and show with controurf and contour the difference of the values
+# fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+# im0 = axs[0].contourf(
+#     ALPHAS,
+#     GAMMAS,
+#     flipped_percentages_noadv.T - flipped_percentages_adv.T,
+#     levels=np.linspace(0, 1, 20),
+#     cmap="viridis",
+# )
+# fig.colorbar(im0, ax=axs[0], label="Difference")
 
-axs[0].set_title("Flipped percentage difference")
-axs[0].set_xlabel("alpha")
-axs[0].set_ylabel("gamma")
-axs[0].set_xscale("log")
-axs[0].set_yscale("log")
+# axs[0].set_title("Flipped percentage difference")
+# axs[0].set_xlabel("alpha")
+# axs[0].set_ylabel("gamma")
+# axs[0].set_xscale("log")
+# axs[0].set_yscale("log")
 
-im1 = axs[1].contourf(
-    ALPHAS,
-    GAMMAS,
-    optimal_reg_param_noadv.T - optimal_reg_param_adv.T,
-    levels=np.linspace(-1, 1, 20),
-    cmap="viridis",
-)
-fig.colorbar(im1, ax=axs[1], label="Difference")
+# im1 = axs[1].contourf(
+#     ALPHAS,
+#     GAMMAS,
+#     optimal_reg_param_noadv.T - optimal_reg_param_adv.T,
+#     levels=np.linspace(-1, 1, 20),
+#     cmap="viridis",
+# )
+# fig.colorbar(im1, ax=axs[1], label="Difference")
 
-axs[1].set_title("Optimal reg_param difference")
-axs[1].set_xlabel("alpha")
-axs[1].set_ylabel("gamma")
-axs[1].set_xscale("log")
-axs[1].set_yscale("log")
+# axs[1].set_title("Optimal reg_param difference")
+# axs[1].set_xlabel("alpha")
+# axs[1].set_ylabel("gamma")
+# axs[1].set_xscale("log")
+# axs[1].set_yscale("log")
 
-im2 = axs[2].contourf(
-    ALPHAS,
-    GAMMAS,
-    optimal_eps_training.T,
-    levels=np.linspace(0, 3, 20),
-    cmap="viridis",
-)
-fig.colorbar(im2, ax=axs[2], label="Value")
+# im2 = axs[2].contourf(
+#     ALPHAS,
+#     GAMMAS,
+#     optimal_eps_training.T,
+#     levels=np.linspace(0, 3, 20),
+#     cmap="viridis",
+# )
+# fig.colorbar(im2, ax=axs[2], label="Value")
 
-axs[2].set_title("Optimal eps_training")
-axs[2].set_xlabel("alpha")
-axs[2].set_ylabel("gamma")
-axs[2].set_xscale("log")
-axs[2].set_yscale("log")
+# axs[2].set_title("Optimal eps_training")
+# axs[2].set_xlabel("alpha")
+# axs[2].set_ylabel("gamma")
+# axs[2].set_xscale("log")
+# axs[2].set_yscale("log")
 
-plt.tight_layout()
+# plt.tight_layout()
 
-plt.show()
+# plt.show()
 
 # Save the results
 data_folder = "./data/hastie_model_optimal_values/"
 if not os.path.exists(data_folder):
     os.makedirs(data_folder)
+
 file_name = "optimal_values_alpha_{:.2f}_gamma_{:.2f}.pkl"
 with open(os.path.join(data_folder, file_name.format(alpha_max, gamma_max)), "wb") as f:
     pickle.dump(
