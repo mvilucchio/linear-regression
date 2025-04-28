@@ -57,7 +57,23 @@ reg_param_found = np.empty((n_alphas,))
 eps_t_found = np.empty((n_alphas,))
 
 initial_condition = (0.6, 1.6, 1.05, 2.7)
-# initial_condition = (0.533069, 1.806296, 0.597970, 0.717633)
+
+
+def hybrid_minimize_2d(fun, bounds, n_samples=100, method="Nelder-Mead", options=None):
+    samples = np.random.uniform(
+        low=[bounds[0][0], bounds[1][0]], high=[bounds[0][1], bounds[1][1]], size=(n_samples, 2)
+    )
+
+    values = np.array([fun(p) for p in samples])
+
+    best_start = samples[np.argmin(values)]
+
+    print("Best start point:", best_start)
+
+    result = minimize(fun, best_start, bounds=bounds, method=method, options=options)
+
+    return result
+
 
 for j, alpha in enumerate(alphas):
 
@@ -96,14 +112,23 @@ for j, alpha in enumerate(alphas):
     # alpha = alphas[j]
     print(f"Alpha: {alpha:.2f} / {alpha_max:.2f}")
 
-    res = minimize(
-        fun_to_min_2,
-        (0.1, 0.1),
-        bounds=((1e-5, 1e0), (0.0, 5e-1)),
-        method="Nelder-Mead",
+    # res = minimize(
+    #     fun_to_min_2,
+    #     (0.1, 0.1),
+    #     bounds=((1e-5, 1e0), (0.0, 5e-1)),
+    #     method="Nelder-Mead",
+    #     options={"xatol": 1e-5, "disp": True},
+    # )
+    # reg_param, eps_t = res.x
+
+    res = hybrid_minimize_2d(
+        fun=fun_to_min_2,
+        bounds=((1e-5, 1.0), (0.0, 0.5)),
+        n_samples=200,
         options={"xatol": 1e-5, "disp": True},
     )
     reg_param, eps_t = res.x
+    print(res.fun, res.x)
 
     reg_param_found[j] = reg_param
     eps_t_found[j] = eps_t
