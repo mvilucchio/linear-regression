@@ -86,7 +86,9 @@ reps = 10
 reg_param = 1e-2
 eps_min, eps_max, n_epss = 0.1, 10, 15
 
-param_pairs = [(1.0, 1.0, 2**10), (0.06, 1.5, 2**11), (0.1, 4.0, 2**10)]  # (alpha, gamma, d)
+# param_pairs = [(2.0, 0.5, 2**10)]  # (alpha, gamma, d)
+# param_pairs = [(0.01, 3.0, 2**10)]  # (alpha, gamma, d)
+param_pairs = [(3.0, 0.5, 2**10)]  # (alpha, gamma, d)
 
 # File name templates
 file_name_flipped_no_adv = f"ERM_flipped_optimal_noadvtrain_Hastie_Linf_d_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_epss_{{:.1f}}_{{:.1f}}_{{:d}}.csv"
@@ -142,7 +144,7 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
             )
 
         m_se, q_se, q_latent_se, q_features_se, V_se, P_se = compute_theory_overlaps(
-            reg_param, 0.0, alpha, gamma, (mean_m, mean_q, 1.0, mean_P)
+            opt_reg_param, 0.0, alpha, gamma, (mean_m, mean_q, 1.0, mean_P)
         )
 
         for j, eps_i in enumerate(eps_dense):
@@ -193,7 +195,7 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
             )
 
         m_se, q_se, q_latent_se, q_features_se, V_se, P_se = compute_theory_overlaps(
-            reg_param, opt_eps_training, alpha, gamma, (mean_m, mean_q, 1.0, mean_P)
+            opt_reg_param, opt_eps_training, alpha, gamma, (mean_m, mean_q, 1.0, mean_P)
         )
 
         for j, eps_i in enumerate(eps_dense):
@@ -223,6 +225,8 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
             mean_misclass = data["mean_misclass"]
             std_misclass = data["std_misclass"]
 
+            opt_reg_param = data["optimal_reg_param"]
+
             if "mean_m" in data and "mean_q" in data and "mean_P" in data:
                 mean_m = data["mean_m"]
                 mean_q = data["mean_q"]
@@ -240,7 +244,7 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
             )
 
         m_se, q_se, q_latent_se, q_features_se, V_se, P_se = compute_theory_overlaps(
-            reg_param, opt_eps_training, alpha, gamma, (mean_m, mean_q, 1.0, mean_P)
+            opt_reg_param, 0.0, alpha, gamma, (mean_m, mean_q, 1.0, mean_P)
         )
 
         for j, eps_i in enumerate(eps_dense):
@@ -252,7 +256,7 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
             eps_dense,
             out,
             color=color,
-            linestyle="-",
+            linestyle="--",
         )
 
     except FileNotFoundError:
@@ -271,6 +275,9 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
             mean_misclass = data["mean_misclass"]
             std_misclass = data["std_misclass"]
 
+            opt_reg_param = data["optimal_reg_param"]
+            opt_eps_training = data["optimal_eps_training"]
+
             if "mean_m" in data and "mean_q" in data and "mean_P" in data:
                 mean_m = data["mean_m"]
                 mean_q = data["mean_q"]
@@ -287,7 +294,7 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
                 label=f"ERM $\\alpha$={alpha}, $\\gamma$={gamma}",
             )
         m_se, q_se, q_latent_se, q_features_se, V_se, P_se = compute_theory_overlaps(
-            reg_param, opt_eps_training, alpha, gamma, (mean_m, mean_q, 1.0, mean_P)
+            opt_reg_param, opt_eps_training, alpha, gamma, (mean_m, mean_q, 1.0, mean_P)
         )
 
         for j, eps_i in enumerate(eps_dense):

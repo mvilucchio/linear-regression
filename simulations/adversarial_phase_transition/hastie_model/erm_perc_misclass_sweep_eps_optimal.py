@@ -48,7 +48,7 @@ if len(sys.argv) > 1:
         float(sys.argv[5]),
     )
 else:
-    eps_min, eps_max, n_epss, alpha, gamma = (0.1, 10.0, 15, 2.0, 0.5)
+    eps_min, eps_max, n_epss, alpha, gamma = (0.1, 10.0, 15, 3.0, 0.5)
 
 pstar_t = 1.0
 eps_test = 1.0
@@ -104,7 +104,7 @@ def fun_to_min_2(x):
     f_kwargs = {"reg_param": reg_param, "gamma": gamma}
     f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": eps_training}
 
-    print(f_kwargs, f_hat_kwargs)
+    # print(f_kwargs, f_hat_kwargs)
 
     m_se, q_se, V_se, P_se = fixed_point_finder(
         f_hastie_L2_reg_Linf_attack,
@@ -129,6 +129,26 @@ def fun_to_min_2(x):
     )
 
 
+def hybrid_minimize_2d(fun, bounds, n_samples=100, method="Nelder-Mead", options=None):
+    # Generate random samples within bounds
+    samples = np.random.uniform(
+        low=[bounds[0][0], bounds[1][0]], high=[bounds[0][1], bounds[1][1]], size=(n_samples, 2)
+    )
+
+    # Evaluate function at each sample
+    values = np.array([fun(p) for p in samples])
+
+    # Select best starting point
+    best_start = samples[np.argmin(values)]
+
+    print("Best start point:", best_start)
+
+    # Run local optimization
+    result = minimize(fun, best_start, bounds=bounds, method=method, options=options)
+
+    return result
+
+
 # Find the optimal reg_param
 res = minimize_scalar(
     fun_to_min,
@@ -140,11 +160,21 @@ reg_param_noadv_opt = res.x
 print(res.fun, res.x)
 
 
-res = minimize(
-    fun_to_min_2,
-    (reg_param_noadv_opt, 0.1),
-    bounds=((1e-5, 1e0), (0.0, 5e-1)),
-    method="Nelder-Mead",
+# res = minimize(
+#     fun_to_min_2,
+#     # (reg_param_noadv_opt, 0.05),
+#     (np.random.uniform(0.0, 1e-1), np.random.uniform(0.0, 1e-1)),
+#     bounds=((1e-5, 1e0), (0.0, 5e-1)),
+#     method="Nelder-Mead",
+#     options={"xatol": 1e-5, "disp": True},
+# )
+# reg_param_opt, eps_training_opt = res.x
+# print(res.fun, res.x)
+
+res = hybrid_minimize_2d(
+    fun=fun_to_min_2,
+    bounds=((1e-5, 1.0), (0.0, 0.5)),
+    n_samples=200,
     options={"xatol": 1e-5, "disp": True},
 )
 reg_param_opt, eps_training_opt = res.x

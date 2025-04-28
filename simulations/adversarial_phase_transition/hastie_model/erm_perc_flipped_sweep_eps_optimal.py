@@ -131,23 +131,53 @@ def fun_to_min_2(x):
     )
 
 
+def hybrid_minimize_2d(fun, bounds, n_samples=100, method="Nelder-Mead", options=None):
+    # Generate random samples within bounds
+    samples = np.random.uniform(
+        low=[bounds[0][0], bounds[1][0]], high=[bounds[0][1], bounds[1][1]], size=(n_samples, 2)
+    )
+
+    # Evaluate function at each sample
+    values = np.array([fun(p) for p in samples])
+
+    # Select best starting point
+    best_start = samples[np.argmin(values)]
+
+    print("Best start point:", best_start)
+
+    # Run local optimization
+    result = minimize(fun, best_start, bounds=bounds, method=method, options=options)
+
+    return result
+
+
 # Find the optimal reg_param
 res = minimize_scalar(
     fun_to_min,
     bounds=(1e-5, 1e0),
     method="bounded",
-    options={"xatol": 1e-8, "disp": True},
+    options={"xatol": 1e-5, "disp": True},
 )
 reg_param_noadv_opt = res.x
 print(res.fun, res.x)
 
 
-res = minimize(
-    fun_to_min_2,
-    (reg_param_noadv_opt, 0.1),
-    bounds=((1e-5, 1e0), (0.0, 5e-1)),
-    method="Nelder-Mead",
-    options={"xatol": 1e-8, "disp": True},
+# res = minimize(
+#     fun_to_min_2,
+#     # (reg_param_noadv_opt, 0.05),
+#     (np.random.uniform(0.0, 1e-1), np.random.uniform(0.0, 1e-1)),
+#     bounds=((1e-5, 1e0), (0.0, 5e-1)),
+#     method="Nelder-Mead",
+#     options={"xatol": 1e-5, "disp": True},
+# )
+# reg_param_opt, eps_training_opt = res.x
+# print(res.fun, res.x)
+
+res = hybrid_minimize_2d(
+    fun=fun_to_min_2,
+    bounds=((1e-5, 1.0), (0.0, 0.5)),
+    n_samples=200,
+    options={"xatol": 1e-5, "disp": True},
 )
 reg_param_opt, eps_training_opt = res.x
 print(res.fun, res.x)
