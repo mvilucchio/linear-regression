@@ -19,6 +19,7 @@ from ..utils.integration_utils import (
 from .likelihood_channel_functions import Z_out_Bayes_decorrelated_noise
 from .moreau_proximals import proximal_Tukey_modified_quad
 from .loss_functions import DDz_mod_tukey_loss_quad
+from fixed_point_equations.regression.mod_Tukey_loss import (gaussian_2d_xigamma_Tukey, mu)
 
 BIG_NUMBER = 6
 DEFAULT_INTEGRATION_BOUND = 15.0
@@ -331,10 +332,8 @@ def RS_int_mod_Tukey_decorrelated_noise(
     """
     Intégrande pour la condition RS avec la loss Tukey modifiée (quadratique).
     """
-    # Vérifications pour la stabilité numérique
-    if q <= m**2 or q < 1e-12: return 0.0
+
     eta = m**2 / q
-    if 1 - eta < 1e-12: return 0.0 # Évite division par zéro ou sqrt(neg) dans Z_out
 
     proximal = proximal_Tukey_modified_quad(y, np.sqrt(q) * xi, V, tau, c)
 
@@ -405,3 +404,92 @@ def RS_E2_mod_Tukey_decorrelated_noise(
 
     # Retourne seulement la valeur de l'intégrale
     return int_value_RS
+
+@njit(error_model="numpy", fastmath=False)
+def RS_star_int_xigamma_Tukey_decorrelated_noise(
+    # Dblquad passe d'abord la variable d'intégration interne (xi ici), puis externe (gamma)
+    xi: float,
+    gamma: float,
+    # Ensuite les args dans l'ordre
+    q: float,
+    m: float,
+    V: float,
+    delta: float,
+    beta: float,
+    tau: float,
+    c: float,
+):
+    """
+    Intégrande pour la condition RS avec la loss Tukey modifiée (quadratique).
+    """
+
+    eta = m**2 / q
+    y= gamma + np.sqrt(q) * xi
+    J_beta = beta*np.sqrt(eta) - np.sqrt(q)
+    delta_prime = (1-eta)*beta**2 + delta
+
+    proximal = proximal_Tukey_modified_quad(y, np.sqrt(q) * xi, V, tau, c)
+
+    ddz_loss = DDz_mod_tukey_loss_quad(y, proximal, tau, c)
+
+    Dproximal = 1.0 / (1.0 + V * ddz_loss)
+
+    weight = gaussian_2d_xigamma_Tukey(
+        xi, gamma, J_beta, delta_prime
+    )
+
+    return (
+        weight
+         * (Dproximal - 1.0)**2
+         / V**2
+     )
+
+def RS_E2_xigamma_mod_Tukey_decorrelated_noise(
+    m: float,
+    q: float,
+    V: float,
+    delta_in: float,
+    delta_out: float,
+    percentage: float,
+    beta: float,
+    tau: float,
+    c: float,
+    integration_bound: float = DEFAULT_INTEGRATION_BOUND,
+    epsabs: float = 1e-12,
+    epsrel: float = 1e-10,
+) -> float:
+    """
+    Calcule l'intégrale double pour la condition RS avec Tukey modifiée (quad).
+    """
+    mu_in, mu_out, J_beta_in, J_beta_out,delta_prime_in,delta_prime_out = mu(q, m, V, delta_in, delta_out, percentage, beta, tau)
+    var_in = integration_bound *np.sqrt(mu_in)**(-1) # Nombre d'écarts-types pour l'intégration en xi
+    var_out = integration_bound *np.sqrt(mu_out)**(-1) # Nombre d'écarts-types pour l'intégration en xi
+    
+    gamma_dom_in = [0,tau] #[0, integration_bound*sqrt(delta_prime_in+J_beta_in**2)]
+    gamma_dom_out = [0,tau] #[0, integration_bound*sqrt(delta_prime_out+ J_beta_out**2)]
+
+    def center_in(x):
+        return J_beta_in*x/(delta_prime_in*mu_in)
+    def center_out(x):
+        return J_beta_out*x/(delta_prime_out*mu_out)
+
+    int_value_RS_E2_in = dblquad(
+        RS_star_int_xigamma_Tukey_decorrelated_noise,
+        gamma_dom_in[0],
+        gamma_dom_in[1],
+        lambda x: -var_in+center_in(x),
+        lambda x: var_in +center_in(x),
+        args=(q, m, V, delta_in, 1, tau, c),epsabs=epsabs, epsrel=epsrel
+    )[0]
+
+    int_value_RS_E2_out = dblquad(
+        RS_star_int_xigamma_Tukey_decorrelated_noise,
+        gamma_dom_out[0],
+        gamma_dom_out[1],
+        lambda x: -var_out +center_out(x),
+        lambda x: var_out +center_out(x),
+        args=(q, m, V, delta_out, beta, tau, c),epsabs=epsabs, epsrel=epsrel
+    )[0]
+    int_value_RS_E2 = 2 * ((1-percentage)*int_value_RS_E2_in+ percentage*int_value_RS_E2_out)
+    
+    return int_value_RS_E2

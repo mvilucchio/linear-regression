@@ -234,8 +234,8 @@ def f_hat_xigamma_mod_Tukey_decorrelated_noise(
 ):
 
     mu_in, mu_out, J_beta_in, J_beta_out,delta_prime_in,delta_prime_out = mu(q, m, V, delta_in, delta_out, percentage, beta, tau)
-    var_in = integration_bound *sqrt(mu_in)**(-1) # Nombre d'écarts-types pour l'intégration en u
-    var_out = integration_bound *sqrt(mu_out)**(-1) # Nombre d'écarts-types pour l'intégration en u
+    var_in = integration_bound *sqrt(mu_in)**(-1) # Nombre d'écarts-types pour l'intégration en xi
+    var_out = integration_bound *sqrt(mu_out)**(-1) # Nombre d'écarts-types pour l'intégration en xi
     
     gamma_dom_in = [0,tau] #[0, integration_bound*sqrt(delta_prime_in+J_beta_in**2)]
     gamma_dom_out = [0,tau] #[0, integration_bound*sqrt(delta_prime_out+ J_beta_out**2)]

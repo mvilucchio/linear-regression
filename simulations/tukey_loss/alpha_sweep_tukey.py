@@ -9,7 +9,7 @@ import warnings
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import (f_hat_mod_Tukey_decorrelated_noise, f_hat_wv_mod_Tukey_decorrelated_noise, f_hat_xigamma_mod_Tukey_decorrelated_noise)
-from linear_regression.aux_functions.stability_functions import RS_E2_mod_Tukey_decorrelated_noise
+from linear_regression.aux_functions.stability_functions import (RS_E2_mod_Tukey_decorrelated_noise, RS_E2_xigamma_mod_Tukey_decorrelated_noise)
 from linear_regression.aux_functions.moreau_proximals import DƔ_proximal_L2
 from linear_regression.aux_functions.misc import excess_gen_error
 from linear_regression.utils.errors import ConvergenceError
@@ -135,7 +135,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Balayage Alpha")):
             rs_value = np.nan # Initialiser
             if CALCULATE_RS and np.isfinite(V_hat):
                  try:
-                    integral_rs = RS_E2_mod_Tukey_decorrelated_noise(
+                    integral_rs = RS_E2_xigamma_mod_Tukey_decorrelated_noise(
                         m, q, V, DELTA_IN, DELTA_OUT, PERCENTAGE, BETA,
                         TAU, C_TUKEY,
                         INTEGRATION_BOUND, INTEGRATION_EPSABS, INTEGRATION_EPSREL
