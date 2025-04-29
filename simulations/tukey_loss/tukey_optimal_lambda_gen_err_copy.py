@@ -407,7 +407,7 @@ if not loaded_from_pickle and not loaded_from_csv:
 
 # --- Affichage Final ---
 if all_alphas: # S'il y a des données (chargées ou calculées)
-    print("\nAffichage Erreur Estimation (SE)")
+    print("\nAffichage (SE)")
     plt.figure(figsize=(8, 6))
     # Filtre les NaN potentiels avant de plotter
     alphas_plot = np.array(all_alphas)
