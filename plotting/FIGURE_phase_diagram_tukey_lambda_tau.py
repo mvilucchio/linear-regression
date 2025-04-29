@@ -61,9 +61,9 @@ PERCENTAGE = 0.1
 BETA = 0.0
 C_TUKEY = 0.0
 # Options d'intégration (utilisées seulement pour le calcul de RS ici)
-INTEGRATION_BOUND = 15.0
-INTEGRATION_EPSABS = 1e-12
-INTEGRATION_EPSREL = 1e-10
+INTEGRATION_BOUND = 7.0
+INTEGRATION_EPSABS = 1e-8
+INTEGRATION_EPSREL = 1e-5
 
 # --- Chargement des Données ---
 DATA_FOLDER = "./data/phase_diagrams_tukey"

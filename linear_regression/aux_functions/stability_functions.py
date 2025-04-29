@@ -454,7 +454,7 @@ def RS_E2_xigamma_mod_Tukey_decorrelated_noise(
     beta: float,
     tau: float,
     c: float,
-    integration_bound: float = DEFAULT_INTEGRATION_BOUND,
+    integration_bound: float,
     epsabs: float = 1e-12,
     epsrel: float = 1e-10,
 ) -> float:
