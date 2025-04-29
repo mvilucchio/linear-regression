@@ -14,6 +14,9 @@ from linear_regression.aux_functions.observables_state_evolution import (
     q_overlap,
     V_overlap
 )
+# Résolution Point Fixe (pour le plot Egen vs lambda)
+from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
+from linear_regression.utils.errors import ConvergenceError # Pour gérer les erreurs FPE
 
 # --- Définition de la fonction objectif avec barrière ---
 def gen_error_with_barrier(m, q, V, barrier_threshold=5./4., penalty=1e10, **kwargs):
@@ -29,8 +32,8 @@ def gen_error_with_barrier(m, q, V, barrier_threshold=5./4., penalty=1e10, **kwa
 # -----------------------------------------------------
 
 # --- Définition des Paramètres ---
-alpha_min, alpha_max = 100, 1000
-n_alpha_pts = 3
+alpha_min, alpha_max = 1, 100
+n_alpha_pts = 30
 # Paramètres du bruit et du modèle
 delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0.0
 # Paramètres de la perte Tukey (c=0 pour Tukey standard)
@@ -38,7 +41,7 @@ tau = 1.0
 c = 0.0
 # Paramètres de l'optimisation et simulation
 min_reg_param_bound = 1e-8 # Borne inférieure pour lambda
-barrier_V_threshold = 5.0 / 4.0 # Seuil pour V
+barrier_V_threshold = 1.0 #5.0 / 4.0 # Seuil pour V
 barrier_penalty = 1e10 # Pénalité si V >= seuil
 
 # --- Configuration Fichiers ---
@@ -51,7 +54,7 @@ full_path_se = os.path.join(data_folder, file_name_se)
 if not os.path.exists(full_path_se):
     print(f"Fichier SE {full_path_se} non trouvé. Lancement du calcul SE (avec barrière V>={barrier_V_threshold:.2f})...")
     # Condition initiale pour m, q, V (à ajuster si besoin)
-    init_cond_fpe = (0.9, 0.9, 0.1) # Important d'avoir V < 5/4 initialement
+    init_cond_fpe = (0.5, 0.3, 0.4) # Important d'avoir V < 5/4 initialement
     # Estimation initiale pour lambda (sera optimisé)
     initial_guess_lambda = alpha_min/20
 
@@ -111,7 +114,8 @@ if not os.path.exists(full_path_se):
             "reg_params_opt": reg_params_opt_se,
             "ms": ms_se, "qs": qs_se, "Vs": Vs_se,
             "tau": tau, "c": c,
-            "barrier_V_threshold": barrier_V_threshold
+            "barrier_V_threshold": barrier_V_threshold,
+            "barrier_penalty": barrier_penalty
         }
 
         with open(full_path_se, "wb") as f:
@@ -124,8 +128,6 @@ if not os.path.exists(full_path_se):
 
 else:
      print(f"Chargement des données SE depuis {full_path_se}")
-     # ... (code de chargement similaire à avant) ...
-     # Assurez-vous de charger les bonnes clés si elles ont changé
      with open(full_path_se, "rb") as f:
         data_se = pickle.load(f)
         alphas_se = data_se["alphas"]
@@ -136,7 +138,8 @@ else:
         estim_errors_se = data_se["estim_error"]
         tau = data_se["tau"]
         c = data_se["c"]
-        # barrier_V_threshold = data_se.get("barrier_V_threshold", 5./4.) # Récupère si sauvegardé
+        barrier_V_threshold = data_se.get("barrier_V_threshold", None)
+        barrier_penalty = data_se.get("barrier_penalty", None)
 
 # --- Affichage rapide des résultats SE ---
 # print("Quelques résultats SE (alpha, lambda_opt, m, q, V, estim_err):")

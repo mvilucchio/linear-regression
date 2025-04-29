@@ -134,8 +134,8 @@ estim_err = np.full_like(alphas, np.nan)
 for i in range(len(alphas)):
     estim_err[i]= 1+qs[i] - 2*ms[i]
 
-gen_error_in = (1-PERCENTAGE)*(1+qs-2*ms)
-gen_error_out = PERCENTAGE*(BETA**2 + qs-2*BETA*ms)
+gen_error_in = (1-PERCENTAGE)*((1+PERCENTAGE*(BETA-1))**2 +qs-2*ms) #Excess : (1 - PERCENTAGE) * (delta_in + 1 - 2 * ms + qs) - (1 - PERCENTAGE) * (delta_in + 1 - 2 * ms_BO + qs_BO) avec - (1 + PERCENTAGE * (BETA -1))**2 * q_b = - 2 * ms_BO + qs_BO)
+gen_error_out = PERCENTAGE*((1+PERCENTAGE*(BETA-1))**2 + qs-2*BETA*ms) #Excess : PERCENTAGE * (delta_out + BETA**2 - 2 * ms + qs) - PERCENTAGE * (delta_out + BETA**2 - 2 * ms_BO + qs_BO) avec - (1 + PERCENTAGE * (BETA -1))**2 * q_b = - 2 * ms_BO + qs_BO)
 gen_error_actual = gen_error+(1 - PERCENTAGE) * PERCENTAGE**2 * (1 - BETA) ** 2 + PERCENTAGE * (
         1 - PERCENTAGE
     ) ** 2 * (BETA - 1) ** 2
@@ -148,7 +148,7 @@ fig_width_in, fig_height_in = set_size(FIG_WIDTH, fraction=0.9)
 fig, ax1 = plt.subplots(figsize=(fig_width_in, fig_height_in))
 
 # --- Tracé des Données (Axe Y Principal) ---
-# ax1.plot(alphas, gen_error, marker='.', linestyle='-', markersize=3, color='tab:blue', label='$E_{gen}^e$')
+ax1.plot(alphas, gen_error, marker='.', linestyle='-', markersize=3, color='tab:blue', label='$E_{gen}^e$')
 # ax1.plot(alphas, one_ms, marker='.', linestyle='-', markersize=3, color='tab:green', label='$1-m$')
 # ax1.plot(alphas, one_qs, marker='.', linestyle='-', markersize=3, color='tab:red', label='$1-q$')
 # ax1.plot(alphas, Vs, marker='.', linestyle='-', markersize=3, color='tab:purple', label='$V$')
@@ -156,14 +156,14 @@ fig, ax1 = plt.subplots(figsize=(fig_width_in, fig_height_in))
 # ax1.plot(alphas, estim_err, marker='.', linestyle='-', markersize=3, color='tab:orange', label='$E_estim$')
 ax1.plot(alphas, gen_error_in, marker='.', linestyle='-', markersize=3, color='tab:gray', label='$E_{gen,in}$')
 ax1.plot(alphas, gen_error_out, marker='.', linestyle='-', markersize=3, color='tab:brown', label='$E_{gen,out}$')
-ax1.plot(alphas, gen_error_actual, marker='.', linestyle='-', markersize=3, color='tab:olive', label='$E_{gen}$')
-#ax1.plot(alphas, gen_error_actual-gen_error_in-gen_error_out, marker='.', linestyle='-', markersize=3, color='tab:blue', label='difference')
+#ax1.plot(alphas, gen_error_actual, marker='.', linestyle='-', markersize=3, color='tab:olive', label='$E_{gen}$')
+#ax1.plot(alphas, gen_error - gen_error_in-gen_error_out, marker='.', linestyle='-', markersize=3, color='tab:blue', label='difference')
 
 # Configuration de l'axe Y principal
 ax1.set_xlabel(r'$\alpha = n/d$')
 ax1.set_ylabel(r'Valeurs des Overlaps / $E_{gen}$')
 ax1.set_xscale('log')
-ax1.set_yscale('log')
+ax1.set_yscale('linear')
 ax1.grid(True, which='both', linestyle=':', linewidth=0.5, alpha=0.7)
 ax1.tick_params(axis='y', labelcolor='black')
 # Définir les limites si nécessaire (souvent utile en log-log)
