@@ -413,13 +413,22 @@ if all_alphas: # S'il y a des données (chargées ou calculées)
     alphas_plot = np.array(all_alphas)
     estim_errors_plot = np.array(all_estim_errors)
     gen_errors_plot = np.array(all_gen_errors)
-    valid_indices = ~np.isnan(gen_errors_plot) & ~np.isnan(alphas_plot) & ~np.isnan(estim_errors_plot)
+    ms_plot = np.array(all_ms)
+    qs_plot = np.array(all_qs)
+    Vs_plot = np.array(all_Vs)
+    valid_indices = ~np.isnan(gen_errors_plot) & ~np.isnan(alphas_plot) & ~np.isnan(estim_errors_plot) & ~np.isnan(ms_plot) & ~np.isnan(qs_plot) & ~np.isnan(Vs_plot)
 
     if np.any(valid_indices):
         #plt.plot(alphas_plot[valid_indices], gen_errors_plot[valid_indices],
         #         label="SE (Estim Error)", color="black", marker='.', linestyle="--")
-        plt.plot(alphas_plot[valid_indices], estim_errors_plot[valid_indices],
-                    label="SE (Gen Error)", color="blue", marker='.', linestyle="--")
+        #plt.plot(alphas_plot[valid_indices], estim_errors_plot[valid_indices],
+        #            label="SE (Gen Error)", color="blue", marker='.', linestyle="--")
+        plt.plot(alphas_plot[valid_indices], ms_plot[valid_indices],
+                    label="SE (m)", color="red", marker='.', linestyle="--")
+        plt.plot(alphas_plot[valid_indices], qs_plot[valid_indices],
+                    label="SE (q)", color="green", marker='.', linestyle="--")
+        plt.plot(alphas_plot[valid_indices], Vs_plot[valid_indices],
+                    label="SE (V)", color="purple", marker='.', linestyle="--")
         print(f"Plotting {np.sum(valid_indices)} points valides.")
     else:
         print("Aucune donnée SE valide à plotter.")
