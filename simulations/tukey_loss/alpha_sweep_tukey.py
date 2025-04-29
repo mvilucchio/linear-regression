@@ -8,7 +8,7 @@ import warnings
 
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
-from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import (f_hat_mod_Tukey_decorrelated_noise, f_hat_wv_mod_Tukey_decorrelated_noise, f_hat_xigamma_mod_Tukey_decorrelated_noise)
+from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import (f_hat_mod_Tukey_decorrelated_noise, f_hat_xigamma_mod_Tukey_decorrelated_noise)
 from linear_regression.aux_functions.stability_functions import (RS_E2_mod_Tukey_decorrelated_noise, RS_E2_xigamma_mod_Tukey_decorrelated_noise)
 from linear_regression.aux_functions.moreau_proximals import DƔ_proximal_L2
 from linear_regression.aux_functions.misc import excess_gen_error
@@ -34,9 +34,9 @@ TAU = 1.0
 print(f"Hyperparamètres fixes : lambda={REG_PARAM:.2f}, tau={TAU:.2f}")
 
 # Plage pour alpha
-ALPHA_MIN =1000
-ALPHA_MAX = 1000000
-N_ALPHA_PTS = 1000
+ALPHA_MIN =10
+ALPHA_MAX = 1000
+N_ALPHA_PTS = 50
 
 # Options d'intégration (utilisées pour RS si CALCULATE_RS=True)
 INTEGRATION_BOUND = 5
@@ -126,7 +126,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Balayage Alpha")):
         # Si convergence, calculer les autres quantités
         if np.all(np.isfinite([m, q, V])):
             # Calculer les chapeaux
-            m_hat, q_hat, V_hat = f_hat_xigamma_mod_Tukey_decorrelated_noise(m, q, V, **f_hat_kwargs)
+            m_hat, q_hat, V_hat= f_hat_xigamma_mod_Tukey_decorrelated_noise(m, q, V, **f_hat_kwargs)
 
             # Calculer l'erreur de généralisation
             gen_err = excess_gen_error(m, q, V, DELTA_IN, DELTA_OUT, PERCENTAGE, BETA) # Ou autre mesure

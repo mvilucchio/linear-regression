@@ -42,7 +42,7 @@ def set_size(width, fraction=1, subplots=(1, 1)):
 PLOT_M = True
 PLOT_Q = True
 PLOT_V = True
-PLOT_RS = False
+PLOT_RS = True
 PLOT_TIME = True
 HEATMAP_VARIABLE = None # Choix: 'V', 'RS', 'TIME', 'M', 'Q', None
 
@@ -53,13 +53,13 @@ FIG_WIDTH = 469.75502 # Largeur standard LaTeX
 IMG_FORMATS = ["pdf", "png"]
 
 # --- Paramètres de la Simulation (pour retrouver le fichier) ---
-NOM_LOSS = "Tukey_mod_xigamma"
+NOM_LOSS = "Tukey_mod_xigamma_c0"
 ALPHA = 10.0
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
 BETA = 0.0
-C_TUKEY = 0.001
+C_TUKEY = 0.0
 # Options d'intégration (utilisées seulement pour le calcul de RS ici)
 INTEGRATION_BOUND = 15.0
 INTEGRATION_EPSABS = 1e-12

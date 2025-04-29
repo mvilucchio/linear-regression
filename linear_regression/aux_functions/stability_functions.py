@@ -19,7 +19,7 @@ from ..utils.integration_utils import (
 from .likelihood_channel_functions import Z_out_Bayes_decorrelated_noise
 from .moreau_proximals import proximal_Tukey_modified_quad
 from .loss_functions import DDz_mod_tukey_loss_quad
-from fixed_point_equations.regression.mod_Tukey_loss import (gaussian_2d_xigamma_Tukey, mu)
+from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import (gaussian_2d_xigamma_Tukey, mu)
 
 BIG_NUMBER = 6
 DEFAULT_INTEGRATION_BOUND = 15.0
