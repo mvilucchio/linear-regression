@@ -35,10 +35,10 @@ from linear_regression.erm.erm_solvers import find_coefficients_mod_Tukey
 integration_bound = 7 # Limite d'intégration pour RS_E2
 
 # --- Définition des Paramètres ---
-alpha_min, alpha_max = 50, 1000
-n_alpha_pts = 50
+alpha_min, alpha_max = 10, 5000
+n_alpha_pts = 30
 # Paramètres du bruit et du modèle
-delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0.0
+delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.05, 0.2
 # Paramètres de la perte Tukey (c=0 pour Tukey standard)
 tau = 1.0
 c = 0.0
@@ -49,8 +49,10 @@ barrier_V_threshold = 1.24 #5.0 / 4.0 # Seuil pour V
 barrier_RS_threshold = 1.0 # Seuil pour RS = alpha * V^2 * E2
 barrier_penalty = 1e10
 # Nouveaux paramètres pour le plot et sauvegarde
-plot_gen_error_vs_lambda = False # Activer/Désactiver les plots intermédiaires
-plot_every_n_alpha = 1       # Afficher le plot tous les N alpha
+plot_gen_error_vs_lambda = True # Activer/Désactiver les plots intermédiaires
+plot_every_n_alpha = 10          # Afficher le plot tous les N alpha
+lambda_pts_plot_gen_error = 30
+lambda_size_plot_gen_error = 100
 csv_save_enabled = True      # Activer/Désactiver la sauvegarde CSV
 force_recompute = False       # Mettre à True pour ignorer les fichiers existants
 
@@ -185,7 +187,7 @@ if not loaded_from_pickle and not loaded_from_csv:
          "barrier_threshold_RS": barrier_RS_threshold,
          "penalty": barrier_penalty, 'integration_bound': integration_bound
     }
-    observables = [gen_error, estimation_error, m_overlap, q_overlap, V_overlap]
+    observables = [excess_gen_error, estimation_error, m_overlap, q_overlap, V_overlap]
     observables_args = [
         {"delta_in": delta_in, "delta_out": delta_out, "percentage": percentage, "beta": beta},
         {}, {}, {}, {}
@@ -232,88 +234,6 @@ if not loaded_from_pickle and not loaded_from_csv:
         current_f_hat_kwargs["alpha"] = alpha_current
         current_f_min_args = f_min_common_args.copy()
 
-        # --- Plot Egen vs Lambda ---
-        if plot_gen_error_vs_lambda and idx % plot_every_n_alpha == 0:
-            print(f"  -> Génération du plot Egen vs Lambda (autour de lambda_guess={old_reg_param_opt:.4f})...")
-            lambda_plot_min = max(min_reg_param_bound, old_reg_param_opt / 10.0)
-            lambda_plot_max = old_reg_param_opt * 10.0
-            # Utilisation de linspace en log peut être préférable pour l'échelle log
-            lambda_plot_range = np.logspace(np.log10(lambda_plot_min), np.log10(lambda_plot_max), 50)
-
-            gen_errors_for_plot = []
-            plot_lambdas = []
-            temp_f_kwargs = f_kwargs.copy()
-            plot_initial_cond = old_initial_cond_fpe
-
-            # Création de la figure pour ce plot spécifique
-            fig_debug, ax_debug = plt.subplots()
-
-            for lam_plot in lambda_plot_range:
-                temp_f_kwargs["reg_param"] = lam_plot
-                try:
-                    # Attention: Utiliser une copie des kwargs de f_hat aussi
-                    temp_f_hat_kwargs = current_f_hat_kwargs.copy()
-                    m_plot, q_plot, V_plot = fixed_point_finder(
-                        f_L2_reg, f_hat_xigamma_mod_Tukey_decorrelated_noise,
-                        plot_initial_cond, temp_f_kwargs, temp_f_hat_kwargs,
-                        verbose=False
-                    )
-                    # Calcule l'erreur de gén sans la barrière pour le plot
-                    gen_error_args_plot = {
-                        'm': m_plot, 'q': q_plot, 'V': V_plot, 'delta_in': delta_in,
-                        'delta_out': delta_out, 'percentage': percentage, 'beta': beta
-                    }
-                    current_gen_error = gen_error(**gen_error_args_plot)
-
-                    # Vérifie si la solution est stable pour l'afficher différemment
-                    is_stable = True
-                    if V_plot >= barrier_V_threshold:
-                        is_stable = False
-                    else:
-                        try:
-                            rs_e2_args_plot = {**gen_error_args_plot, 'tau':tau, 'c':c, 'integration_bound' : integration_bound}
-                            E2_plot = RS_E2_xigamma_mod_Tukey_decorrelated_noise(**rs_e2_args_plot)
-                            if not np.isfinite(E2_plot) or alpha_current * (V_plot**2) * E2_plot >= barrier_RS_threshold:
-                                is_stable = False
-                        except:
-                            is_stable = False # Instable si E2 échoue
-
-                    # Ajoute aux listes pour le plot
-                    if not is_stable:
-                        print(f"     ! Instable pour lambda={lam_plot:.4e} (V={V_plot:.4f}, E2={E2_plot:.4f})")
-                    gen_errors_for_plot.append(current_gen_error if is_stable else np.nan) # Met NaN si instable
-                    plot_lambdas.append(lam_plot)
-
-                except (ConvergenceError, ValueError, TypeError) as e_plot:
-                     print(f"     ! Échec FPE pour plot lambda={lam_plot:.4e}: {e_plot}")
-                     # Ignore ce point pour le plot si FPE échoue
-                     pass
-
-            if plot_lambdas:
-                ax_debug.plot(plot_lambdas, gen_errors_for_plot, '.-')
-                ax_debug.axvline(old_reg_param_opt, color='r', linestyle='--', label=f'Guess $\\lambda$ = {old_reg_param_opt:.4f}')
-                # Indique le lambda qui sera trouvé par l'optimisation (si elle réussit)
-                # Note: Ceci nécessite que l'optimisation soit faite AVANT le plot,
-                #       ou alors on l'ajoute après l'optimisation. Déplaçons le plot après.
-                # optimal_lambda_current = all_reg_params_opt[-1] if all_reg_params_opt else old_reg_param_opt
-                # plt.axvline(optimal_lambda_current, color='g', linestyle=':', label=f'Optimal $\\lambda$ = {optimal_lambda_current:.4f}')
-
-                ax_debug.set_xscale('log')
-                ax_debug.set_yscale('log')
-                ax_debug.set_xlabel('$\\lambda$')
-                ax_debug.set_ylabel('$E_{gen}$')
-                ax_debug.set_title(f'Egen vs $\\lambda$ pour $\\alpha = {alpha_current:.3f}$')
-                ax_debug.legend()
-                ax_debug.grid(True, which="both", ls='--')
-                # plot_debug_filename = os.path.join(data_folder, f"debug_egen_vs_lambda_alpha_{alpha:.3f}.png")
-                # fig_debug.savefig(plot_debug_filename)
-                # print(f"     Plot sauvegardé: {plot_debug_filename}")
-                # plt.close(fig_debug) # Ferme la figure spécifique
-                plt.show()
-            else:
-                print("     Aucun point à plotter pour Egen vs Lambda.")
-        # --- Fin Plot Egen vs Lambda ---
-
         # --- Optimisation Principale pour cet alpha ---
         print(f"  -> Recherche de lambda optimal (démarrage à {old_reg_param_opt:.5f})...")
         try:
@@ -345,7 +265,7 @@ if not loaded_from_pickle and not loaded_from_csv:
             all_qs.append(current_q)
             all_Vs.append(current_V)
 
-            print(f"  -> Trouvé lambda_opt = {current_reg_param_opt:.5f} (Egen={current_gen_error:.5f}, V={current_V:.4f})")
+            print(f"  -> Trouvé lambda_opt = {current_reg_param_opt:.5f} (Excess Egen={current_gen_error:.5f}, V={current_V:.4f})")
 
             # Mise à jour pour la prochaine itération
             old_reg_param_opt = current_reg_param_opt
@@ -377,6 +297,86 @@ if not loaded_from_pickle and not loaded_from_csv:
             all_qs.append(np.nan)
             all_Vs.append(np.nan)
             print("  -> Poursuite avec la dernière valeur lambda_opt connue.")
+        
+        # --- Plot Egen vs Lambda ---
+        if plot_gen_error_vs_lambda and idx % plot_every_n_alpha == 0:
+            print(f"  -> Génération du plot Excess Egen vs Lambda (autour de lambda_opti={current_reg_param_opt:.4f})...")
+            lambda_plot_min = max(min_reg_param_bound, current_reg_param_opt / lambda_size_plot_gen_error)
+            lambda_plot_max = current_reg_param_opt * lambda_size_plot_gen_error
+            # Utilisation de linspace en log peut être préférable pour l'échelle log
+            lambda_plot_range = np.logspace(np.log10(lambda_plot_min), np.log10(lambda_plot_max), lambda_pts_plot_gen_error)
+
+            gen_errors_for_plot = []
+            plot_lambdas = []
+            temp_f_kwargs = f_kwargs.copy()
+            plot_initial_cond = (current_m, current_q, current_V)
+
+            # Création de la figure pour ce plot spécifique
+            fig_debug, ax_debug = plt.subplots()
+
+            for lam_plot in lambda_plot_range:
+                temp_f_kwargs["reg_param"] = lam_plot
+                try:
+                    # Attention: Utiliser une copie des kwargs de f_hat aussi
+                    temp_f_hat_kwargs = current_f_hat_kwargs.copy()
+                    m_plot, q_plot, V_plot = fixed_point_finder(
+                        f_L2_reg, f_hat_xigamma_mod_Tukey_decorrelated_noise,
+                        plot_initial_cond, temp_f_kwargs, temp_f_hat_kwargs,
+                        verbose=False
+                    )
+                    # Calcule l'erreur de gén sans la barrière pour le plot
+                    gen_error_args_plot = {
+                        'm': m_plot, 'q': q_plot, 'V': V_plot, 'delta_in': delta_in,
+                        'delta_out': delta_out, 'percentage': percentage, 'beta': beta
+                    }
+                    current_gen_error = excess_gen_error(**gen_error_args_plot)
+
+                    # Vérifie si la solution est stable pour l'afficher différemment
+                    is_stable = True
+                    if V_plot >= barrier_V_threshold:
+                        is_stable = False
+                    else:
+                        try:
+                            rs_e2_args_plot = {**gen_error_args_plot, 'tau':tau, 'c':c, 'integration_bound' : integration_bound}
+                            E2_plot = RS_E2_xigamma_mod_Tukey_decorrelated_noise(**rs_e2_args_plot)
+                            if not np.isfinite(E2_plot) or alpha_current * (V_plot**2) * E2_plot >= barrier_RS_threshold:
+                                is_stable = False
+                        except:
+                            is_stable = False # Instable si E2 échoue
+
+                    # Ajoute aux listes pour le plot
+                    if not is_stable:
+                        print(f"     ! Instable pour lambda={lam_plot:.4e} (V={V_plot:.4f}, E2={E2_plot:.4f})")
+                    gen_errors_for_plot.append(current_gen_error)
+                    plot_lambdas.append(lam_plot)
+
+                except (ConvergenceError, ValueError, TypeError) as e_plot:
+                     print(f"     ! Échec FPE pour plot lambda={lam_plot:.4e}: {e_plot}")
+                     # Ignore ce point pour le plot si FPE échoue
+                     pass
+
+            if plot_lambdas:
+                ax_debug.plot(plot_lambdas, gen_errors_for_plot, '.-')
+                ax_debug.axvline(old_reg_param_opt, color='r', linestyle='--', label=f'Optimal $\\lambda$ = {old_reg_param_opt:.4f}')
+                # Indique le lambda qui sera trouvé par l'optimisation (si elle réussit)
+                guess_lambda = all_reg_params_opt[-2] if len(all_reg_params_opt)>1 else initial_guess_lambda
+                plt.axvline(guess_lambda, color='g', linestyle=':', label=f'Guess $\\lambda$ = {guess_lambda:.4f}')
+
+                ax_debug.set_xscale('log')
+                ax_debug.set_yscale('log')
+                ax_debug.set_xlabel('$\\lambda$')
+                ax_debug.set_ylabel('$E_{gen}^e$')
+                ax_debug.set_title(f'Excess Egen vs $\\lambda$ pour $\\alpha = {alpha_current:.3f}$')
+                ax_debug.legend()
+                ax_debug.grid(True, which="both", ls='--')
+                # plot_debug_filename = os.path.join(data_folder, f"debug_egen_vs_lambda_alpha_{alpha:.3f}.png")
+                # fig_debug.savefig(plot_debug_filename)
+                # print(f"     Plot sauvegardé: {plot_debug_filename}")
+                # plt.close(fig_debug) # Ferme la figure spécifique
+                plt.show()
+            else:
+                print("     Aucun point à plotter pour Excess Egen vs Lambda.")
+        # --- Fin Plot Excess Egen vs Lambda ---
 
     # --- Fin de la boucle ---
     print("\nSweep SE terminé.")
@@ -416,19 +416,22 @@ if all_alphas: # S'il y a des données (chargées ou calculées)
     ms_plot = np.array(all_ms)
     qs_plot = np.array(all_qs)
     Vs_plot = np.array(all_Vs)
-    valid_indices = ~np.isnan(gen_errors_plot) & ~np.isnan(alphas_plot) & ~np.isnan(estim_errors_plot) & ~np.isnan(ms_plot) & ~np.isnan(qs_plot) & ~np.isnan(Vs_plot)
+    reg_param_opt_plot = np.array(all_reg_params_opt)
+    valid_indices = ~np.isnan(gen_errors_plot) & ~np.isnan(alphas_plot) & ~np.isnan(estim_errors_plot) & ~np.isnan(ms_plot) & ~np.isnan(qs_plot) & ~np.isnan(Vs_plot) & ~np.isnan(reg_param_opt_plot)
 
     if np.any(valid_indices):
-        #plt.plot(alphas_plot[valid_indices], gen_errors_plot[valid_indices],
-        #         label="SE (Estim Error)", color="black", marker='.', linestyle="--")
-        #plt.plot(alphas_plot[valid_indices], estim_errors_plot[valid_indices],
-        #            label="SE (Gen Error)", color="blue", marker='.', linestyle="--")
-        plt.plot(alphas_plot[valid_indices], ms_plot[valid_indices],
-                    label="SE (m)", color="red", marker='.', linestyle="--")
-        plt.plot(alphas_plot[valid_indices], qs_plot[valid_indices],
-                    label="SE (q)", color="green", marker='.', linestyle="--")
-        plt.plot(alphas_plot[valid_indices], Vs_plot[valid_indices],
-                    label="SE (V)", color="purple", marker='.', linestyle="--")
+        # plt.plot(alphas_plot[valid_indices], np.abs(estim_errors_plot[valid_indices]-(percentage*(1-beta))**2),
+        #         label="SE (|Estim Error - $(\\epsilon(\\beta-1))^2$|)", color="black", marker='.', linestyle="--")
+        # plt.plot(alphas_plot[valid_indices], gen_errors_plot[valid_indices],
+        #         label="SE (Excess Gen Error)", color="blue", marker='.', linestyle="--")
+        plt.plot(alphas_plot[valid_indices], np.abs(ms_plot[valid_indices]- (1+percentage*(beta-1))),
+                    label="SE (|m - $(1+\\epsilon(\\beta-1))$|)", color="red", marker='.', linestyle="--")
+        # plt.plot(alphas_plot[valid_indices], np.abs(1-ms_plot[valid_indices]**2/qs_plot[valid_indices]),
+        #             label="SE ($|1-\\eta|$)", color="green", marker='.', linestyle="--")
+        # plt.plot(alphas_plot[valid_indices], Vs_plot[valid_indices],
+        #             label="SE (V)", color="purple", marker='.', linestyle="--")
+        # plt.plot(alphas_plot[valid_indices], alphas_plot[valid_indices]/ reg_param_opt_plot[valid_indices],
+        #         label="SE (alpha / lambda_opt)", color="black", marker='.', linestyle="--")
         print(f"Plotting {np.sum(valid_indices)} points valides.")
     else:
         print("Aucune donnée SE valide à plotter.")
