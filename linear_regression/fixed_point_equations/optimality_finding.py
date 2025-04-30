@@ -69,7 +69,7 @@ def find_optimal_reg_param_function(
         )
 
         for idx, (f, f_args) in enumerate(zip(funs, funs_args)):
-            out_values[idx] = f(m, q, V, **f_args)
+            out_values[idx] = f(m, q, V, **f_args)  # Beware of the ** instead of * in the f_args
 
         return fun_min_val, reg_param_opt, (m, q, V), out_values
     else:
