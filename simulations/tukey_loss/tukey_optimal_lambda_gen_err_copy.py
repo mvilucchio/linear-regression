@@ -38,7 +38,7 @@ integration_bound = 7 # Limite d'intégration pour RS_E2
 alpha_min, alpha_max = 10, 5000
 n_alpha_pts = 30
 # Paramètres du bruit et du modèle
-delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.05, 0.2
+delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0.2
 # Paramètres de la perte Tukey (c=0 pour Tukey standard)
 tau = 1.0
 c = 0.0
@@ -424,14 +424,14 @@ if all_alphas: # S'il y a des données (chargées ou calculées)
         #         label="SE (|Estim Error - $(\\epsilon(\\beta-1))^2$|)", color="black", marker='.', linestyle="--")
         # plt.plot(alphas_plot[valid_indices], gen_errors_plot[valid_indices],
         #         label="SE (Excess Gen Error)", color="blue", marker='.', linestyle="--")
-        plt.plot(alphas_plot[valid_indices], np.abs(ms_plot[valid_indices]- (1+percentage*(beta-1))),
-                    label="SE (|m - $(1+\\epsilon(\\beta-1))$|)", color="red", marker='.', linestyle="--")
+        # plt.plot(alphas_plot[valid_indices], np.abs(ms_plot[valid_indices]- (1+percentage*(beta-1))),
+        #             label="SE (|m - $(1+\\epsilon(\\beta-1))$|)", color="red", marker='.', linestyle="--")
         # plt.plot(alphas_plot[valid_indices], np.abs(1-ms_plot[valid_indices]**2/qs_plot[valid_indices]),
         #             label="SE ($|1-\\eta|$)", color="green", marker='.', linestyle="--")
         # plt.plot(alphas_plot[valid_indices], Vs_plot[valid_indices],
         #             label="SE (V)", color="purple", marker='.', linestyle="--")
-        # plt.plot(alphas_plot[valid_indices], alphas_plot[valid_indices]/ reg_param_opt_plot[valid_indices],
-        #         label="SE (alpha / lambda_opt)", color="black", marker='.', linestyle="--")
+        plt.plot(alphas_plot[valid_indices], alphas_plot[valid_indices]/ reg_param_opt_plot[valid_indices],
+                label="SE (alpha / lambda_opt)", color="black", marker='.', linestyle="--")
         print(f"Plotting {np.sum(valid_indices)} points valides.")
     else:
         print("Aucune donnée SE valide à plotter.")
