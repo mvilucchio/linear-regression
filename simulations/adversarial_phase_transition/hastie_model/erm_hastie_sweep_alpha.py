@@ -3,7 +3,7 @@ from linear_regression.erm.erm_solvers import (
     find_coefficients_Logistic_adv_Linf_L2,
 )
 from linear_regression.erm.adversarial_perturbation_finders import (
-    find_adversarial_perturbation_direct_space,
+    find_adversarial_perturbation_linear_rf,
 )
 from linear_regression.data.generation import data_generation_hastie, measure_gen_probit_clasif
 from linear_regression.erm.metrics import (
@@ -30,17 +30,18 @@ if len(sys.argv) > 1:
         float(sys.argv[8]),
     )
 else:
-    alpha_min, alpha_max, n_alphas = 0.1, 2.0, 5
-    gamma = 0.5
+    alpha_min, alpha_max, n_alphas = 0.3, 3.0, 10
+    gamma = 2.0
     eps_t = 0.1
     delta = 0.0
     reg_param = 1e-2
-    d = 700
+    d = 500
 
-reps = 5
+reps = 10
 n_gen = 1000
 
 pstar = 1.0
+eps_test = 1.0
 
 data_folder = f"./data/hastie_model_training"
 file_name = f"ERM_training_gamma_{gamma:.2f}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_eps_{eps_t:.2f}_reg_param_{reg_param:.1e}_pstar_{pstar:.1f}.csv"
@@ -65,6 +66,8 @@ for i, alpha in enumerate(alpha_list):
     p = int(d / gamma)
     n = int(alpha * d)
 
+    print(f"p {p} d {d} n {n}")
+
     m_vals = []
     q_vals = []
     q_latent_vals = []
@@ -77,8 +80,8 @@ for i, alpha in enumerate(alpha_list):
 
     j = 0
     while j < reps:
-        xs, ys, zs, xs_gen, ys_gen, zs_gen, wstar, F = data_generation_hastie(
-            measure_gen_probit_clasif, d, n, n_gen, (delta,), gamma
+        xs, ys, zs, xs_gen, ys_gen, zs_gen, wstar, F, noise, noise_gen = data_generation_hastie(
+            measure_gen_probit_clasif, d, n, n_gen, (delta,), gamma, noi=True
         )
 
         try:
@@ -98,32 +101,24 @@ for i, alpha in enumerate(alpha_list):
         yhat_gen = np.sign(np.dot(xs_gen, w))
 
         gen_err_vals.append(generalisation_error_classification(ys_gen, xs_gen, w, wstar))
-        adv_err_vals.append(adversarial_error_data(ys_gen, xs_gen, w, wstar, eps_t, pstar))
+        adv_err_vals.append(adversarial_error_data(ys_gen, xs_gen, w, wstar, eps_test, pstar))
 
         # calculation of flipped perturbation
-        adv_perturbation = find_adversarial_perturbation_direct_space(
-            yhat_gen, xs_gen, w, F @ wstar, eps_t / np.sqrt(d), "inf"
+        # calculation of flipped perturbation
+        adv_perturbation = find_adversarial_perturbation_linear_rf(
+            yhat_gen, zs_gen, w, F.T, wstar, eps_test / np.sqrt(d), "inf"
         )
-        flipped = percentage_flipped_labels_estim(
-            yhat_gen,
-            xs_gen,
-            w,
-            wstar,
-            xs_gen + adv_perturbation,
+        flipped = np.mean(
+            yhat_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w)
         )
         flip_fair_vals.append(flipped)
 
         # calculation of perturbation
-        adv_perturbation = find_adversarial_perturbation_direct_space(
-            ys_gen, xs_gen, w, F @ wstar, eps_t / np.sqrt(d), "inf"
+        adv_perturbation = find_adversarial_perturbation_linear_rf(
+            ys_gen, zs_gen, w, F.T, wstar, eps_test / np.sqrt(d), "inf"
         )
-        misclass = percentage_error_from_true(
-            ys_gen,
-            xs_gen,
-            w,
-            F @ wstar,
-            xs_gen + adv_perturbation,
-        )
+
+        misclass = np.mean(ys_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w))
         misc_fair_vals.append(misclass)
 
         print(f"repetition {j} for alpha {alpha:.2f} done.")

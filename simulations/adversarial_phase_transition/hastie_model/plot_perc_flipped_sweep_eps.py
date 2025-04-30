@@ -17,10 +17,10 @@ from linear_regression.fixed_point_equations.classification.Adv_train_p_norm_has
     f_hat_Logistic_no_noise_Linf_adv_classif,
 )
 
-gammas = [2.0]
-alphas = [1.5]
+gammas = [0.5]
+alphas = [1.0]
 reps = 10
-eps_training = 0.0
+eps_training = 0.1
 pstar_t = 1.0
 p = "inf"
 reg_param = 1e-2
@@ -29,7 +29,7 @@ eps_min, eps_max, n_epss = 0.1, 10, 15
 data_folder = "./data/hastie_model_training"
 file_name = f"ERM_flipped_Hastie_Linf_d_{{:d}}_alpha_{{alpha:.1f}}_gamma_{{gamma:.1f}}_reps_{reps:d}_epss_{{eps_min:.1f}}_{{eps_max:.1f}}_{{n_epss:d}}_reg_param_{reg_param:.1e}_eps_t_{eps_training:.2f}.pkl"
 
-dimensions = [int(2**a) for a in range(11, 12)]
+dimensions = [int(2**a) for a in range(9, 10)]
 
 markers = [".", "x", "1", "2", "+", "3", "4"]
 

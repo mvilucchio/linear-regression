@@ -27,9 +27,10 @@ if len(sys.argv) > 1:
         float(sys.argv[6]),
     )
 else:
-    gamma_min, gamma_max, n_gammas, alpha, eps_t, reg_param = (0.5, 2.0, 100, 1.5, 0.1, 1e-2)
+    gamma_min, gamma_max, n_gammas, alpha, eps_t, reg_param = (0.1, 3.0, 50, 2.0, 0.1, 1e-2)
 
 pstar = 1
+eps_test_metrics = 1.0
 
 data_folder = "./data/hastie_model_training"
 file_name = f"SE_training_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_eps_{eps_t:.2f}_reg_param_{reg_param:.1e}_pstar_{pstar:.1f}.csv"
@@ -88,15 +89,29 @@ for j, gamma in enumerate(gammas):
 
     estim_errors_se[j] = 1 - 2 * ms_found[j] + qs_found[j]
     adversarial_errors_found[j] = classification_adversarial_error(
-        ms_found[j], qs_found[j], Ps_found[j], eps_t, pstar
+        ms_found[j], qs_found[j], Ps_found[j], eps_test_metrics, pstar
     )
     gen_errors_se[j] = np.arccos(ms_found[j] / np.sqrt(qs_found[j])) / np.pi
 
     flipped_fairs_se[j] = percentage_flipped_hastie_model(
-        ms_found[j], qs_found[j], qs_latent_found[j], qs_features_found[j], 1.0, eps_t, gamma, "inf"
+        ms_found[j],
+        qs_found[j],
+        qs_latent_found[j],
+        qs_features_found[j],
+        1.0,
+        eps_test_metrics,
+        gamma,
+        "inf",
     )
     misclas_fairs_se[j] = percentage_misclassified_hastie_model(
-        ms_found[j], qs_found[j], qs_latent_found[j], qs_features_found[j], 1.0, eps_t, gamma, "inf"
+        ms_found[j],
+        qs_found[j],
+        qs_latent_found[j],
+        qs_features_found[j],
+        1.0,
+        eps_test_metrics,
+        gamma,
+        "inf",
     )
 
 data = {

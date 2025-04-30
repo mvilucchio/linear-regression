@@ -86,9 +86,9 @@ reps = 10
 reg_param = 1e-2
 eps_min, eps_max, n_epss = 0.1, 10, 15
 
-# param_pairs = [(2.0, 0.5, 2**10)]  # (alpha, gamma, d)
-# param_pairs = [(0.01, 3.0, 2**10)]  # (alpha, gamma, d)
-param_pairs = [(3.0, 0.5, 2**10)]  # (alpha, gamma, d)
+param_pairs = [(2.0, 0.5, 2**10), (0.01, 3.0, 2**10)]  # (alpha, gamma, d)
+# param_pairs = []  # (alpha, gamma, d)
+# param_pairs = [(3.0, 0.5, 2**10)]  # (alpha, gamma, d)
 
 # File name templates
 file_name_flipped_no_adv = f"ERM_flipped_optimal_noadvtrain_Hastie_Linf_d_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_epss_{{:.1f}}_{{:.1f}}_{{:d}}.csv"

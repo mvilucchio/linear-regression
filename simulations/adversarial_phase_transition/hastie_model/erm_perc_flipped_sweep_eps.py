@@ -39,10 +39,10 @@ else:
         0.1,
         10.0,
         15,
-        1.5,
-        1.5,
+        1.0,
+        0.5,
         1e-2,
-        0.0,
+        0.1,
     )
 
 # DO NOT CHANGE, NOT IMPLEMENTED FOR OTHERS

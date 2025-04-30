@@ -124,8 +124,8 @@ def percentage_misclassified_hastie_model(
         np.inf,
         lambda nu: -np.inf,
         lambda nu: np.inf,
-        epsabs=1e-3,
-        epsrel=1e-3,
+        epsabs=1e-7,
+        epsrel=1e-7,
     )[0]
 
     int_val_1 = quad(
