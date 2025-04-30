@@ -48,7 +48,7 @@ if len(sys.argv) > 1:
         float(sys.argv[5]),
     )
 else:
-    eps_min, eps_max, n_epss, alpha, gamma = (0.1, 10.0, 15, 3.0, 0.5)
+    eps_min, eps_max, n_epss, alpha, gamma = (0.1, 10.0, 15, 1.0, 0.5)
 
 pstar_t = 1.0
 eps_test = 1.0
