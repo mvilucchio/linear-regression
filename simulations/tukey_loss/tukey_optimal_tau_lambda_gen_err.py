@@ -96,8 +96,8 @@ def excess_gen_error_wrapper_for_lambda_tau_opt(m, q, V, alpha, a, # Reçoit 'a'
 # -----------------------------------------------------------
 
 # --- Définition des Paramètres ---
-alpha_min, alpha_max = 500, 1000
-n_alpha_pts = 10
+alpha_min, alpha_max = 100, 100
+n_alpha_pts = 1
 # Paramètres bruit/modèle
 delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0.0
 # Paramètre c
@@ -115,11 +115,11 @@ barrier_penalty = 1e10
 plot_gen_error_vs_lambda = True
 plot_every_n_alpha = 1
 lambda_pts_plot_gen_error = 3
-lambda_size_plot_gen_error = 3
+lambda_size_plot_gen_error = 20
 tau_pts_plot_gen_error = 3
-tau_size_plot_gen_error = 3
+tau_size_plot_gen_error = 5
 csv_save_enabled = True
-force_recompute = False
+force_recompute = True
 
 # --- Configuration Fichiers ---
 data_folder = "./data/mod_Tukey_c0_lambda_tau_opt_multi_barrier" # Nouveau dossier
@@ -380,6 +380,7 @@ if not loaded_from_pickle and not loaded_from_csv:
 
                         # Vérifie la stabilité pour éventuellement masquer des points
                         is_stable = True
+                        E2_plot = np.nan
                         if V_plot >= barrier_V_threshold: is_stable = False
                         else:
                             try:
@@ -387,7 +388,9 @@ if not loaded_from_pickle and not loaded_from_csv:
                                 E2_plot = RS_E2_xigamma_mod_Tukey_decorrelated_noise(**rs_e2_args_plot)
                                 if not np.isfinite(E2_plot) or E2_plot < 0 or alpha_current * (V_plot**2) * E2_plot >= barrier_RS_threshold:
                                     is_stable = False
-                            except: is_stable = False
+                            except Exception as e_stab:
+                                print(f"RS ne converge pas : {e_stab}") 
+                                is_stable = False
                         if not is_stable: print(f"     ! Point instable (lambda={lam_plot:.2e}, tau={tau_plot:.2e}, V={V_plot:.2f}, RS={alpha_current*(V_plot**2)*E2_plot:.2f})")
                         egen_xs_grid[i, j] = current_excess_gen_error
 
@@ -410,10 +413,11 @@ if not loaded_from_pickle and not loaded_from_csv:
                 valid_mask = ~np.isnan(log_egen_xs)
                 z_min = np.nanmin(log_egen_xs[valid_mask])
                 z_max = np.nanmax(log_egen_xs[valid_mask])
-                surf = ax_3d.plot_surface(log_lambda, log_tau, log_egen_xs,vmin=z_min, vmax=z_max)
+                norm = plt.Normalize(vmin=z_min, vmax=z_max)
+                surf = ax_3d.plot_surface(log_lambda, log_tau, log_egen_xs,cmap=cm.viridis,norm=norm)
 
                 # Ajoute une barre de couleur
-                fig_3d.colorbar(surf, shrink=0.5, aspect=5, label='log Excess Gen Error')
+                fig_3d.colorbar(surf, norm=norm, shrink=0.5, aspect=5, label='log Excess Gen Error')
 
                 # Marque le point optimal
                 ax_3d.scatter(np.log10(old_reg_param_opt), np.log10(old_tau_param_opt), log_egen_xs.min(),
@@ -423,6 +427,15 @@ if not loaded_from_pickle and not loaded_from_csv:
                 guess_tau_plot = all_tau_params_opt[-2] if len(all_tau_params_opt) > 1 else initial_guess_tau
                 ax_3d.scatter(np.log10(guess_labmda_plot), np.log10(guess_tau_plot), log_egen_xs.min(),
                                 marker='x', s=100, c='orange', label=f'Guess ($\\lambda_0, \\tau_0$)')
+
+                # Ajoute des lignes de contour
+                ax_3d.contour(log_lambda, log_tau, log_egen_xs, zdir='z', offset=z_min, extend3d=True,
+                                cmap=cm.coolwarm, linewidths=0.5, alpha=0.5)
+                
+                # Ajoute des lignes de contour projete sur le plan XY
+                ax_3d.contour(log_lambda, log_tau, log_egen_xs, zdir='z', offset=z_min,
+                                cmap=cm.coolwarm, linewidths=0.5, alpha=0.5)
+
 
                 ax_3d.set_xlabel('log10($\\lambda$)')
                 ax_3d.set_ylabel('log10($\\tau$)')
