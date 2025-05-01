@@ -214,6 +214,7 @@ def sweep_alpha_optimal_lambda_hub_param_fixed_point(
     min_reg_param=SMALLEST_REG_PARAM,
     min_huber_param=SMALLEST_HUBER_PARAM,
     decreasing=False,
+    update_fmin_huber_args=False
 ):
     if update_funs_args is None:
         update_funs_args = [False] * len(funs)
@@ -264,6 +265,8 @@ def sweep_alpha_optimal_lambda_hub_param_fixed_point(
 
         if update_f_min_args:
             f_min_args.update({"alpha": alpha})
+        if update_fmin_huber_args:
+            f_min_args.update({"a": old_hub_param_opt})
 
         for jdx, update_flag in enumerate(update_funs_args):
             if update_flag:
