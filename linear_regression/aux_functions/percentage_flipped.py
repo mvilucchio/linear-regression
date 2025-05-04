@@ -78,6 +78,8 @@ def percentage_flipped_hastie_model(
         * np.heaviside(+AA - np.sign(x) * x, 0),
         -np.inf,
         np.inf,
+        epsabs=1e-7,
+        epsrel=1e-7,
     )[0]
     # if gamma <= 1:
     #     return erf(
