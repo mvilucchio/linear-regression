@@ -61,6 +61,9 @@ epss = np.logspace(np.log10(eps_min), np.log10(eps_max), n_epss)
 data_folder = "./data/hastie_model_training"
 file_name = f"ERM_sweep_eps_Hastie_Linf_d_{{:d}}_alpha_{alpha:.1f}_gamma_{gamma:.1f}_reps_{reps:d}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}_regparam_{reg_param:.1e}.csv"
 
+if not os.path.exists(data_folder):
+    os.makedirs(data_folder)
+
 for d in tqdm(dimensions, desc="dim", leave=False):
     p = int(d / gamma)
     n = int(d * alpha)
