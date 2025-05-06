@@ -124,28 +124,28 @@ for d in tqdm(dimensions, desc="dim", leave=False):
             eps_i = epss_rescaled[i]
             try:
                 adv_perturbation = find_adversarial_perturbation_linear_rf(
-                    ys_gen, zs_gen, w, F.T, wstar, eps_i, "inf"
-                )
-            except (ValueError, UserWarning, SolverError) as e:
-                print("Error in finding adversarial perturbation:", e)
-                break
-
-            flipped = np.mean(
-                ys_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w)
-            )
-
-            vals_flipped[j, i] = flipped
-
-            try:
-                adv_perturbation = find_adversarial_perturbation_linear_rf(
                     yhat_gen, zs_gen, w, F.T, wstar, eps_i, "inf"
                 )
             except (ValueError, UserWarning, SolverError) as e:
                 print("Error in finding adversarial perturbation:", e)
                 break
 
-            misclass = np.mean(
+            flipped = np.mean(
                 yhat_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w)
+            )
+
+            vals_flipped[j, i] = flipped
+
+            try:
+                adv_perturbation = find_adversarial_perturbation_linear_rf(
+                    ys_gen, zs_gen, w, F.T, wstar, eps_i, "inf"
+                )
+            except (ValueError, UserWarning, SolverError) as e:
+                print("Error in finding adversarial perturbation:", e)
+                break
+
+            misclass = np.mean(
+                ys_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w)
             )
 
             vals_misclass[j, i] = misclass
@@ -177,20 +177,21 @@ for d in tqdm(dimensions, desc="dim", leave=False):
     mean_flipped, std_flipped = np.mean(vals_flipped, axis=0), np.std(vals_flipped, axis=0)
     mean_adverr, std_adverr = np.mean(vals_adverr, axis=0), np.std(vals_adverr, axis=0)
 
-    data = {
+    # Create a structured array for CSV output
+    data_dict = {
         "eps": epss,
-        "mean_m": mean_m,
-        "std_m": std_m,
-        "mean_q": mean_q,
-        "std_q": std_q,
-        "mean_q_latent": mean_q_latent,
-        "std_q_latent": std_q_latent,
-        "mean_q_feature": mean_q_feature,
-        "std_q_feature": std_q_feature,
-        "mean_P": mean_P,
-        "std_P": std_P,
-        "mean_rho": mean_rho,
-        "std_rho": std_rho,
+        "mean_m": np.full_like(epss, mean_m),
+        "std_m": np.full_like(epss, std_m),
+        "mean_q": np.full_like(epss, mean_q),
+        "std_q": np.full_like(epss, std_q),
+        "mean_q_latent": np.full_like(epss, mean_q_latent),
+        "std_q_latent": np.full_like(epss, std_q_latent),
+        "mean_q_feature": np.full_like(epss, mean_q_feature),
+        "std_q_feature": np.full_like(epss, std_q_feature),
+        "mean_P": np.full_like(epss, mean_P),
+        "std_P": np.full_like(epss, std_P),
+        "mean_rho": np.full_like(epss, mean_rho),
+        "std_rho": np.full_like(epss, std_rho),
         "mean_misclass": mean_misclass,
         "std_misclass": std_misclass,
         "mean_flipped": mean_flipped,
@@ -199,7 +200,10 @@ for d in tqdm(dimensions, desc="dim", leave=False):
         "std_adverr": std_adverr,
     }
 
-    data_file = os.path.join(data_folder, file_name.format(d))
+    # Convert to structured array for saving
+    header = ",".join(data_dict.keys())
+    data_array = np.column_stack([data_dict[key] for key in data_dict.keys()])
 
-    with open(data_file, "wb") as f:
-        pickle.dump(data, f)
+    # Save to CSV
+    data_file = os.path.join(data_folder, file_name.format(d).replace(".csv", ".txt"))
+    np.savetxt(data_file, data_array, delimiter=",", header=header, comments="")
