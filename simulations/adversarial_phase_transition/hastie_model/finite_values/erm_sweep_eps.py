@@ -39,21 +39,19 @@ if len(sys.argv) > 1:
         float(sys.argv[7]),
     )
 else:
-    eps_min, eps_max, n_epss, alpha, gamma, reg_param = (
+    eps_min, eps_max, n_epss, alpha, gamma, reg_param, eps_training = (
         0.1,
         10.0,
         15,
         1.5,
         0.5,
         1e-2,
+        0.0,
     )
-
-eps_training = 0.0
 
 # DO NOT CHANGE
 pstar = 1.0
 reg = 2.0
-reg_param = 1e-2
 
 dimensions = [int(2**a) for a in range(9, 10)]
 reps = 10
@@ -61,7 +59,7 @@ reps = 10
 epss = np.logspace(np.log10(eps_min), np.log10(eps_max), n_epss)
 
 data_folder = "./data/hastie_model_training"
-file_name = f"ERM_noadvtrain_Hastie_Linf_d_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_epss_{{:.1f}}_{{:.1f}}_{{:d}}_pstar_{pstar:.1f}_reg_{reg:.1f}_regparam_{reg_param:.1e}.csv"
+file_name = f"ERM_sweep_eps_Hastie_Linf_d_{{:d}}_alpha_{alpha:.1f}_gamma_{gamma:.1f}_reps_{reps:d}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}_regparam_{reg_param:.1e}.csv"
 
 for d in tqdm(dimensions, desc="dim", leave=False):
     p = int(d / gamma)
@@ -149,7 +147,6 @@ for d in tqdm(dimensions, desc="dim", leave=False):
 
             vals_misclass[j, i] = misclass
 
-            # adv_err = adversarial_error_data(ys_gen, xs_gen, w)
             try:
                 adv_perturbation = find_adversarial_error_rf(
                     ys_gen, zs_gen, w, F.T, wstar, eps_i, "inf"
@@ -159,7 +156,7 @@ for d in tqdm(dimensions, desc="dim", leave=False):
                 break
 
             adv_err = np.mean(
-                yhat_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w)
+                ys_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w)
             )
 
             vals_adverr[j, i] = adv_err
@@ -203,21 +200,3 @@ for d in tqdm(dimensions, desc="dim", leave=False):
 
     with open(data_file, "wb") as f:
         pickle.dump(data, f)
-
-#     plt.errorbar(
-#         epss, mean_misclass, yerr=std_misclass, linestyle="", marker=".", label=f"$d = {d}$"
-#     )
-
-# out = np.empty_like(epss)
-# for i, eps_i in enumerate(epss):
-#     out[i] = percentage_misclassified_hastie_model(
-#         mean_m, mean_q, mean_q_latent, mean_q_feature, mean_rho, eps_i, gamma, "inf"
-#     )
-# plt.plot(epss, out, label=f"$\\gamma = $ {gamma:.1f}", linestyle="--")
-
-# plt.xlabel(r"$\epsilon$")
-# plt.ylabel(r"$\mathbb{P}(\hat{y} \neq y)$")
-# plt.xscale("log")
-# plt.grid(which="both")
-# plt.legend()
-# plt.show()
