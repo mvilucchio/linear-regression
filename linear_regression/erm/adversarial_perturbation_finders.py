@@ -50,6 +50,37 @@ def find_adversarial_perturbation_direct_space(
 # -------------------------- Linear Random Features -------------------------- #
 
 
+def find_adversarial_error_rf(
+    ys: ndarray,
+    cs: ndarray,
+    w: ndarray,
+    F: ndarray,
+    wstar: ndarray,
+    ε: float,
+    p: float,
+) -> ndarray:
+    _, d = cs.shape
+    delta = Variable(d)
+    if float(p) == inf:
+        constraints = [norm(delta, "inf") <= ε]
+    else:
+        constraints = [norm(delta, p) <= ε]
+
+    wtilde = F @ w
+    objective = Minimize(wtilde.T @ delta)
+
+    problem = Problem(objective, constraints)
+    solver_opts = {
+        "abstol": 1e-5,  # Absolute tolerance
+        "reltol": 1e-5,  # Relative tolerance
+        "feastol": 1e-5,  # Feasibility tolerance
+        "max_iters": 10_000,  # Maximum iterations
+    }
+    problem.solve(solver="ECOS", verbose=False, **solver_opts)
+
+    return ys[:, None] * tile(delta.value, (len(ys), 1))
+
+
 def find_adversarial_perturbation_linear_rf(
     ys: ndarray,
     cs: ndarray,

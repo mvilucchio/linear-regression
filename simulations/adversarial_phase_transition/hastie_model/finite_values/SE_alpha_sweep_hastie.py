@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
-from linear_regression.aux_functions.misc import classification_adversarial_error
+from linear_regression.aux_functions.misc import (
+    classification_adversarial_error,
+    classification_adversarial_error_latent,
+)
 from linear_regression.fixed_point_equations.regularisation.hastie_model_pstar_attacks import (
     f_hastie_L2_reg_Linf_attack,
     q_latent_hastie_L2_reg_Linf_attack,
@@ -32,7 +35,7 @@ else:
 
 # DO NOT CHANGE, NOT IMPLEMENTED FOR OTHERS
 pstar = 1.0
-eps_test = 1.0
+eps_test_metrics = 1.0
 
 data_folder = "./data/hastie_model_training"
 file_name = f"SE_training_gamma_{gamma:.2f}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_eps_{eps_t:.2f}_reg_param_{reg_param:.1e}_pstar_{pstar:.1f}.csv"
@@ -93,8 +96,19 @@ for j, alpha in enumerate(alphas):
     )
 
     estim_errors_se[j] = 1 - 2 * ms_found[j] + qs_found[j]
-    adversarial_errors_found[j] = classification_adversarial_error(
-        ms_found[j], qs_found[j], Ps_found[j], eps_test, pstar
+    # adversarial_errors_found[j] = classification_adversarial_error(
+    #     ms_found[j], qs_found[j], Ps_found[j], eps_test, pstar
+    # )
+    adversarial_errors_found[j] = classification_adversarial_error_latent(
+        ms_found[j],
+        qs_found[j],
+        qs_features_found[j],
+        qs_latent_found[j],
+        1.0,
+        Ps_found[j],
+        eps_test_metrics,
+        gamma,
+        pstar,
     )
     gen_errors_se[j] = np.arccos(ms_found[j] / np.sqrt(qs_found[j])) / np.pi
 
@@ -104,7 +118,7 @@ for j, alpha in enumerate(alphas):
         qs_latent_found[j],
         qs_features_found[j],
         1.0,
-        eps_test,
+        eps_test_metrics,
         gamma,
         "inf",
     )
@@ -114,7 +128,7 @@ for j, alpha in enumerate(alphas):
         qs_latent_found[j],
         qs_features_found[j],
         1.0,
-        eps_test,
+        eps_test_metrics,
         gamma,
         "inf",
     )

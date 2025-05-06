@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 
-gamma_min, gamma_max, n_gammas_ERM, n_gammas_SE = 0.1, 3.0, 10, 100
-alphas = [0.5, 1.0, 1.5, 2.0]
+gamma_min, gamma_max, n_gammas_ERM, n_gammas_SE = 0.5, 3.0, 10, 50
+alphas = [1.0]
 d = 300
 delta = 0.0
 reps = 10

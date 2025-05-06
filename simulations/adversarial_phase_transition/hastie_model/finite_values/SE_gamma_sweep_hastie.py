@@ -1,6 +1,9 @@
 import numpy as np
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
-from linear_regression.aux_functions.misc import classification_adversarial_error
+from linear_regression.aux_functions.misc import (
+    classification_adversarial_error,
+    classification_adversarial_error_latent,
+)
 from linear_regression.fixed_point_equations.regularisation.hastie_model_pstar_attacks import (
     f_hastie_L2_reg_Linf_attack,
     q_latent_hastie_L2_reg_Linf_attack,
@@ -27,7 +30,7 @@ if len(sys.argv) > 1:
         float(sys.argv[6]),
     )
 else:
-    gamma_min, gamma_max, n_gammas, alpha, eps_t, reg_param = (0.1, 3.0, 50, 2.0, 0.1, 1e-2)
+    gamma_min, gamma_max, n_gammas, alpha, eps_t, reg_param = (0.5, 3.0, 50, 1.0, 0.1, 1e-2)
 
 pstar = 1
 eps_test_metrics = 1.0
@@ -88,8 +91,19 @@ for j, gamma in enumerate(gammas):
     )
 
     estim_errors_se[j] = 1 - 2 * ms_found[j] + qs_found[j]
-    adversarial_errors_found[j] = classification_adversarial_error(
-        ms_found[j], qs_found[j], Ps_found[j], eps_test_metrics, pstar
+    # adversarial_errors_found[j] = classification_adversarial_error(
+    #     ms_found[j], qs_found[j], Ps_found[j], eps_test_metrics, pstar
+    # )
+    adversarial_errors_found[j] = classification_adversarial_error_latent(
+        ms_found[j],
+        qs_found[j],
+        qs_features_found[j],
+        qs_latent_found[j],
+        1.0,
+        Ps_found[j],
+        eps_test_metrics,
+        gamma,
+        pstar,
     )
     gen_errors_se[j] = np.arccos(ms_found[j] / np.sqrt(qs_found[j])) / np.pi
 

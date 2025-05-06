@@ -34,6 +34,12 @@ def adversarial_error_data(ys, xs, w, wstar, eps, pstar):
     return mean(ys != tmp)
 
 
+def adversarial_error_data_latent_space(ys, xs, w, wstar, esp, pstar, F):
+    _, d = xs.shape
+    tmp = sign(xs @ w / sqrt(d) - esp * ys * sum(abs(F @ w) ** pstar) ** (1 / pstar) / d**pstar)
+    return mean(ys != tmp)
+
+
 def adversarial_error_data_Sigmaupsilon(ys, xs, w, wstar, Sigmaupsilon, eps):
     _, d = xs.shape
     tmp = sign(xs @ w / sqrt(d) - eps / sqrt(d) * sqrt(dot(w, Sigmaupsilon @ w)) * ys)

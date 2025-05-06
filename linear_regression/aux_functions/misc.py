@@ -5,7 +5,7 @@ from numpy import abs as np_abs
 import numpy as np
 from numpy.linalg import norm, det, inv
 from numpy.random import normal
-from scipy.integrate import quad
+from scipy.integrate import quad, dblquad
 from numba import vectorize, njit
 
 
@@ -165,6 +165,29 @@ def classification_adversarial_error(m, q, P, eps, pstar):
         epsabs=1e-10,
     )[0]
     return 0.5 * (Iminus + Iplus) / np.sqrt(2 * pi * q)
+
+
+def classification_adversarial_error_latent(m, q, q_features, q_latent, rho, P, eps, gamma, pstar):
+    if float(pstar) != 1.0:
+        raise ValueError("pstar must be 1 for this function")
+    if gamma <= 1:
+        AA = eps * np.sqrt(q_latent) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
+    else:
+        AA = eps * np.sqrt(q_features) / np.sqrt(gamma) * np.sqrt(2 / np.pi)
+
+    return dblquad(
+        lambda nu, lamb: (
+            exp((-2 * m * lamb * nu + q * nu**2 + lamb**2 * rho) / (2.0 * (m**2 - q * rho)))
+            * np.heaviside(+AA - lamb * np.sign(nu), 0.0)
+        )
+        / (2.0 * np.pi * sqrt(-(m**2) + q * rho)),
+        -np.inf,
+        np.inf,
+        lambda nu: -np.inf,
+        lambda nu: np.inf,
+        epsabs=1e-7,
+        epsrel=1e-7,
+    )[0]
 
 
 # ----------------------------- errors regression ---------------------------- #

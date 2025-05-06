@@ -4,6 +4,7 @@ from linear_regression.erm.erm_solvers import (
 )
 from linear_regression.erm.adversarial_perturbation_finders import (
     find_adversarial_perturbation_linear_rf,
+    find_adversarial_error_rf,
 )
 from linear_regression.data.generation import data_generation_hastie, measure_gen_probit_clasif
 from linear_regression.erm.metrics import (
@@ -31,11 +32,11 @@ if len(sys.argv) > 1:
     )
 else:
     gamma_min, gamma_max, n_gammas = 0.5, 3.0, 10
-    alpha = 2.0
+    alpha = 1.0
     eps_t = 0.1
     delta = 0.0
     reg_param = 1e-2
-    d = 500
+    d = 300
 
 reps = 10
 n_gen = 1000
@@ -102,7 +103,12 @@ for i, gamma in enumerate(gamma_list):
         yhat_gen = np.sign(np.dot(xs_gen, w))
 
         gen_err_vals.append(generalisation_error_classification(ys_gen, xs_gen, w, wstar))
-        adv_err_vals.append(adversarial_error_data(ys_gen, xs_gen, w, wstar, eps_test, pstar))
+        # adv_err_vals.append(adversarial_error_data(ys_gen, xs_gen, w, wstar, eps_test, pstar))
+        adv_perturbation = find_adversarial_error_rf(
+            ys_gen, zs_gen, w, F.T, wstar, eps_test / np.sqrt(d), "inf"
+        )
+        adv_err = np.mean(ys_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w))
+        adv_err_vals.append(adv_err)
 
         # calculation of flipped perturbation
         adv_perturbation = find_adversarial_perturbation_linear_rf(
