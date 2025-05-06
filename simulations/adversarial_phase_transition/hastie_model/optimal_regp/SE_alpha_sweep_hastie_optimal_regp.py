@@ -110,28 +110,28 @@ def perform_sweep(error_metric_type, output_file):
         print(f"Calculating alpha: {alpha:.2f} / {alpha_max:.2f}")
 
         # Optimize regularization parameter
-        if j == 0:
-            res = minimize_scalar(
-                fun_to_min,
-                args=(alpha, gamma, initial_condition, error_metric_type),
-                bounds=(1e-5, 1e1),
-                method="bounded",
-            )
-            reg_param = res.x
-        else:
-            prev_param = reg_param_found[j - 1]
-            lower = max(1e-5, prev_param * 0.5)
-            middle = prev_param
-            upper = min(1e1, prev_param * 2.0)
+        # if j == 0:
+        res = minimize_scalar(
+            fun_to_min,
+            args=(alpha, gamma, initial_condition, error_metric_type),
+            bounds=(1e-5, 1e1),
+            method="bounded",
+        )
+        reg_param = res.x
+        # else:
+        #     prev_param = reg_param_found[j - 1]
+        #     lower = max(1e-5, prev_param * 0.5)
+        #     middle = prev_param
+        #     upper = min(1e1, prev_param * 2.0)
 
-            res = minimize_scalar(
-                fun_to_min,
-                args=(alpha, gamma, initial_condition, error_metric_type),
-                bracket=(lower, middle, upper),
-                method="brent",
-            )
-            reg_param = res.x
-            reg_param = max(1e-5, min(1e1, reg_param))
+        #     res = minimize_scalar(
+        #         fun_to_min,
+        #         args=(alpha, gamma, initial_condition, error_metric_type),
+        #         bracket=(lower, middle, upper),
+        #         method="brent",
+        #     )
+        #     reg_param = res.x
+        #     reg_param = max(1e-5, min(1e1, reg_param))
 
         reg_param_found[j] = reg_param
 
