@@ -103,6 +103,7 @@ def find_optimal_reg_and_huber_parameter_function(
     def minimize_fun(x):
         copy_f_kwargs.update({"reg_param": x[0]})
         copy_f_hat_kwargs.update({"a": x[1]})
+        print(f"\t\tλ = {float(x[0]):.5f}, a= {float(x[1]):.5f}")
 
         m, q, V = fixed_point_finder(
             f_func,
