@@ -49,9 +49,6 @@ def fun_to_min(reg_param, alpha, gamma, init_cond, error_metric="misclass"):
         abs_tol=1e-5,
     )
 
-    if error_metric == "adv":
-        return classification_adversarial_error(m_se, q_se, P_se, eps_test, pstar)
-
     m_hat, q_hat, V_hat, P_hat = f_hat_Logistic_no_noise_Linf_adv_classif(
         m_se, q_se, V_se, P_se, 0.0, alpha, gamma
     )
@@ -60,7 +57,19 @@ def fun_to_min(reg_param, alpha, gamma, init_cond, error_metric="misclass"):
     q_features_se = q_features_hastie_L2_reg_Linf_attack(
         m_hat, q_hat, V_hat, P_hat, reg_param, gamma
     )
-    if error_metric == "misclass":
+    if error_metric == "adv":
+        return classification_adversarial_error_latent(
+            m_se,
+            q_se,
+            q_features_se,
+            q_latent_se,
+            1.0,
+            P_se,
+            eps_test,
+            gamma,
+            pstar
+        )
+    elif error_metric == "misclass":
         return percentage_misclassified_hastie_model(
             m_se, q_se, q_latent_se, q_features_se, 1.0, eps_test, gamma, "inf"
         )
@@ -110,28 +119,29 @@ def perform_sweep(error_metric_type, output_file):
         print(f"Calculating alpha: {alpha:.2f} / {alpha_max:.2f}")
 
         # Optimize regularization parameter
-        # if j == 0:
-        res = minimize_scalar(
-            fun_to_min,
-            args=(alpha, gamma, initial_condition, error_metric_type),
-            bounds=(1e-5, 1e1),
-            method="bounded",
-        )
-        reg_param = res.x
-        # else:
-        #     prev_param = reg_param_found[j - 1]
-        #     lower = max(1e-5, prev_param * 0.5)
-        #     middle = prev_param
-        #     upper = min(1e1, prev_param * 2.0)
+        if j == 0:
+            res = minimize_scalar(
+                fun_to_min,
+                args=(alpha, gamma, initial_condition, error_metric_type),
+                bounds=(1e-5, 1e1),
+                method="bounded",
+            )
+            reg_param = res.x
+        else:
+            prev_param = reg_param_found[j - 1]
+            lower = max(1e-5, prev_param * 0.5)
+            upper = min(1e1, prev_param * 2.0)
 
-        #     res = minimize_scalar(
-        #         fun_to_min,
-        #         args=(alpha, gamma, initial_condition, error_metric_type),
-        #         bracket=(lower, middle, upper),
-        #         method="brent",
-        #     )
-        #     reg_param = res.x
-        #     reg_param = max(1e-5, min(1e1, reg_param))
+            res = minimize_scalar(
+                fun_to_min,
+                args=(alpha, gamma, initial_condition, error_metric_type),
+                bounds=(lower, upper),
+                method="bounded",
+                # bracket=(lower, upper),
+                # method="brent",
+            )
+            reg_param = res.x
+            reg_param = max(1e-5, min(1e1, reg_param))
 
         reg_param_found[j] = reg_param
 
@@ -168,22 +178,17 @@ def perform_sweep(error_metric_type, output_file):
         estim_errors_se[j] = 1 - 2 * ms_found[j] + qs_found[j]
 
         # Calculate adversarial error using the latent version
-        if error_metric_type == "misclass":
-            adversarial_errors_found[j] = classification_adversarial_error_latent(
-                ms_found[j],
-                qs_found[j],
-                qs_features_found[j],
-                qs_latent_found[j],
-                1.0,
-                Ps_found[j],
-                eps_test,
-                gamma,
-                pstar,
-            )
-        else:
-            adversarial_errors_found[j] = classification_adversarial_error(
-                ms_found[j], qs_found[j], Ps_found[j], 0.0, pstar
-            )
+        adversarial_errors_found[j] = classification_adversarial_error_latent(
+            ms_found[j],
+            qs_found[j],
+            qs_features_found[j],
+            qs_latent_found[j],
+            1.0,
+            Ps_found[j],
+            eps_test,
+            gamma,
+            pstar,
+        )
 
         gen_errors_se[j] = np.arccos(ms_found[j] / np.sqrt(qs_found[j])) / np.pi
 

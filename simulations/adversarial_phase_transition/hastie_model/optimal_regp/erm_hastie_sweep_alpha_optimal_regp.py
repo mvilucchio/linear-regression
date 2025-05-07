@@ -20,21 +20,19 @@ import os
 import sys
 
 if len(sys.argv) > 1:
-    alpha_min, alpha_max, n_alphas, d, gamma, eps_t, delta, reg_param = (
+    alpha_min, alpha_max, n_alphas, d, gamma, eps_t, delta = (
         float(sys.argv[1]),
         float(sys.argv[2]),
         int(sys.argv[3]),
         int(sys.argv[4]),
         float(sys.argv[5]),
         float(sys.argv[6]),
-        float(sys.argv[7]),
-        float(sys.argv[8]),
+        float(sys.argv[7])
     )
 else:
     alpha_min, alpha_max, n_alphas = 0.3, 3.0, 10
     gamma = 2.0
     delta = 0.0
-    reg_param = 1e-2
     d = 500
 
 eps_t = 0.0
@@ -42,18 +40,19 @@ reps = 10
 n_gen = 1000
 
 pstar = 1.0
+reg = 2.0
 eps_test = 1.0
 
 data_folder = f"./data/hastie_model_training_optimal"
-file_name_misclass = f"ERM_optimal_regp_misclass_gamma_{gamma:.2f}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{pstar:.1f}.csv"
-file_name_flipped = f"ERM_optimal_regp_flipped_gamma_{gamma:.2f}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{pstar:.1f}.csv"
-file_name_adverr = f"ERM_optimal_regp_adverr_gamma_{gamma:.2f}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{pstar:.1f}.csv"
+file_name_misclass = f"ERM_optimal_regp_misclass_gamma_{gamma:.2f}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
+file_name_flipped = f"ERM_optimal_regp_flipped_gamma_{gamma:.2f}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
+file_name_adverr = f"ERM_optimal_regp_adverr_gamma_{gamma:.2f}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
 
 alpha_min_se, alpha_max_se, n_alphas_se = 0.3, 3.0, 100
 
-file_name_misclass_SE = f"SE_optimal_regp_misclass_gamma_{{gamma:.2f}}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_pstar_{pstar:.1f}_reg_{pstar:.1f}.csv"
-file_name_flipped_SE = f"SE_optimal_regp_flipped_gamma_{{gamma:.2f}}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_pstar_{pstar:.1f}_reg_{pstar:.1f}.csv"
-file_name_adverr_SE = f"SE_optimal_regp_adverr_gamma_{{gamma:.2f}}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_pstar_{pstar:.1f}_reg_{pstar:.1f}.csv"
+file_name_misclass_SE = f"SE_optimal_regp_misclass_gamma_{gamma:.2f}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
+file_name_flipped_SE = f"SE_optimal_regp_flipped_gamma_{gamma:.2f}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
+file_name_adverr_SE = f"SE_optimal_regp_adverr_gamma_{gamma:.2f}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
 
 if not os.path.exists(data_folder):
     os.makedirs(data_folder)

@@ -1,39 +1,75 @@
 import numpy as np
-from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
-from linear_regression.aux_functions.misc import (
-    classification_adversarial_error,
-    classification_adversarial_error_latent,
+import matplotlib.pyplot as plt
+from linear_regression.aux_functions.percentage_flipped import (
+    percentage_misclassified_hastie_model,
+    percentage_flipped_hastie_model,
 )
+from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.hastie_model_pstar_attacks import (
     f_hastie_L2_reg_Linf_attack,
     q_latent_hastie_L2_reg_Linf_attack,
     q_features_hastie_L2_reg_Linf_attack,
 )
+from linear_regression.aux_functions.misc import classification_adversarial_error_latent
 from linear_regression.fixed_point_equations.classification.Adv_train_p_norm_hastie import (
     f_hat_Logistic_no_noise_Linf_adv_classif,
 )
-from linear_regression.aux_functions.percentage_flipped import (
-    percentage_flipped_hastie_model,
-    percentage_misclassified_hastie_model,
-)
-from os.path import join, exists
+from scipy.optimize import minimize_scalar
+from tqdm.auto import tqdm
+from os.path import join
 import os
 import sys
-from scipy.optimize import minimize, minimize_scalar
+from cvxpy.error import SolverError
+import pickle
 
 if len(sys.argv) > 1:
-    gamma_min, gamma_max, n_gammas, alpha = (
+    eps_min, eps_max, n_epss, alpha, gamma, eps_training = (
         float(sys.argv[1]),
         float(sys.argv[2]),
         int(sys.argv[3]),
         float(sys.argv[4]),
+        float(sys.argv[5]),
+        float(sys.argv[6]),
+        float(sys.argv[7]),
     )
 else:
-    gamma_min, gamma_max, n_gammas, alpha = (0.5, 2.0, 50, 0.5)
+    eps_min, eps_max, n_epss, alpha, gamma, eps_training = (
+        0.1,
+        10.0,
+        15,
+        1.5,
+        0.5,
+        0.0
+    )
 
-pstar = 1
-reg_p = 2.0
+# DO NOT CHANGE
+pstar = 1.0
+reg = 2.0
 eps_test = 1.0
+
+def compute_theory_overlaps(reg_param, eps_train, alpha, gamma, init_cond):
+    f_kwargs = {"reg_param": reg_param, "gamma": gamma}
+    f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": eps_train}
+
+    m_se, q_se, V_se, P_se = fixed_point_finder(
+        f_hastie_L2_reg_Linf_attack,
+        f_hat_Logistic_no_noise_Linf_adv_classif,
+        init_cond,
+        f_kwargs,
+        f_hat_kwargs,
+        abs_tol=1e-6,
+    )
+
+    m_hat, q_hat, V_hat, P_hat = f_hat_Logistic_no_noise_Linf_adv_classif(
+        m_se, q_se, V_se, P_se, eps_train, alpha, gamma
+    )
+
+    q_latent_se = q_latent_hastie_L2_reg_Linf_attack(m_hat, q_hat, V_hat, P_hat, reg_param, gamma)
+    q_features_se = q_features_hastie_L2_reg_Linf_attack(
+        m_hat, q_hat, V_hat, P_hat, reg_param, gamma
+    )
+
+    return m_se, q_se, q_latent_se, q_features_se, V_se, P_se
 
 
 def fun_to_min(reg_param, alpha, gamma, init_cond, error_metric="misclass"):
@@ -79,48 +115,42 @@ def fun_to_min(reg_param, alpha, gamma, init_cond, error_metric="misclass"):
         )
 
 
-data_folder = "./data/hastie_model_training_optimal"
+data_folder = "./data/hastie_model_training"
+file_name_misclass = f"ERM_sweep_eps_misclass_Hastie_Linf_alpha_{alpha:.1f}_gamma_{gamma:.1f}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
+file_name_flipped = f"ERM_sweep_eps_flipped_Hastie_Linf_alpha_{alpha:.1f}_gamma_{gamma:.1f}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
+file_name_adverr = f"ERM_sweep_eps_adverr_Hastie_Linf_alpha_{alpha:.1f}_gamma_{gamma:.1f}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
 
-file_name_misclass = f"SE_optimal_regp_misclass_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
-file_name_flipped = f"SE_optimal_regp_flipped_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
-file_name_adverr = f"SE_optimal_regp_adverr_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
-# SE_optimal_regp_misclass_alpha_
-# SE_optimal_regp_flipped_alpha_
-# SE_optimal_regp_adverr_alpha_
-
-if not exists(data_folder):
+if not os.path.exists(data_folder):
     os.makedirs(data_folder)
-
 
 def perform_sweep(error_metric_type, output_file):
     """
-    Performs a gamma sweep with optimization for regularization parameter.
+    Performs an alpha sweep with optimization for regularization parameter.
 
     Parameters:
     - error_metric_type: String, metric used for optimization ('misclass', 'flipped', or 'adv')
     - output_file: String, file path to save results
-    - use_latent_error: Boolean, whether to use latent error calculation
     """
-    gammas = np.linspace(gamma_min, gamma_max, n_gammas)
+    epss = np.logspace(np.log10(eps_min), np.log10(eps_max), n_epss)
 
     # Initialize arrays
-    ms_found = np.empty((n_gammas,))
-    qs_found = np.empty((n_gammas,))
-    qs_latent_found = np.empty((n_gammas,))
-    qs_features_found = np.empty((n_gammas,))
-    Vs_found = np.empty((n_gammas,))
-    Ps_found = np.empty((n_gammas,))
-    estim_errors_se = np.empty((n_gammas,))
-    adversarial_errors_found = np.empty((n_gammas,))
-    gen_errors_se = np.empty((n_gammas,))
-    flipped_fairs_se = np.empty((n_gammas,))
-    misclas_fairs_se = np.empty((n_gammas,))
-    reg_param_found = np.empty((n_gammas,))
+    ms_found = np.empty((n_epss,))
+    qs_found = np.empty((n_epss,))
+    qs_latent_found = np.empty((n_epss,))
+    qs_features_found = np.empty((n_epss,))
+    Vs_found = np.empty((n_epss,))
+    Ps_found = np.empty((n_epss,))
+    estim_errors_se = np.empty((n_epss,))
+    adversarial_errors_found = np.empty((n_epss,))
+    gen_errors_se = np.empty((n_epss,))
+    flipped_fairs_se = np.empty((n_epss,))
+    misclas_fairs_se = np.empty((n_epss,))
+    reg_param_found = np.empty((n_epss,))
 
     initial_condition = (0.6, 1.6, 1.05, 1.1)
 
-    for j, gamma in enumerate(gammas):
-        print(f"Calculating gamma: {gamma:.2f} / {gamma_max:.2f}")
+    for j, eps in enumerate(epss):
+        print(f"Calculating epss: {eps:.2f} / {eps_max:.2f}")
 
         # Optimize regularization parameter
         if j == 0:
@@ -141,8 +171,6 @@ def perform_sweep(error_metric_type, output_file):
                 args=(alpha, gamma, initial_condition, error_metric_type),
                 bounds=(lower, upper),
                 method="bounded",
-                # bracket=(lower, upper),
-                # method="brent",
             )
             reg_param = res.x
             reg_param = max(1e-5, min(1e1, reg_param))
@@ -181,6 +209,7 @@ def perform_sweep(error_metric_type, output_file):
 
         estim_errors_se[j] = 1 - 2 * ms_found[j] + qs_found[j]
 
+        # Calculate adversarial error using the latent version
         adversarial_errors_found[j] = classification_adversarial_error_latent(
             ms_found[j],
             qs_found[j],
@@ -218,7 +247,7 @@ def perform_sweep(error_metric_type, output_file):
 
     # Save results to file
     data = {
-        "gamma": gammas,
+        "eps": epss,
         "m": ms_found,
         "q": qs_found,
         "q_latent": qs_latent_found,
@@ -243,8 +272,8 @@ def perform_sweep(error_metric_type, output_file):
         comments="",
     )
 
-
-# Call the function three times with appropriate parameters
 perform_sweep("misclass", file_name_misclass)  # For misclassification error
 perform_sweep("flipped", file_name_flipped)  # For flipped error
 perform_sweep("adv", file_name_adverr)  # For adversarial error
+
+

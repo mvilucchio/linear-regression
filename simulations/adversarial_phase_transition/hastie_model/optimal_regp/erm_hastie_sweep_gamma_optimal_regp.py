@@ -52,9 +52,9 @@ file_name_adverr = f"ERM_optimal_regp_adverr_alpha_{alpha:.2f}_gammas_{gamma_min
 
 gamma_min_se, gamma_max_se, n_gammas_se = 0.5, 3.0, 100
 
-file_name_misclass_SE = f"SE_optimal_regp_misclass_alpha_{{alpha:.2f}}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{pstar:.1f}.csv"
-file_name_flipped_SE = f"SE_optimal_regp_flipped_alpha_{{alpha:.2f}}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{pstar:.1f}.csv"
-file_name_adverr_SE = f"SE_optimal_regp_adverr_alpha_{{alpha:.2f}}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{pstar:.1f}.csv"
+file_name_misclass_SE = f"SE_optimal_regp_misclass_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{pstar:.1f}.csv"
+file_name_flipped_SE = f"SE_optimal_regp_flipped_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{pstar:.1f}.csv"
+file_name_adverr_SE = f"SE_optimal_regp_adverr_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{pstar:.1f}.csv"
 
 if not os.path.exists(data_folder):
     os.makedirs(data_folder)
