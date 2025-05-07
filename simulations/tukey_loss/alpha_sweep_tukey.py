@@ -14,14 +14,15 @@ from linear_regression.aux_functions.moreau_proximals import DƔ_proximal_L2
 from linear_regression.aux_functions.misc import excess_gen_error
 from linear_regression.utils.errors import ConvergenceError
 from linear_regression.fixed_point_equations import TOL_FPE, MAX_ITER_FPE, BLEND_FPE
+from linear_regression.fixed_point_equations.regression.TEST import f_hat_fast
 
 # --- Paramètres de la Simulation ---
 
 # Contrôle des calculs coûteux
-CALCULATE_RS = True
+CALCULATE_RS = False
 
 # Paramètres physiques fixes
-NOM_LOSS = "Tukey_mod_xigamma_c0"
+NOM_LOSS = "Tukey_fast"
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
@@ -111,7 +112,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Balayage Alpha")):
         # Recherche du point fixe
         m, q, V = fixed_point_finder(
             f_func=f_L2_reg,
-            f_hat_func=f_hat_xigamma_mod_Tukey_decorrelated_noise,
+            f_hat_func=f_hat_fast, #f_hat_xigamma_mod_Tukey_decorrelated_noise,
             initial_condition=current_initial_cond,
             f_kwargs=f_kwargs,
             f_hat_kwargs=f_hat_kwargs,
@@ -126,7 +127,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Balayage Alpha")):
         # Si convergence, calculer les autres quantités
         if np.all(np.isfinite([m, q, V])):
             # Calculer les chapeaux
-            m_hat, q_hat, V_hat= f_hat_xigamma_mod_Tukey_decorrelated_noise(m, q, V, **f_hat_kwargs)
+            m_hat, q_hat, V_hat= f_hat_fast(m, q, V, **f_hat_kwargs) #f_hat_xigamma_mod_Tukey_decorrelated_noise(m, q, V, **f_hat_kwargs)
 
             # Calculer l'erreur de généralisation
             gen_err = excess_gen_error(m, q, V, DELTA_IN, DELTA_OUT, PERCENTAGE, BETA) # Ou autre mesure

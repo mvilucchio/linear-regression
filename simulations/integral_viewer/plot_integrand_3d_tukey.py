@@ -24,7 +24,7 @@ except Exception as e:
 
 
 # --- Paramètres pour la visualisation ---
-alpha, m_vis, q_vis, V_vis = 1.06175918e+04,9.41814536e-01,8.87991714e-01,1.89303351e-03
+alpha, m_vis, q_vis, V_vis = 8.68511374e+01,9.49824575e-01,9.03762820e-01,2.27573742e-02
 #m_vis = 0.4
 #q_vis = 0.7
 #V_vis = 0.8
@@ -38,7 +38,7 @@ DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
 BETA = 0.0
-C_TUKEY = 0.000001
+C_TUKEY = 0.001
 
 mu_in, mu_out,J_beta_in,J_beta_out,delta_prime_in,delta_prime_out = mu(q_vis,m_vis,V_vis,DELTA_IN,DELTA_OUT,PERCENTAGE,BETA,tau_vis)
 var_mu_in = np.sqrt(mu_in)**(-1)
