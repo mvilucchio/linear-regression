@@ -8,13 +8,12 @@ import warnings
 
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
-from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import (f_hat_mod_Tukey_decorrelated_noise, f_hat_xigamma_mod_Tukey_decorrelated_noise)
+from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import (f_hat_mod_Tukey_decorrelated_noise, f_hat_xigamma_mod_Tukey_decorrelated_noise, f_hat_fast)
 from linear_regression.aux_functions.stability_functions import (RS_E2_mod_Tukey_decorrelated_noise, RS_E2_xigamma_mod_Tukey_decorrelated_noise)
 from linear_regression.aux_functions.moreau_proximals import DƔ_proximal_L2
 from linear_regression.aux_functions.misc import excess_gen_error
 from linear_regression.utils.errors import ConvergenceError
 from linear_regression.fixed_point_equations import TOL_FPE, MAX_ITER_FPE, BLEND_FPE
-from linear_regression.fixed_point_equations.regression.TEST import f_hat_fast
 
 # --- Paramètres de la Simulation ---
 
@@ -35,9 +34,9 @@ TAU = 1.0
 print(f"Hyperparamètres fixes : lambda={REG_PARAM:.2f}, tau={TAU:.2f}")
 
 # Plage pour alpha
-ALPHA_MIN =10
-ALPHA_MAX = 1000
-N_ALPHA_PTS = 50
+ALPHA_MIN =0.5
+ALPHA_MAX = 300
+N_ALPHA_PTS = 20
 
 # Options d'intégration (utilisées pour RS si CALCULATE_RS=True)
 INTEGRATION_BOUND = 5

@@ -48,9 +48,9 @@ IMG_FORMATS = ["pdf", "png"]
 # --- Paramètres de la Simulation (pour retrouver le fichier) ---
 # Doivent correspondre à ceux du script de calcul !
 NOM_LOSS = "Tukey_fast"
-ALPHA_MIN = 10
-ALPHA_MAX = 1000
-N_ALPHA_PTS = 50
+ALPHA_MIN = 0.5
+ALPHA_MAX = 300
+N_ALPHA_PTS = 20
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
@@ -173,8 +173,8 @@ ax1.set_xlim(min(alphas), max(alphas))
 # --- ERM Donnees ---
 
 reps = 10
-ALPHA_MIN = 10
-ALPHA_MAX = 1000
+ALPHA_MIN = 0.5
+ALPHA_MAX = 300
 N_ALPHA_PTS = 20
 d = 500
 c_tukey_ERM = 0.0
