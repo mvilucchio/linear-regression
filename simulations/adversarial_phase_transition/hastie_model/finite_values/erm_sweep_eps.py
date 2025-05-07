@@ -205,5 +205,5 @@ for d in tqdm(dimensions, desc="dim", leave=False):
     data_array = np.column_stack([data_dict[key] for key in data_dict.keys()])
 
     # Save to CSV
-    data_file = os.path.join(data_folder, file_name.format(d).replace(".csv", ".txt"))
+    data_file = os.path.join(data_folder, file_name.format(d))
     np.savetxt(data_file, data_array, delimiter=",", header=header, comments="")
