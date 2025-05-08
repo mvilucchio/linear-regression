@@ -24,6 +24,29 @@ from line_profiler import profile
 # ---------------------------- Linear Direct Space --------------------------- #
 
 
+def find_adversarial_perturbation_direct_space_noteacher(
+    ys: ndarray,
+    xs: ndarray,
+    w: ndarray,
+    wstar: ndarray,
+    ε: float,
+    p: float,
+) -> ndarray:
+    delta = Variable(len(w))
+
+    if float(p) == inf:
+        constraints = [norm(delta, "inf") <= ε]
+    else:
+        constraints = [norm(delta, p) <= ε]
+
+    objective = Minimize(w @ delta)
+
+    problem = Problem(objective, constraints)
+    problem.solve()
+
+    return ys[:, None] * tile(delta.value, (len(ys), 1))
+
+
 def find_adversarial_perturbation_direct_space(
     ys: ndarray,
     xs: ndarray,

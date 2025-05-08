@@ -100,9 +100,9 @@ def fun_to_min(reg_param, alpha, gamma, init_cond, eps_test, error_metric="miscl
 
 
 data_folder = "./data/hastie_model_training"
-file_name_misclass = f"ERM_sweep_eps_misclass_Hastie_Linf_alpha_{alpha:.1f}_gamma_{gamma:.1f}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
-file_name_flipped = f"ERM_sweep_eps_flipped_Hastie_Linf_alpha_{alpha:.1f}_gamma_{gamma:.1f}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
-file_name_adverr = f"ERM_sweep_eps_adverr_Hastie_Linf_alpha_{alpha:.1f}_gamma_{gamma:.1f}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
+file_name_misclass = f"SE_optimal_regp_misclass_Linf_alpha_{alpha:.1f}_gamma_{gamma:.1f}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
+file_name_flipped = f"SE_optimal_regp_flipped_Linf_alpha_{alpha:.1f}_gamma_{gamma:.1f}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
+file_name_adverr = f"SE_optimal_regp_adverr_Linf_alpha_{alpha:.1f}_gamma_{gamma:.1f}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}.csv"
 
 if not os.path.exists(data_folder):
     os.makedirs(data_folder)
@@ -174,7 +174,6 @@ def perform_sweep(error_metric_type, output_file):
 
         estim_errors_se[j] = 1 - 2 * ms_found[j] + qs_found[j]
 
-        # Calculate adversarial error using the latent version
         adversarial_errors_found[j] = classification_adversarial_error_latent(
             ms_found[j],
             qs_found[j],
