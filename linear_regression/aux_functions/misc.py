@@ -167,6 +167,41 @@ def classification_adversarial_error(m, q, P, eps, pstar):
     return 0.5 * (Iminus + Iplus) / np.sqrt(2 * pi * q)
 
 
+def misclassification_error_direct_space(m, q, P, eps, pstar):
+    if pstar != 1.0:
+        raise ValueError("pstar must be 1 for this function")
+    rho = 1.0
+    AA = eps * np.sqrt(q - m**2 / rho) * np.sqrt(2 / pi)
+    return dblquad(
+        lambda nu, lamb: (
+            exp((-2 * m * lamb * nu + q * nu**2 + lamb**2 * rho) / (2.0 * (m**2 - q * rho)))
+            * np.heaviside(+AA - lamb * np.sign(nu), 0.0)
+        )
+        / (2.0 * np.pi * sqrt(-(m**2) + q * rho)),
+        -np.inf,
+        np.inf,
+        lambda nu: -np.inf,
+        lambda nu: np.inf,
+        epsabs=1e-7,
+        epsrel=1e-7,
+    )[0]
+
+
+def flipped_error_direct_space(m, q, P, eps, pstar):
+    if pstar != 1.0:
+        raise ValueError("pstar must be 1 for this function")
+    rho = 1.0
+    AA = eps * np.sqrt(q - m**2 / rho) * np.sqrt(2 / pi)
+    return quad(
+        lambda lamb: (exp(-0.5 * lamb**2 / q) * np.heaviside(+AA - lamb * np.sign(lamb), 0.0))
+        / sqrt(2.0 * np.pi * q),
+        -np.inf,
+        np.inf,
+        epsabs=1e-7,
+        epsrel=1e-7,
+    )[0]
+
+
 def classification_adversarial_error_latent(m, q, q_features, q_latent, rho, P, eps, gamma, pstar):
     if float(pstar) != 1.0:
         raise ValueError("pstar must be 1 for this function")
