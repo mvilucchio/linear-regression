@@ -165,7 +165,7 @@ def perform_sweep(error_metric_type, output_file):
 
         # Calculate additional metrics
         m_hat, q_hat, V_hat, P_hat = f_hat_Logistic_no_noise_Linf_adv_classif(
-            ms_found[j], qs_found[j], Vs_found[j], Ps_found[j], eps_test, alpha, gamma
+            ms_found[j], qs_found[j], Vs_found[j], Ps_found[j], 0.0, alpha, gamma
         )
 
         qs_latent_found[j] = q_latent_hastie_L2_reg_Linf_attack(

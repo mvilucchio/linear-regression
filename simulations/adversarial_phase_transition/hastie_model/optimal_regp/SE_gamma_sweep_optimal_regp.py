@@ -31,7 +31,7 @@ if len(sys.argv) > 1:
 else:
     gamma_min, gamma_max, n_gammas, alpha = (0.5, 2.0, 50, 0.5)
 
-pstar = 1
+pstar = 1.0
 reg_p = 2.0
 eps_test = 1.0
 
@@ -169,7 +169,7 @@ def perform_sweep(error_metric_type, output_file):
 
         # Calculate additional metrics
         m_hat, q_hat, V_hat, P_hat = f_hat_Logistic_no_noise_Linf_adv_classif(
-            ms_found[j], qs_found[j], Vs_found[j], Ps_found[j], eps_test, alpha, gamma
+            ms_found[j], qs_found[j], Vs_found[j], Ps_found[j], 0.0, alpha, gamma
         )
 
         qs_latent_found[j] = q_latent_hastie_L2_reg_Linf_attack(
