@@ -21,12 +21,7 @@ import sys
 from scipy.optimize import minimize_scalar
 
 if len(sys.argv) > 1:
-    alpha_min, alpha_max, n_alphas = (
-        float(sys.argv[1]),
-        float(sys.argv[2]),
-        int(sys.argv[3]),
-        float(sys.argv[4]),
-    )
+    alpha_min, alpha_max, n_alphas = (float(sys.argv[1]), float(sys.argv[2]), int(sys.argv[3]))
 else:
     alpha_min, alpha_max, n_alphas = (0.5, 2.0, 100)
 
