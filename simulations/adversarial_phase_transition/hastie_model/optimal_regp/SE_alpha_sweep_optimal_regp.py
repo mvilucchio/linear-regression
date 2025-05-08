@@ -36,6 +36,31 @@ reg_p = 2.0
 eps_test = 1.0
 
 
+def compute_theory_overlaps(reg_param, alpha, gamma, init_cond):
+    f_kwargs = {"reg_param": reg_param, "gamma": gamma}
+    f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": 0.0}
+
+    m_se, q_se, V_se, P_se = fixed_point_finder(
+        f_hastie_L2_reg_Linf_attack,
+        f_hat_Logistic_no_noise_Linf_adv_classif,
+        init_cond,
+        f_kwargs,
+        f_hat_kwargs,
+        abs_tol=1e-6,
+    )
+
+    m_hat, q_hat, V_hat, P_hat = f_hat_Logistic_no_noise_Linf_adv_classif(
+        m_se, q_se, V_se, P_se, 0.0, alpha, gamma
+    )
+
+    q_latent_se = q_latent_hastie_L2_reg_Linf_attack(m_hat, q_hat, V_hat, P_hat, reg_param, gamma)
+    q_features_se = q_features_hastie_L2_reg_Linf_attack(
+        m_hat, q_hat, V_hat, P_hat, reg_param, gamma
+    )
+
+    return m_se, q_se, q_latent_se, q_features_se, V_se, P_se
+
+
 def fun_to_min(reg_param, alpha, gamma, init_cond, error_metric="misclass"):
     f_kwargs = {"reg_param": reg_param, "gamma": gamma}
     f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": 0.0}
@@ -59,15 +84,7 @@ def fun_to_min(reg_param, alpha, gamma, init_cond, error_metric="misclass"):
     )
     if error_metric == "adv":
         return classification_adversarial_error_latent(
-            m_se,
-            q_se,
-            q_features_se,
-            q_latent_se,
-            1.0,
-            P_se,
-            eps_test,
-            gamma,
-            pstar
+            m_se, q_se, q_features_se, q_latent_se, 1.0, P_se, eps_test, gamma, pstar
         )
     elif error_metric == "misclass":
         return percentage_misclassified_hastie_model(
@@ -145,35 +162,16 @@ def perform_sweep(error_metric_type, output_file):
 
         reg_param_found[j] = reg_param
 
-        # Run fixed point iteration with optimal reg_param
-        f_kwargs = {"reg_param": reg_param, "gamma": gamma}
-        f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": 0.0}
-
-        ms_found[j], qs_found[j], Vs_found[j], Ps_found[j] = fixed_point_finder(
-            f_hastie_L2_reg_Linf_attack,
-            f_hat_Logistic_no_noise_Linf_adv_classif,
-            initial_condition,
-            f_kwargs,
-            f_hat_kwargs,
-            abs_tol=1e-5,
-            min_iter=10,
-            verbose=False,
-            print_every=1,
-        )
+        (
+            ms_found[j],
+            qs_found[j],
+            qs_latent_found[j],
+            qs_features_found[j],
+            Vs_found[j],
+            Ps_found[j],
+        ) = compute_theory_overlaps(reg_param, alpha, gamma, initial_condition)
 
         initial_condition = (ms_found[j], qs_found[j], Vs_found[j], Ps_found[j])
-
-        # Calculate additional metrics
-        m_hat, q_hat, V_hat, P_hat = f_hat_Logistic_no_noise_Linf_adv_classif(
-            ms_found[j], qs_found[j], Vs_found[j], Ps_found[j], 0.0, alpha, gamma
-        )
-
-        qs_latent_found[j] = q_latent_hastie_L2_reg_Linf_attack(
-            m_hat, q_hat, V_hat, P_hat, reg_param, gamma
-        )
-        qs_features_found[j] = q_features_hastie_L2_reg_Linf_attack(
-            m_hat, q_hat, V_hat, P_hat, reg_param, gamma
-        )
 
         estim_errors_se[j] = 1 - 2 * ms_found[j] + qs_found[j]
 

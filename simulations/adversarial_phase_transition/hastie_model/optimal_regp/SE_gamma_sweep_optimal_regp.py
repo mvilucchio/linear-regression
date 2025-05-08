@@ -36,6 +36,31 @@ reg_p = 2.0
 eps_test = 1.0
 
 
+def compute_theory_overlaps(reg_param, alpha, gamma, init_cond):
+    f_kwargs = {"reg_param": reg_param, "gamma": gamma}
+    f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": 0.0}
+
+    m_se, q_se, V_se, P_se = fixed_point_finder(
+        f_hastie_L2_reg_Linf_attack,
+        f_hat_Logistic_no_noise_Linf_adv_classif,
+        init_cond,
+        f_kwargs,
+        f_hat_kwargs,
+        abs_tol=1e-6,
+    )
+
+    m_hat, q_hat, V_hat, P_hat = f_hat_Logistic_no_noise_Linf_adv_classif(
+        m_se, q_se, V_se, P_se, 0.0, alpha, gamma
+    )
+
+    q_latent_se = q_latent_hastie_L2_reg_Linf_attack(m_hat, q_hat, V_hat, P_hat, reg_param, gamma)
+    q_features_se = q_features_hastie_L2_reg_Linf_attack(
+        m_hat, q_hat, V_hat, P_hat, reg_param, gamma
+    )
+
+    return m_se, q_se, q_latent_se, q_features_se, V_se, P_se
+
+
 def fun_to_min(reg_param, alpha, gamma, init_cond, error_metric="misclass"):
     f_kwargs = {"reg_param": reg_param, "gamma": gamma}
     f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": 0.0}
@@ -59,15 +84,7 @@ def fun_to_min(reg_param, alpha, gamma, init_cond, error_metric="misclass"):
     )
     if error_metric == "adv":
         return classification_adversarial_error_latent(
-            m_se,
-            q_se,
-            q_features_se,
-            q_latent_se,
-            1.0,
-            P_se,
-            eps_test,
-            gamma,
-            pstar
+            m_se, q_se, q_features_se, q_latent_se, 1.0, P_se, eps_test, gamma, pstar
         )
     elif error_metric == "misclass":
         return percentage_misclassified_hastie_model(
@@ -84,9 +101,6 @@ data_folder = "./data/hastie_model_training_optimal"
 file_name_misclass = f"SE_optimal_regp_misclass_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
 file_name_flipped = f"SE_optimal_regp_flipped_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
 file_name_adverr = f"SE_optimal_regp_adverr_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
-# SE_optimal_regp_misclass_alpha_
-# SE_optimal_regp_flipped_alpha_
-# SE_optimal_regp_adverr_alpha_
 
 if not exists(data_folder):
     os.makedirs(data_folder)
@@ -141,43 +155,22 @@ def perform_sweep(error_metric_type, output_file):
                 args=(alpha, gamma, initial_condition, error_metric_type),
                 bounds=(lower, upper),
                 method="bounded",
-                # bracket=(lower, upper),
-                # method="brent",
             )
             reg_param = res.x
             reg_param = max(1e-5, min(1e1, reg_param))
 
         reg_param_found[j] = reg_param
 
-        # Run fixed point iteration with optimal reg_param
-        f_kwargs = {"reg_param": reg_param, "gamma": gamma}
-        f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": 0.0}
-
-        ms_found[j], qs_found[j], Vs_found[j], Ps_found[j] = fixed_point_finder(
-            f_hastie_L2_reg_Linf_attack,
-            f_hat_Logistic_no_noise_Linf_adv_classif,
-            initial_condition,
-            f_kwargs,
-            f_hat_kwargs,
-            abs_tol=1e-5,
-            min_iter=10,
-            verbose=False,
-            print_every=1,
-        )
+        (
+            ms_found[j],
+            qs_found[j],
+            qs_latent_found[j],
+            qs_features_found[j],
+            Vs_found[j],
+            Ps_found[j],
+        ) = compute_theory_overlaps(reg_param, alpha, gamma, initial_condition)
 
         initial_condition = (ms_found[j], qs_found[j], Vs_found[j], Ps_found[j])
-
-        # Calculate additional metrics
-        m_hat, q_hat, V_hat, P_hat = f_hat_Logistic_no_noise_Linf_adv_classif(
-            ms_found[j], qs_found[j], Vs_found[j], Ps_found[j], 0.0, alpha, gamma
-        )
-
-        qs_latent_found[j] = q_latent_hastie_L2_reg_Linf_attack(
-            m_hat, q_hat, V_hat, P_hat, reg_param, gamma
-        )
-        qs_features_found[j] = q_features_hastie_L2_reg_Linf_attack(
-            m_hat, q_hat, V_hat, P_hat, reg_param, gamma
-        )
 
         estim_errors_se[j] = 1 - 2 * ms_found[j] + qs_found[j]
 
@@ -216,7 +209,6 @@ def perform_sweep(error_metric_type, output_file):
             "inf",
         )
 
-    # Save results to file
     data = {
         "gamma": gammas,
         "m": ms_found,
@@ -244,7 +236,6 @@ def perform_sweep(error_metric_type, output_file):
     )
 
 
-# Call the function three times with appropriate parameters
 perform_sweep("misclass", file_name_misclass)  # For misclassification error
 perform_sweep("flipped", file_name_flipped)  # For flipped error
 perform_sweep("adv", file_name_adverr)  # For adversarial error
