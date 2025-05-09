@@ -151,27 +151,103 @@ def max_difference(x, y):
 # --------------------------- errors classification -------------------------- #
 
 
+# def classification_adversarial_error(m, q, P, eps, pstar):
+#     Iminus = quad(
+#         lambda x: np.exp(-0.5 * x**2 / q) * erfc(m * x / np.sqrt(2 * q * (q - m**2))),
+#         -eps * P ** (1 / pstar),
+#         np.inf,
+#         epsabs=1e-10,
+#     )[0]
+#     Iplus = quad(
+#         lambda x: np.exp(-0.5 * x**2 / q) * (1 + erf(m * x / np.sqrt(2 * q * (q - m**2)))),
+#         -np.inf,
+#         eps * P ** (1 / pstar),
+#         epsabs=1e-10,
+#     )[0]
+#     return 0.5 * (Iminus + Iplus) / np.sqrt(2 * pi * q)
+
+
 def classification_adversarial_error(m, q, P, eps, pstar):
-    Iminus = quad(
-        lambda x: np.exp(-0.5 * x**2 / q) * erfc(m * x / np.sqrt(2 * q * (q - m**2))),
-        -eps * P ** (1 / pstar),
-        np.inf,
-        epsabs=1e-10,
-    )[0]
-    Iplus = quad(
-        lambda x: np.exp(-0.5 * x**2 / q) * (1 + erf(m * x / np.sqrt(2 * q * (q - m**2)))),
+    if float(pstar) not in (1.0, 2.0):
+        raise ValueError("pstar must be 1 or 2 for this function")
+    rho = 1.0
+    if pstar == 1.0:
+        AA = eps * np.sqrt(q) * np.sqrt(2 / pi)
+    else:
+        AA = (
+            eps
+            * np.sqrt(q)
+            * np.sqrt(2)
+            / np.sqrt(pi) ** (1 / pstar)
+            * (np.sqrt(pi) / 2) ** (1 / pstar)
+        )
+    return dblquad(
+        lambda nu, lamb: (
+            exp((-2 * m * lamb * nu + q * nu**2 + lamb**2 * rho) / (2.0 * (m**2 - q * rho)))
+            * np.heaviside(+AA - lamb * np.sign(nu), 0.0)
+        )
+        / (2.0 * np.pi * sqrt(-(m**2) + q * rho)),
         -np.inf,
-        eps * P ** (1 / pstar),
-        epsabs=1e-10,
+        np.inf,
+        lambda nu: -np.inf,
+        lambda nu: np.inf,
+        epsabs=1e-7,
+        epsrel=1e-7,
     )[0]
-    return 0.5 * (Iminus + Iplus) / np.sqrt(2 * pi * q)
+
+
+def boundary_error_direct_space(m, q, P, eps, pstar):
+    # if pstar != 1.0:
+    #     raise ValueError("pstar must be 1 for this function")
+    # rho = 1.0
+    # AA = eps * np.sqrt(q - m**2 / rho) * np.sqrt(2 / pi)
+    if float(pstar) not in (1.0, 2.0):
+        raise ValueError("pstar must be 1 or 2 for this function")
+    rho = 1.0
+    if pstar == 1.0:
+        AA = eps * np.sqrt(q) * np.sqrt(2 / pi)
+    else:
+        AA = (
+            eps
+            * np.sqrt(q)
+            * np.sqrt(2)
+            / np.sqrt(pi) ** (1 / pstar)
+            * (np.sqrt(pi) / 2) ** (1 / pstar)
+        )
+    return dblquad(
+        lambda nu, lamb: (
+            exp((-2 * m * lamb * nu + q * nu**2 + lamb**2 * rho) / (2.0 * (m**2 - q * rho)))
+            * np.heaviside(+AA - lamb * np.sign(nu), 0.0)
+            * np.heaviside(np.sign(nu) * np.sign(lamb), 0.0)
+        )
+        / (2.0 * np.pi * sqrt(-(m**2) + q * rho)),
+        -np.inf,
+        np.inf,
+        lambda nu: -np.inf,
+        lambda nu: np.inf,
+        epsabs=1e-7,
+        epsrel=1e-7,
+    )[0]
 
 
 def misclassification_error_direct_space(m, q, P, eps, pstar):
-    if pstar != 1.0:
-        raise ValueError("pstar must be 1 for this function")
+    # if pstar != 1.0:
+    #     raise ValueError("pstar must be 1 for this function")
+    # rho = 1.0
+    # AA = eps * np.sqrt(q - m**2 / rho) * np.sqrt(2 / pi)
+    if float(pstar) not in (1.0, 2.0):
+        raise ValueError("pstar must be 1 or 2 for this function")
     rho = 1.0
-    AA = eps * np.sqrt(q - m**2 / rho) * np.sqrt(2 / pi)
+    if pstar == 1.0:
+        AA = eps * np.sqrt(q) * np.sqrt(2 / pi)
+    else:
+        AA = (
+            eps
+            * np.sqrt(q)
+            * np.sqrt(2)
+            / np.sqrt(pi) ** (1 / pstar)
+            * (np.sqrt(pi) / 2) ** (1 / pstar)
+        )
     return dblquad(
         lambda nu, lamb: (
             exp((-2 * m * lamb * nu + q * nu**2 + lamb**2 * rho) / (2.0 * (m**2 - q * rho)))
@@ -188,10 +264,23 @@ def misclassification_error_direct_space(m, q, P, eps, pstar):
 
 
 def flipped_error_direct_space(m, q, P, eps, pstar):
-    if pstar != 1.0:
-        raise ValueError("pstar must be 1 for this function")
+    # if pstar != 1.0:
+    #     raise ValueError("pstar must be 1 for this function")
+    # rho = 1.0
+    # AA = eps * np.sqrt(q - m**2 / rho) * np.sqrt(2 / pi)
+    if float(pstar) not in (1.0, 2.0):
+        raise ValueError("pstar must be 1 or 2 for this function")
     rho = 1.0
-    AA = eps * np.sqrt(q - m**2 / rho) * np.sqrt(2 / pi)
+    if pstar == 1.0:
+        AA = eps * np.sqrt(q) * np.sqrt(2 / pi)
+    else:
+        AA = (
+            eps
+            * np.sqrt(q)
+            * np.sqrt(2)
+            / np.sqrt(pi) ** (1 / pstar)
+            * (np.sqrt(pi) / 2) ** (1 / pstar)
+        )
     return quad(
         lambda lamb: (exp(-0.5 * lamb**2 / q) * np.heaviside(+AA - lamb * np.sign(lamb), 0.0))
         / sqrt(2.0 * np.pi * q),
@@ -205,6 +294,7 @@ def flipped_error_direct_space(m, q, P, eps, pstar):
 def classification_adversarial_error_latent(m, q, q_features, q_latent, rho, P, eps, gamma, pstar):
     if float(pstar) != 1.0:
         raise ValueError("pstar must be 1 for this function")
+
     if gamma <= 1:
         AA = eps * np.sqrt(q_latent) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
     else:
