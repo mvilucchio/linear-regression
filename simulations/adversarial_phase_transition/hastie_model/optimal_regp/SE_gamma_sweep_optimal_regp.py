@@ -15,11 +15,12 @@ from linear_regression.fixed_point_equations.classification.Adv_train_p_norm_has
 from linear_regression.aux_functions.percentage_flipped import (
     percentage_flipped_hastie_model,
     percentage_misclassified_hastie_model,
+    boundary_error_fair_hastie_model,
 )
 from os.path import join, exists
 import os
 import sys
-from scipy.optimize import minimize, minimize_scalar
+from scipy.optimize import minimize_scalar
 
 if len(sys.argv) > 1:
     gamma_min, gamma_max, n_gammas, alpha = (
@@ -90,6 +91,10 @@ def fun_to_min(reg_param, alpha, gamma, init_cond, error_metric="misclass"):
         return percentage_misclassified_hastie_model(
             m_se, q_se, q_latent_se, q_features_se, 1.0, eps_test, gamma, "inf"
         )
+    elif error_metric == "bound":
+        return boundary_error_fair_hastie_model(
+            m_se, q_se, q_latent_se, q_features_se, 1.0, eps_test, gamma, "inf"
+        )
     else:
         return percentage_flipped_hastie_model(
             m_se, q_se, q_latent_se, q_features_se, 1.0, eps_test, gamma, "inf"
@@ -100,6 +105,7 @@ data_folder = "./data/hastie_model_training_optimal"
 
 file_name_misclass = f"SE_optimal_regp_misclass_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
 file_name_flipped = f"SE_optimal_regp_flipped_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
+file_name_bound = f"SE_optimal_regp_bound_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
 file_name_adverr = f"SE_optimal_regp_adverr_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
 
 if not exists(data_folder):
@@ -117,7 +123,6 @@ def perform_sweep(error_metric_type, output_file):
     """
     gammas = np.linspace(gamma_min, gamma_max, n_gammas)
 
-    # Initialize arrays
     ms_found = np.empty((n_gammas,))
     qs_found = np.empty((n_gammas,))
     qs_latent_found = np.empty((n_gammas,))
@@ -129,6 +134,7 @@ def perform_sweep(error_metric_type, output_file):
     gen_errors_se = np.empty((n_gammas,))
     flipped_fairs_se = np.empty((n_gammas,))
     misclas_fairs_se = np.empty((n_gammas,))
+    bound_err_se = np.empty((n_gammas,))
     reg_param_found = np.empty((n_gammas,))
 
     initial_condition = (0.6, 1.6, 1.05, 1.1)
@@ -186,6 +192,17 @@ def perform_sweep(error_metric_type, output_file):
             pstar,
         )
 
+        bound_err_se[j] = boundary_error_fair_hastie_model(
+            ms_found[j],
+            qs_found[j],
+            qs_latent_found[j],
+            qs_features_found[j],
+            1.0,
+            eps_test,
+            gamma,
+            "inf",
+        )
+
         gen_errors_se[j] = np.arccos(ms_found[j] / np.sqrt(qs_found[j])) / np.pi
 
         flipped_fairs_se[j] = percentage_flipped_hastie_model(
@@ -222,6 +239,7 @@ def perform_sweep(error_metric_type, output_file):
         "generalisation_errors_found": gen_errors_se,
         "flipped_fairs_found": flipped_fairs_se,
         "misclas_fairs_found": misclas_fairs_se,
+        "bound_errors_found": bound_err_se,
         "reg_param_found": reg_param_found,
     }
 
@@ -236,6 +254,6 @@ def perform_sweep(error_metric_type, output_file):
     )
 
 
-perform_sweep("misclass", file_name_misclass)  # For misclassification error
-perform_sweep("flipped", file_name_flipped)  # For flipped error
-perform_sweep("adv", file_name_adverr)  # For adversarial error
+# perform_sweep("misclass", file_name_misclass)
+perform_sweep("bound", file_name_bound)
+perform_sweep("adv", file_name_adverr)

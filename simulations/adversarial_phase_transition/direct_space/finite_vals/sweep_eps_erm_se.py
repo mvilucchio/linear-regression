@@ -1,20 +1,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import erf, erfc
-from linear_regression.data.generation import (
-    measure_gen_no_noise_clasif,
-    data_generation,
-    data_generation_hastie,
-)
-from linear_regression.aux_functions.percentage_flipped import percentage_misclassified_hastie_model
-from linear_regression.erm.metrics import (
-    percentage_flipped_labels_estim,
-    percentage_error_from_true,
-    adversarial_error_data,
-)
 from linear_regression.erm.erm_solvers import (
-    find_coefficients_Logistic,
     find_coefficients_Logistic_adv_Linf_L2,
+    find_coefficients_Logistic_adv_Linf_L1,
+)
+from linear_regression.erm.adversarial_perturbation_finders import (
+    find_adversarial_perturbation_direct_space_noteacher,
+    find_adversarial_perturbation_direct_space,
+)
+from linear_regression.data.generation import data_generation, measure_gen_no_noise_clasif
+from linear_regression.erm.metrics import generalisation_error_classification
+from linear_regression.erm.erm_solvers import (
+    find_coefficients_Logistic_adv_Linf_L2,
+    find_coefficients_Logistic_adv_Linf_L1,
+    find_coefficients_Logistic,
 )
 from linear_regression.erm.adversarial_perturbation_finders import (
     find_adversarial_perturbation_linear_rf,
@@ -26,7 +26,7 @@ import sys
 from cvxpy.error import SolverError
 
 if len(sys.argv) > 1:
-    eps_min, eps_max, n_epss, alpha, gamma, reg_param, eps_training, reg, pstar, d = (
+    eps_min, eps_max, n_epss, alpha, eps_training, reg_param, reg, pstar, d = (
         float(sys.argv[1]),
         float(sys.argv[2]),
         int(sys.argv[3]),
@@ -35,21 +35,19 @@ if len(sys.argv) > 1:
         float(sys.argv[6]),
         float(sys.argv[7]),
         float(sys.argv[8]),
-        float(sys.argv[9]),
-        int(sys.argv[10]),
+        int(sys.argv[9]),
     )
 else:
-    eps_min, eps_max, n_epss, alpha, gamma, reg_param, eps_training, reg, pstar, d = (
+    eps_min, eps_max, n_epss, alpha, eps_training, reg_param, reg, pstar, d = (
         0.1,
         10.0,
         15,
         1.5,
-        0.5,
-        1e-2,
         0.0,
+        1e-2,
         2.0,
-        1.0,
-        512,
+        2.0,
+        500,
     )
 
 reps = 10
@@ -60,20 +58,17 @@ if pstar == 2.0:
 if pstar == 1.0:
     adv_geometry = "inf"
 
-data_folder = "./data/hastie_model_training"
-file_name = f"ERM_sweep_eps_Hastie_d_{d:d}_alpha_{alpha:.1f}_gamma_{gamma:.1f}_reps_{reps:d}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}_regparam_{reg_param:.1e}.csv"
+data_folder = "./data/direct_space_model_training"
+
+file_name = f"ERM_sweep_eps_direct_model_d_{d:d}_alpha_{alpha:.1f}_reps_{reps:d}_epss_{eps_min:.1f}_{eps_max:.1f}_{n_epss:d}_pstar_{pstar:.1f}_reg_{reg:.1f}_regparam_{reg_param:.1e}.csv"
 
 if not os.path.exists(data_folder):
     os.makedirs(data_folder)
 
 epss = np.logspace(np.log10(eps_min), np.log10(eps_max), n_epss)
 
-p = int(d / gamma)
 n = int(d * alpha)
 
-print(f"p: {p}, d: {d}, n: {n}")
-
-# Initialize arrays to hold results
 vals_misclass = np.empty((reps, len(epss)))
 vals_flipped = np.empty((reps, len(epss)))
 vals_adverr = np.empty((reps, len(epss)))
@@ -81,36 +76,28 @@ vals_bound = np.empty((reps, len(epss)))
 
 estim_vals_m = np.empty((reps,))
 estim_vals_q = np.empty((reps,))
-estim_vals_q_latent = np.empty((reps,))
-estim_vals_q_feature = np.empty((reps,))
 estim_vals_rho = np.empty((reps,))
 estim_vals_P = np.empty((reps,))
 
 j = 0
 while j < reps:
     print(f"Calculating repetition: {j + 1} / {reps}")
-    xs, ys, zs, xs_gen, ys_gen, zs_gen, wstar, F, noise, noise_gen = data_generation_hastie(
-        measure_gen_no_noise_clasif,
-        d=d,
-        n=max(n, 1),
-        n_gen=n_gen,
-        measure_fun_args={},
-        gamma=gamma,
-        noi=True,
+    xs, ys, xs_gen, ys_gen, wstar = data_generation(
+        measure_gen_no_noise_clasif, d, max(n, 1), 1000, ()
     )
 
     try:
-        w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, 0.5 * reg_param, eps_training)
+        w = find_coefficients_Logistic(ys, xs, reg_param)
     except (ValueError, UserWarning, SolverError) as e:
         print("Error in finding coefficients:", e)
         continue
 
     estim_vals_rho[j] = np.sum(wstar**2) / d
-    estim_vals_m[j] = np.dot(wstar, F.T @ w) / (p * np.sqrt(gamma))
-    estim_vals_q[j] = np.dot(F.T @ w, F.T @ w) / p + np.dot(w, w) / p
-    estim_vals_q_latent[j] = np.dot(F.T @ w, F.T @ w) / d
-    estim_vals_q_feature[j] = np.dot(w, w) / p
-    estim_vals_P[j] = np.mean(np.abs(w))
+    estim_vals_m[j] = np.dot(wstar, w) / d
+    estim_vals_q[j] = np.dot(w, w) / d
+    estim_vals_P[j] = np.sum(np.abs(w) ** pstar) / d
+
+    yhat = np.repeat(np.sign(xs @ w).reshape(-1, 1), d, axis=1)
 
     yhat_gen = np.sign(xs_gen @ w)
 
@@ -120,70 +107,63 @@ while j < reps:
 
         if pstar == 2.0:
             eps_i = eps_i
-        else:
+        elif pstar == 1.0:
             eps_i = eps_i / np.sqrt(d)
 
         # flipped error
         try:
-            adv_perturbation = find_adversarial_perturbation_linear_rf(
-                yhat_gen, zs_gen, w, F.T, wstar, eps_i, adv_geometry
+            adv_perturbation = find_adversarial_perturbation_direct_space(
+                yhat_gen, xs_gen, w, wstar, eps_i, adv_geometry
             )
         except (ValueError, UserWarning, SolverError) as e:
             print("Error in finding adversarial perturbation:", e)
             break
 
-        flipped = np.mean(
-            yhat_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w)
-        )
+        flipped = np.mean(yhat_gen != np.sign((xs_gen + adv_perturbation) @ w))
         vals_flipped[j, i] = flipped
 
         # misclassification error
         try:
-            adv_perturbation = find_adversarial_perturbation_linear_rf(
-                ys_gen, zs_gen, w, F.T, wstar, eps_i, adv_geometry
+            adv_perturbation = find_adversarial_perturbation_direct_space(
+                ys_gen, xs_gen, w, wstar, eps_i, adv_geometry
             )
         except (ValueError, UserWarning, SolverError) as e:
             print("Error in finding adversarial perturbation:", e)
             break
 
-        misclass = np.mean(ys_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w))
+        misclass = np.mean(ys_gen != np.sign((xs_gen + adv_perturbation) @ w))
         vals_misclass[j, i] = misclass
 
         # adversarial error
         try:
-            adv_perturbation = find_adversarial_error_rf(
-                ys_gen, zs_gen, w, F.T, wstar, eps_i, adv_geometry
+            adv_perturbation = find_adversarial_perturbation_direct_space_noteacher(
+                ys_gen, xs_gen, w, wstar, eps_i, adv_geometry
             )
         except (ValueError, UserWarning, SolverError) as e:
             print("Error in finding adversarial perturbation:", e)
             break
 
-        adv_err = np.mean(ys_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w))
+        adv_err = np.mean(ys_gen != np.sign((xs_gen + adv_perturbation) @ w))
         vals_adverr[j, i] = adv_err
 
-        # bound error (added to match sweep_eps_erm_se.py structure)
+        # bound error
         try:
-            adv_perturbation = find_adversarial_perturbation_linear_rf(
-                ys_gen, zs_gen, w, F.T, wstar, eps_i, adv_geometry
+            adv_perturbation = find_adversarial_perturbation_direct_space(
+                ys_gen, xs_gen, w, wstar, eps_i, adv_geometry
             )
         except (ValueError, UserWarning, SolverError) as e:
             print("Error in finding adversarial perturbation:", e)
             break
-
         bound_err = np.mean(
-            (ys_gen != np.sign((zs_gen + adv_perturbation) @ F.T @ w + noise_gen @ w))
-            * (ys_gen == yhat_gen)
+            (ys_gen != np.sign((xs_gen + adv_perturbation) @ w)) * (ys_gen == yhat_gen)
         )
         vals_bound[j, i] = bound_err
-
         i += 1
     else:
         j += 1
 
 mean_m, std_m = np.mean(estim_vals_m), np.std(estim_vals_m)
 mean_q, std_q = np.mean(estim_vals_q), np.std(estim_vals_q)
-mean_q_latent, std_q_latent = np.mean(estim_vals_q_latent), np.std(estim_vals_q_latent)
-mean_q_feature, std_q_feature = np.mean(estim_vals_q_feature), np.std(estim_vals_q_feature)
 mean_P, std_P = np.mean(estim_vals_P), np.std(estim_vals_P)
 mean_rho, std_rho = np.mean(estim_vals_rho), np.std(estim_vals_rho)
 mean_misclass, std_misclass = np.mean(vals_misclass, axis=0), np.std(vals_misclass, axis=0)
@@ -198,10 +178,6 @@ data_dict = {
     "std_m": np.full_like(epss, std_m),
     "mean_q": np.full_like(epss, mean_q),
     "std_q": np.full_like(epss, std_q),
-    "mean_q_latent": np.full_like(epss, mean_q_latent),
-    "std_q_latent": np.full_like(epss, std_q_latent),
-    "mean_q_feature": np.full_like(epss, mean_q_feature),
-    "std_q_feature": np.full_like(epss, std_q_feature),
     "mean_P": np.full_like(epss, mean_P),
     "std_P": np.full_like(epss, std_P),
     "mean_rho": np.full_like(epss, mean_rho),

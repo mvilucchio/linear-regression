@@ -38,7 +38,7 @@ eps_test = 1.0
 
 alpha_min_erm, alpha_max_erm, n_alphas_erm = max(0.5, alpha_min_se), min(5.0, alpha_max_se), 10
 
-data_folder = f"./data/hastie_model_training_optimal"
+data_folder = f"./data/direct_space_model_training_optimal"
 
 file_name_misclass = f"ERM_optimal_regp_misclass_direct_alphas_{alpha_min_erm:.1f}_{alpha_max_erm:.1f}_{n_alphas_erm:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
 file_name_adverr = f"ERM_optimal_regp_adverr_direct_alphas_{alpha_min_erm:.1f}_{alpha_max_erm:.1f}_{n_alphas_erm:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
@@ -63,6 +63,7 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
         file_name_output: Output file name
         eps_t: Epsilon parameter for the solver (default 0.0)
     """
+    print(os.path.join(data_folder, file_name_SE_template))
     if os.path.exists(os.path.join(data_folder, file_name_SE_template)):
         print(f"SE file {file_name_SE_template} exists.")
     else:
@@ -84,8 +85,6 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
     # Initialize arrays to hold results
     ms = np.empty((n_alphas_erm, 2))
     qs = np.empty((n_alphas_erm, 2))
-    q_latent = np.empty((n_alphas_erm, 2))
-    q_feature = np.empty((n_alphas_erm, 2))
     Ps = np.empty((n_alphas_erm, 2))
     gen_errs = np.empty((n_alphas_erm, 2))
     adv_errs = np.empty((n_alphas_erm, 2))
@@ -95,12 +94,11 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
 
     # Loop through alpha values
     for i, (alpha, reg_param) in enumerate(zip(alpha_list, reg_param_list)):
+        print(f"Calculating alpha: {alpha:.2f} / {alpha_max_erm:.2f}")
         n = int(alpha * d)
 
         m_vals = []
         q_vals = []
-        q_latent_vals = []
-        q_feature_vals = []
         P_vals = []
         gen_err_vals = []
         adv_err_vals = []
@@ -128,7 +126,6 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
             m_vals.append(np.dot(wstar, w) / d)
             q_vals.append(np.dot(w, w) / d)
             P_vals.append(np.sum(np.abs(w) ** pstar) / d)
-            # P_vals.append(np.mean(np.abs(w)))
 
             yhat_gen = np.sign(np.dot(xs_gen, w))
 
@@ -140,14 +137,12 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
             adv_err = np.mean(ys_gen != np.sign((xs_gen + adv_perturbation) @ w))
             adv_err_vals.append(adv_err)
 
-            # calculation of flipped perturbation
             adv_perturbation = find_adversarial_perturbation_direct_space(
                 yhat_gen, xs_gen, w, wstar, eps_test / np.sqrt(d), "inf"
             )
             flipped = np.mean(yhat_gen != np.sign((xs_gen + adv_perturbation) @ w))
             flip_fair_vals.append(flipped)
 
-            # calculation of perturbation
             adv_perturbation = find_adversarial_perturbation_direct_space(
                 ys_gen, xs_gen, w, wstar, eps_test / np.sqrt(d), "inf"
             )
@@ -167,8 +162,6 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
 
         ms[i, 0], ms[i, 1] = np.mean(m_vals), np.std(m_vals)
         qs[i, 0], qs[i, 1] = np.mean(q_vals), np.std(q_vals)
-        q_latent[i, 0], q_latent[i, 1] = np.mean(q_latent_vals), np.std(q_latent_vals)
-        q_feature[i, 0], q_feature[i, 1] = np.mean(q_feature_vals), np.std(q_feature_vals)
         Ps[i, 0], Ps[i, 1] = np.mean(P_vals), np.std(P_vals)
         gen_errs[i, 0], gen_errs[i, 1] = np.mean(gen_err_vals), np.std(gen_err_vals)
         adv_errs[i, 0], adv_errs[i, 1] = np.mean(adv_err_vals), np.std(adv_err_vals)
@@ -178,17 +171,12 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
 
         print(f"alpha {alpha:.2f} done.")
 
-    # Prepare columns and headers for saving to CSV
     columns = (
         alpha_list,
         ms[:, 0],
         ms[:, 1],
         qs[:, 0],
         qs[:, 1],
-        q_latent[:, 0],
-        q_latent[:, 1],
-        q_feature[:, 0],
-        q_feature[:, 1],
         Ps[:, 0],
         Ps[:, 1],
         gen_errs[:, 0],
@@ -205,14 +193,15 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
     )
 
     header = (
-        "alpha, m_mean, m_std, q_mean, q_std, q_latent_mean, q_latent_std, "
-        "q_feature_mean, q_feature_std, P_mean, P_std, gen_err_mean, gen_err_std, "
-        "adv_err_mean, adv_err_std, flipped_fair_mean, flipped_fair_std, "
-        "misclass_fair_mean, misclass_fair_std, bound_err_mean, bound_err_std,"
+        "alpha,m_mean,m_std,q_mean,q_std,P_mean,P_std,"
+        "gen_err_mean,gen_err_std,"
+        "adv_err_mean,adv_err_std,"
+        "flipped_fair_mean,flipped_fair_std,"
+        "misclass_fair_mean,misclass_fair_std,"
+        "bound_err_mean,bound_err_std,"
         "reg_param"
     )
 
-    # Return basic results for function output
     results = {"alpha_list": alpha_list, "gen_errs": gen_errs, "adv_errs": adv_errs}
     np.savetxt(
         os.path.join(data_folder, file_name_output),

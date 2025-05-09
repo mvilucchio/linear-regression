@@ -21,17 +21,19 @@ import sys
 from scipy.optimize import minimize_scalar
 
 if len(sys.argv) > 1:
-    alpha_min, alpha_max, n_alphas, pstar, reg_p = (
+    alpha_min, alpha_max, n_alphas, pstar, reg_p, metric_type_chosen = (
         float(sys.argv[1]),
         float(sys.argv[2]),
         int(sys.argv[3]),
         float(sys.argv[4]),
         float(sys.argv[5]),
+        sys.argv[6],
     )
 else:
-    alpha_min, alpha_max, n_alphas = (0.5, 2.0, 100)
+    alpha_min, alpha_max, n_alphas = (0.2, 3.0, 50)
     pstar = 2.0
     reg_p = 2.0
+    metric_type_chosen = "bound"
 
 eps_test = 1.0
 
@@ -104,7 +106,7 @@ def perform_sweep(error_metric_type, output_file):
     Performs an alpha sweep with optimization for regularization parameter.
 
     Parameters:
-    - error_metric_type: String, metric used for optimization ('misclass', 'flipped', or 'adv')
+    - error_metric_type: String, metric used for optimization ('misclass', 'bound', or 'adv')
     - output_file: String, file path to save results
     """
     alphas = np.linspace(alpha_min, alpha_max, n_alphas)
@@ -129,10 +131,11 @@ def perform_sweep(error_metric_type, output_file):
         print(f"Calculating alpha: {alpha:.2f} / {alpha_max:.2f}")
 
         if j == 0:
+            print("Finding optimal reg_param for the first alpha")
             res = minimize_scalar(
                 fun_to_min,
                 args=(alpha, initial_condition, error_metric_type),
-                bounds=(1e-5, 1e1),
+                bounds=(1e-3, 1e0),
                 method="bounded",
             )
             reg_param = res.x
@@ -206,7 +209,12 @@ def perform_sweep(error_metric_type, output_file):
     )
 
 
-# Call the function three times with appropriate parameters
-perform_sweep("misclass", file_name_misclass)
-perform_sweep("bound", file_name_bound)
-perform_sweep("adv", file_name_adverr)
+if metric_type_chosen == "misclass":
+    print("Performing sweep for misclassification error")
+    perform_sweep("misclass", file_name_misclass)
+elif metric_type_chosen == "bound":
+    print("Performing sweep for boundary error")
+    perform_sweep("bound", file_name_bound)
+elif metric_type_chosen == "adv":
+    print("Performing sweep for adversarial error")
+    perform_sweep("adv", file_name_adverr)

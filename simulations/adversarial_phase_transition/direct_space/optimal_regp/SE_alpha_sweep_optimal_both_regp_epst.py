@@ -22,12 +22,19 @@ import sys
 from scipy.optimize import minimize_scalar, minimize
 
 if len(sys.argv) > 1:
-    alpha_min, alpha_max, n_alphas = (float(sys.argv[1]), float(sys.argv[2]), int(sys.argv[3]))
+    alpha_min, alpha_max, n_alphas, pstar, reg_p, metric_type_chosen = (
+        float(sys.argv[1]),
+        float(sys.argv[2]),
+        int(sys.argv[3]),
+        float(sys.argv[4]),
+        float(sys.argv[5]),
+        sys.argv[6],
+    )
 else:
     alpha_min, alpha_max, n_alphas = (0.5, 2.0, 100)
-
-pstar = 1.0
-reg_p = 2.0
+    pstar = 1.0
+    reg_p = 2.0
+    metric_type_chosen = "misclass"
 eps_test = 1.0
 
 
@@ -182,7 +189,9 @@ def perform_sweep(error_metric_type, output_file):
     )
 
 
-# Call the function three times with appropriate parameters
-perform_sweep("misclass", file_name_misclass)  # For misclassification error
-perform_sweep("bound", file_name_flipped)  # For flipped error
-perform_sweep("adv", file_name_adverr)  # For adversarial error
+if metric_type_chosen == "misclass":
+    perform_sweep("misclass", file_name_misclass)
+elif metric_type_chosen == "bound":
+    perform_sweep("bound", file_name_bound)
+elif metric_type_chosen == "adv":
+    perform_sweep("adv", file_name_adverr)
