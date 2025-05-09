@@ -14,8 +14,6 @@ from ..erm import (
     NOISE_SCALE,
 )
 
-from line_profiler import profile
-
 
 # ---------------------------------------------------------------------------- #
 #                                Main functions                                #
@@ -135,63 +133,63 @@ def find_adversarial_perturbation_linear_rf(
     return ys[:, None] * tile(delta.value, (len(ys), 1))
 
 
-from scipy.optimize import minimize_scalar
+# from scipy.optimize import minimize_scalar
 
 
-def min_fun(kappa, wstar, w, F):
-    return np.sum(np.abs(kappa * wstar + F.T @ w))
+# def min_fun(kappa, wstar, w, F):
+#     return np.sum(np.abs(kappa * wstar + F.T @ w))
 
 
-def find_adversarial_perturbation_linear_rf_new(
-    ys: ndarray,
-    cs: ndarray,
-    w: ndarray,
-    F: ndarray,
-    wstar: ndarray,
-    ε: float,
-    p: float,
-) -> ndarray:
-    # cs = cs.astype(np.float64)
-    # wstar = wstar.astype(np.float64)
-    # F = F.astype(np.float64)
-    # w = w.astype(np.float64)
-    # ys = ys.astype(np.float64)
-    # cs = np.ascontiguousarray(cs)
-    # wstar = np.ascontiguousarray(wstar)
-    # F = np.ascontiguousarray(F)
-    # w = np.ascontiguousarray(w)
-    # ys = np.ascontiguousarray(ys)
+# def find_adversarial_perturbation_linear_rf_new(
+#     ys: ndarray,
+#     cs: ndarray,
+#     w: ndarray,
+#     F: ndarray,
+#     wstar: ndarray,
+#     ε: float,
+#     p: float,
+# ) -> ndarray:
+#     # cs = cs.astype(np.float64)
+#     # wstar = wstar.astype(np.float64)
+#     # F = F.astype(np.float64)
+#     # w = w.astype(np.float64)
+#     # ys = ys.astype(np.float64)
+#     # cs = np.ascontiguousarray(cs)
+#     # wstar = np.ascontiguousarray(wstar)
+#     # F = np.ascontiguousarray(F)
+#     # w = np.ascontiguousarray(w)
+#     # ys = np.ascontiguousarray(ys)
 
-    # _, d = cs.shape
-    # delta = Variable(d)
-    # if float(p) == inf:
-    #     constraints = [norm(delta, "inf") <= ε, wstar.T @ delta == 0]
-    # else:
-    #     constraints = [norm(delta, p) <= ε, wstar.T @ delta == 0]
+#     # _, d = cs.shape
+#     # delta = Variable(d)
+#     # if float(p) == inf:
+#     #     constraints = [norm(delta, "inf") <= ε, wstar.T @ delta == 0]
+#     # else:
+#     #     constraints = [norm(delta, p) <= ε, wstar.T @ delta == 0]
 
-    wtilde = F.T @ w
-    # objective = Minimize(wtilde.T @ delta)
+#     wtilde = F.T @ w
+#     # objective = Minimize(wtilde.T @ delta)
 
-    # problem = Problem(objective, constraints)
-    # solver_opts = {"abstol": 1e-8, "reltol": 1e-8, "feastol": 1e-8, "max_iters": 10_000}
-    # problem.solve(solver="ECOS", verbose=False, **solver_opts)
+#     # problem = Problem(objective, constraints)
+#     # solver_opts = {"abstol": 1e-8, "reltol": 1e-8, "feastol": 1e-8, "max_iters": 10_000}
+#     # problem.solve(solver="ECOS", verbose=False, **solver_opts)
 
-    res = minimize_scalar(min_fun, bracket=(-5e10, 5e10), method="brent", args=(wstar, w, F))
-    kappa = res.x
+#     res = minimize_scalar(min_fun, bracket=(-5e10, 5e10), method="brent", args=(wstar, w, F))
+#     kappa = res.x
 
-    # problem.solve(
-    #     solver=MOSEK,
-    #     mosek_params={
-    #         "MSK_DPAR_INTPNT_CO_TOL_REL_GAP": 1e-10,  # Relative gap tolerance
-    #         "MSK_DPAR_INTPNT_CO_TOL_PFEAS": 1e-10,  # Primal feasibility tolerance
-    #         "MSK_DPAR_INTPNT_CO_TOL_DFEAS": 1e-10,  # Dual feasibility tolerance
-    #         "MSK_IPAR_AUTO_UPDATE_SOL_INFO": 0,
-    #     },
-    # )
+#     # problem.solve(
+#     #     solver=MOSEK,
+#     #     mosek_params={
+#     #         "MSK_DPAR_INTPNT_CO_TOL_REL_GAP": 1e-10,  # Relative gap tolerance
+#     #         "MSK_DPAR_INTPNT_CO_TOL_PFEAS": 1e-10,  # Primal feasibility tolerance
+#     #         "MSK_DPAR_INTPNT_CO_TOL_DFEAS": 1e-10,  # Dual feasibility tolerance
+#     #         "MSK_IPAR_AUTO_UPDATE_SOL_INFO": 0,
+#     #     },
+#     # )
 
-    delta = np.sign(wtilde + kappa * wstar)
+#     delta = np.sign(wtilde + kappa * wstar)
 
-    return res.fun, -ys[:, None] * tile(delta, (len(ys), 1))
+#     return res.fun, -ys[:, None] * tile(delta, (len(ys), 1))
 
 
 # ------------------------ Non-Linear Random Features ------------------------ #

@@ -56,6 +56,38 @@ def percentage_flipped_direct_space(m: float, q: float, rho: float, epsilon: flo
 # ------------------------------- Hastie Model ------------------------------- #
 
 
+def boundary_error_fair_hastie_model(
+    m: float,
+    q: float,
+    q_latent: float,
+    q_features: float,
+    rho: float,
+    epsilon: float,
+    gamma: float,
+    p,
+) -> float:
+    # if float(p) == inf:
+    if gamma <= 1:
+        AA = epsilon * np.sqrt(q_latent - m**2 / gamma) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
+    else:
+        AA = epsilon * np.sqrt(q_features - m**2 / gamma) * np.sqrt(2 / np.pi) / np.sqrt(gamma)
+
+    return dblquad(
+        lambda nu, lamb: (
+            exp((-2 * m * lamb * nu + q * nu**2 + lamb**2 * rho) / (2.0 * (m**2 - q * rho)))
+            * np.heaviside(+AA - lamb * np.sign(nu), 0.0)
+            * np.heaviside(np.sign(lamb) * np.sign(nu), 0.0)
+        )
+        / (2.0 * np.pi * sqrt(-(m**2) + q * rho)),
+        -np.inf,
+        np.inf,
+        lambda nu: -np.inf,
+        lambda nu: np.inf,
+        epsabs=1e-7,
+        epsrel=1e-7,
+    )[0]
+
+
 def percentage_flipped_hastie_model(
     m: float,
     q: float,
