@@ -36,6 +36,11 @@ reps = 10
 n_gen = 1000
 eps_test = 1.0
 
+if pstar == 2.0:
+    adv_geometry = 2.0
+elif pstar == 1.0:
+    adv_geometry = "inf"
+
 alpha_min_erm, alpha_max_erm, n_alphas_erm = max(0.5, alpha_min_se), min(5.0, alpha_max_se), 10
 
 data_folder = f"./data/direct_space_model_training_optimal"
@@ -92,6 +97,11 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
     misclas_fairs = np.empty((n_alphas_erm, 2))
     bound_errs = np.empty((n_alphas_erm, 2))
 
+    if pstar == 2.0:
+        eps_test_tilde = eps_test
+    elif pstar == 1.0:
+        eps_test_tilde = eps_test / np.sqrt(d)
+
     # Loop through alpha values
     for i, (alpha, reg_param) in enumerate(zip(alpha_list, reg_param_list)):
         print(f"Calculating alpha: {alpha:.2f} / {alpha_max_erm:.2f}")
@@ -132,25 +142,25 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
             gen_err_vals.append(generalisation_error_classification(ys_gen, xs_gen, w, wstar))
 
             adv_perturbation = find_adversarial_perturbation_direct_space_noteacher(
-                ys_gen, xs_gen, w, wstar, eps_test / np.sqrt(d), "inf"
+                ys_gen, xs_gen, w, wstar, eps_test_tilde, adv_geometry
             )
             adv_err = np.mean(ys_gen != np.sign((xs_gen + adv_perturbation) @ w))
             adv_err_vals.append(adv_err)
 
             adv_perturbation = find_adversarial_perturbation_direct_space(
-                yhat_gen, xs_gen, w, wstar, eps_test / np.sqrt(d), "inf"
+                yhat_gen, xs_gen, w, wstar, eps_test_tilde, adv_geometry
             )
             flipped = np.mean(yhat_gen != np.sign((xs_gen + adv_perturbation) @ w))
             flip_fair_vals.append(flipped)
 
             adv_perturbation = find_adversarial_perturbation_direct_space(
-                ys_gen, xs_gen, w, wstar, eps_test / np.sqrt(d), "inf"
+                ys_gen, xs_gen, w, wstar, eps_test_tilde, adv_geometry
             )
             misclass = np.mean(ys_gen != np.sign((xs_gen + adv_perturbation) @ w))
             misc_fair_vals.append(misclass)
 
             adv_perturbation = find_adversarial_perturbation_direct_space(
-                ys_gen, xs_gen, w, wstar, eps_test / np.sqrt(d), "inf"
+                ys_gen, xs_gen, w, wstar, eps_test_tilde, adv_geometry
             )
             bound_err = np.mean(
                 (ys_gen != np.sign((xs_gen + adv_perturbation) @ w)) * (ys_gen != yhat_gen)

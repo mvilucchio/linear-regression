@@ -39,18 +39,17 @@ eps_test = 1.0
 
 
 def compute_theory_overlaps(reg_param, alpha, init_cond):
-    if pstar == 1.0:
+    if pstar == 2.0:
         f_hat = f_hat_Logistic_no_noise_classif
         f_hat_kwargs = {"alpha": alpha, "eps_t": 0.0}
     else:
         f_hat = f_hat_Logistic_no_noise_Linf_adv_classif
         f_hat_kwargs = {"alpha": alpha, "eps_t": 0.0}
+
     f_kwargs = {"reg_param": reg_param, "reg_order": reg_p, "pstar": pstar}
-    # f_hat_kwargs = {"alpha": alpha, "eps_t": 0.0}
 
     m_se, q_se, V_se, P_se = fixed_point_finder(
         f_Lr_regularisation_Lpstar_attack,
-        # f_hat_Logistic_no_noise_Linf_adv_classif,
         f_hat,
         init_cond,
         f_kwargs,
@@ -62,7 +61,7 @@ def compute_theory_overlaps(reg_param, alpha, init_cond):
 
 
 def fun_to_min(reg_param, alpha, init_cond, error_metric="misclass"):
-    if pstar == 1.0:
+    if pstar == 2.0:
         f_hat = f_hat_Logistic_no_noise_classif
         f_hat_kwargs = {"alpha": alpha, "eps_t": 0.0}
     else:
