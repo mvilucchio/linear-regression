@@ -45,19 +45,16 @@ alpha_min_erm, alpha_max_erm, n_alphas_erm = max(0.5, alpha_min_se), min(5.0, al
 
 data_folder = f"./data/direct_space_model_training_optimal"
 
-file_name_misclass = f"ERM_optimal_regp_misclass_direct_alphas_{alpha_min_erm:.1f}_{alpha_max_erm:.1f}_{n_alphas_erm:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
-file_name_adverr = f"ERM_optimal_regp_adverr_direct_alphas_{alpha_min_erm:.1f}_{alpha_max_erm:.1f}_{n_alphas_erm:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
-file_name_bound = f"ERM_optimal_regp_bound_direct_alphas_{alpha_min_erm:.1f}_{alpha_max_erm:.1f}_{n_alphas_erm:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
+file_name_misclass = f"ERM_optimal_misclass_direct_alphas_{alpha_min_erm:.1f}_{alpha_max_erm:.1f}_{n_alphas_erm:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
+file_name_adverr = f"ERM_optimal_adverr_direct_alphas_{alpha_min_erm:.1f}_{alpha_max_erm:.1f}_{n_alphas_erm:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
+file_name_bound = f"ERM_optimal_bound_direct_alphas_{alpha_min_erm:.1f}_{alpha_max_erm:.1f}_{n_alphas_erm:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
 
-
-file_name_misclass_SE = f"SE_optimal_regp_misclass_direct_alphas_{alpha_min_se:.1f}_{alpha_max_se:.1f}_{n_alphas_se:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
-file_name_adverr_SE = f"SE_optimal_regp_adverr_direct_alphas_{alpha_min_se:.1f}_{alpha_max_se:.1f}_{n_alphas_se:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
-file_name_bound_SE = f"SE_optimal_regp_bound_direct_alphas_{alpha_min_se:.1f}_{alpha_max_se:.1f}_{n_alphas_se:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
+file_name_misclass_SE = f"SE_optimal_misclass_direct_alphas_{alpha_min_se:.1f}_{alpha_max_se:.1f}_{n_alphas_se:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
+file_name_adverr_SE = f"SE_optimal_adverr_direct_alphas_{alpha_min_se:.1f}_{alpha_max_se:.1f}_{n_alphas_se:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
+file_name_bound_SE = f"SE_optimal_bound_direct_alphas_{alpha_min_se:.1f}_{alpha_max_se:.1f}_{n_alphas_se:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
 
 if not os.path.exists(data_folder):
     os.makedirs(data_folder)
-
-print(f"Data folder: {data_folder}")
 
 
 def perform_sweep(metric_name, file_name_SE_template, file_name_output):
@@ -87,7 +84,8 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
     alpha_list = np.linspace(alpha_min_erm, alpha_max_erm, n_alphas_erm)
     indices = np.searchsorted(alphas_SE, alpha_list)
     alpha_list = SE_data[indices, 0]
-    reg_param_list = SE_data[indices, -1]
+    reg_param_list = SE_data[indices, -2]
+    epst_list = SE_data[indices, -1]
 
     # Initialize arrays to hold results
     ms = np.empty((n_alphas_erm, 2))
@@ -105,7 +103,7 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
         eps_test_tilde = eps_test / np.sqrt(d)
 
     # Loop through alpha values
-    for i, (alpha, reg_param) in enumerate(zip(alpha_list, reg_param_list)):
+    for i, (alpha, reg_param, eps_t) in enumerate(zip(alpha_list, reg_param_list, epst_list)):
         print(f"Calculating alpha: {alpha:.2f} / {alpha_max_erm:.2f}")
         n = int(alpha * d)
 
@@ -126,9 +124,9 @@ def perform_sweep(metric_name, file_name_SE_template, file_name_output):
 
             try:
                 if pstar == 2.0:
-                    w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, reg_param, 0.0)
+                    w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, reg_param, eps_t)
                 else:
-                    w = find_coefficients_Logistic_adv_Linf_L1(ys, xs, reg_param, 0.0)
+                    w = find_coefficients_Logistic_adv_Linf_L1(ys, xs, reg_param, eps_t)
             except (ValueError, SolverError) as e:
                 print(
                     f"minimization didn't converge on iteration {j} for alpha {alpha:.2f}. Trying again."
@@ -232,6 +230,6 @@ if metric_name_chosen == "misclass":
 elif metric_name_chosen == "bound":
     print("Performing sweep for boundary error.")
     bound_results = perform_sweep("bound", file_name_bound_SE, file_name_bound)
-elif metric_name_chosen == "adv":
+elif metric_name_chosen == "adverr":
     print("Performing sweep for adversarial error.")
     adverr_results = perform_sweep("adversarial error", file_name_adverr_SE, file_name_adverr)

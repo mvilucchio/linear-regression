@@ -12,6 +12,12 @@ from linear_regression.fixed_point_equations.regularisation.pstar_attacks_Lr_reg
 from linear_regression.fixed_point_equations.classification.Adversarial_Logistic_loss import (
     f_hat_Logistic_no_noise_classif,
 )
+from linear_regression.fixed_point_equations.classification.Adversarial_Logistic_loss import (
+    f_hat_Logistic_no_noise_classif,
+)
+from linear_regression.fixed_point_equations.classification.Adv_train_p_norm import (
+    f_hat_Logistic_no_noise_Linf_adv_classif,
+)
 from linear_regression.aux_functions.percentage_flipped import (
     percentage_flipped_hastie_model,
     percentage_misclassified_hastie_model,
@@ -35,17 +41,24 @@ else:
     pstar = 1.0
     reg_p = 2.0
     metric_type_chosen = "misclass"
+
 eps_test = 1.0
 
 
 def compute_theory_overlaps(x, alpha, init_cond):
     reg_param, eps_t = x
+    if pstar == 2.0:
+        f_hat = f_hat_Logistic_no_noise_classif
+        f_hat_kwargs = {"alpha": alpha, "eps_t": eps_t}
+    else:
+        f_hat = f_hat_Logistic_no_noise_Linf_adv_classif
+        f_hat_kwargs = {"alpha": alpha, "eps_t": eps_t}
+
     f_kwargs = {"reg_param": reg_param, "reg_order": reg_p, "pstar": pstar}
-    f_hat_kwargs = {"alpha": alpha, "eps_t": eps_t}
 
     m_se, q_se, V_se, P_se = fixed_point_finder(
         f_Lr_regularisation_Lpstar_attack,
-        f_hat_Logistic_no_noise_classif,
+        f_hat,
         init_cond,
         f_kwargs,
         f_hat_kwargs,
@@ -57,12 +70,18 @@ def compute_theory_overlaps(x, alpha, init_cond):
 
 def fun_to_min(x, alpha, init_cond, error_metric="misclass"):
     reg_param, eps_t = x
+    if pstar == 2.0:
+        f_hat = f_hat_Logistic_no_noise_classif
+        f_hat_kwargs = {"alpha": alpha, "eps_t": eps_t}
+    else:
+        f_hat = f_hat_Logistic_no_noise_Linf_adv_classif
+        f_hat_kwargs = {"alpha": alpha, "eps_t": eps_t}
+
     f_kwargs = {"reg_param": reg_param, "reg_order": reg_p, "pstar": pstar}
-    f_hat_kwargs = {"alpha": alpha, "eps_t": eps_t}
 
     m_se, q_se, V_se, P_se = fixed_point_finder(
         f_Lr_regularisation_Lpstar_attack,
-        f_hat_Logistic_no_noise_classif,
+        f_hat,
         init_cond,
         f_kwargs,
         f_hat_kwargs,
@@ -120,14 +139,14 @@ def perform_sweep(error_metric_type, output_file):
     guess = (0.5, 0.1)
 
     for j, alpha in enumerate(alphas):
-        print(f"Calculating alpha: {alpha:.2f} / {alpha_max:.2f}")
+        print(f"Calculating alpha: {alpha:.2f} / {alpha_max:.2f}", flush=True)
 
         res = minimize(
             fun_to_min,
             x0=guess,
             args=(alpha, initial_condition, error_metric_type),
             method="Nelder-Mead",
-            bounds=((1e-5, 1e1), (0.0, 0.5)),
+            bounds=((1e-4, 1e1), (0.0, 0.5)),
         )
         reg_param, eps_t = res.x
 
@@ -189,6 +208,8 @@ def perform_sweep(error_metric_type, output_file):
     )
 
 
+print(f"Running sweep for {metric_type_chosen}...", flush=True)
+print(f"Alpha range: {alpha_min:.1f} to {alpha_max:.1f}", flush=True)
 if metric_type_chosen == "misclass":
     perform_sweep("misclass", file_name_misclass)
 elif metric_type_chosen == "bound":

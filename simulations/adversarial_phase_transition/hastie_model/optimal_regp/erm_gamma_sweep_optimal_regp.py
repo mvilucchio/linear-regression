@@ -41,7 +41,7 @@ pstar = 1.0
 reg = 2.0
 eps_test = 1.0
 
-gamma_min_erm, gamma_max_erm, n_gammas_erm = max(0.65, gamma_min_se), min(2.0, gamma_max_se), 10
+gamma_min_erm, gamma_max_erm, n_gammas_erm = max(0.2, gamma_min_se), min(2.0, gamma_max_se), 10
 
 data_folder = f"./data/hastie_model_training_optimal"
 

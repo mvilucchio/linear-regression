@@ -208,6 +208,7 @@ def perform_sweep(error_metric_type, output_file):
     )
 
 
+print("Starting alpha sweep for optimal regularization parameter", flush=True)
 if metric_type_chosen == "misclass":
     print("Performing sweep for misclassification error")
     perform_sweep("misclass", file_name_misclass)
