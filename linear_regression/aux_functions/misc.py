@@ -205,11 +205,11 @@ def boundary_error_direct_space(m, q, P, eps, pstar):
         raise ValueError("pstar must be 1 or 2 for this function")
     rho = 1.0
     if pstar == 1.0:
-        AA = eps * np.sqrt(q) * np.sqrt(2 / pi)
+        AA = eps * np.sqrt(q - m**2) * np.sqrt(2 / pi)
     else:
         AA = (
             eps
-            * np.sqrt(q)
+            * np.sqrt(q - m**2)
             * np.sqrt(2)
             / np.sqrt(pi) ** (1 / pstar)
             * (np.sqrt(pi) / 2) ** (1 / pstar)
@@ -239,11 +239,11 @@ def misclassification_error_direct_space(m, q, P, eps, pstar):
         raise ValueError("pstar must be 1 or 2 for this function")
     rho = 1.0
     if pstar == 1.0:
-        AA = eps * np.sqrt(q) * np.sqrt(2 / pi)
+        AA = eps * np.sqrt(q - m**2) * np.sqrt(2 / pi)
     else:
         AA = (
             eps
-            * np.sqrt(q)
+            * np.sqrt(q - m**2)
             * np.sqrt(2)
             / np.sqrt(pi) ** (1 / pstar)
             * (np.sqrt(pi) / 2) ** (1 / pstar)
@@ -292,14 +292,24 @@ def flipped_error_direct_space(m, q, P, eps, pstar):
 
 
 def classification_adversarial_error_latent(m, q, q_features, q_latent, rho, P, eps, gamma, pstar):
-    if float(pstar) != 1.0:
+    if float(pstar) not in (1.0, 2.0):
         raise ValueError("pstar must be 1 for this function")
 
+    # if gamma <= 1:
+    #     AA = eps * np.sqrt(q_latent) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
+    # else:
+    #     AA = eps * np.sqrt(q_features) / np.sqrt(gamma) * np.sqrt(2 / np.pi)
     if gamma <= 1:
-        AA = eps * np.sqrt(q_latent) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
+        first_term = np.sqrt(q_latent) * np.sqrt(gamma)
     else:
-        AA = eps * np.sqrt(q_features) / np.sqrt(gamma) * np.sqrt(2 / np.pi)
+        first_term = np.sqrt(q_features) / np.sqrt(gamma)
 
+    if pstar == 1.0:
+        second_term = np.sqrt(2 / pi)
+    elif pstar == 2.0:
+        second_term = np.sqrt(2) / np.sqrt(pi) ** (1 / pstar) * (np.sqrt(pi) / 2) ** (1 / pstar)
+
+    AA = eps * first_term * second_term
     return dblquad(
         lambda nu, lamb: (
             exp((-2 * m * lamb * nu + q * nu**2 + lamb**2 * rho) / (2.0 * (m**2 - q * rho)))
