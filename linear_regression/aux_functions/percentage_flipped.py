@@ -72,18 +72,36 @@ def boundary_error_fair_hastie_model(
     # else:
     #     AA = epsilon * np.sqrt(q_features - m**2 / gamma) * np.sqrt(2 / np.pi) / np.sqrt(gamma)
 
-    if gamma <= 1:
-        first_term = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(gamma)
-    else:
-        first_term = np.sqrt(q_features - m**2 / gamma) / np.sqrt(gamma)
+    if gamma <= 1 and float(p) == inf:
+        AA = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
+    elif gamma <= 1 and float(p) == 2.0:
+        AA = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(gamma)
+    elif gamma > 1 and float(p) == inf:
+        AA = np.sqrt(q_features - m**2 / gamma) * np.sqrt(2 / np.pi) / np.sqrt(gamma)
+    elif gamma > 1 and float(p) == 2.0:
+        AA = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(gamma)
 
-    if float(p) == inf:
-        second_term = np.sqrt(2 / pi)
-    elif float(p) == 2.0:
-        pstar = 2.0
-        second_term = np.sqrt(2) / np.sqrt(pi) ** (1 / pstar) * (np.sqrt(pi) / 2) ** (1 / pstar)
+    AA = epsilon * AA
+    # if float(p) == inf:
+    #     second_term = np.sqrt(2 / pi) / np.sqrt(gamma)
+    # elif float(p) == 2.0:
+    #     pstar = 2.0
+    #     second_term = np.sqrt(2) / np.sqrt(pi) ** (1 / pstar) * (np.sqrt(pi) / 2) ** (1 / pstar)
 
-    AA = epsilon * first_term * second_term
+    # AA = epsilon * first_term * second_term
+    # if gamma <= 1:
+    #     first_term = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(gamma)
+    # else:
+    #     # first_term = np.sqrt(q_features - m**2 / gamma) / np.sqrt(gamma)
+    #     first_term = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(gamma)
+
+    # if float(p) == inf:
+    #     second_term = np.sqrt(2 / pi) / np.sqrt(gamma)
+    # elif float(p) == 2.0:
+    #     pstar = 2.0
+    #     second_term = np.sqrt(2) / np.sqrt(pi) ** (1 / pstar) * (np.sqrt(pi) / 2) ** (1 / pstar)
+
+    # AA = epsilon * first_term * second_term
     return dblquad(
         lambda nu, lamb: (
             exp((-2 * m * lamb * nu + q * nu**2 + lamb**2 * rho) / (2.0 * (m**2 - q * rho)))
@@ -160,18 +178,29 @@ def percentage_misclassified_hastie_model(
     # else:
     #     AA = epsilon * np.sqrt(q_features - m**2 / gamma) / np.sqrt(gamma) * np.sqrt(2 / np.pi)
 
-    if gamma <= 1:
-        first_term = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(gamma)
-    else:
-        first_term = np.sqrt(q_features - m**2 / gamma) / np.sqrt(gamma)
+    # if gamma <= 1:
+    #     first_term = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(gamma)
+    # else:
+    #     first_term = np.sqrt(q_features - m**2 / gamma) / np.sqrt(gamma)
 
-    if float(p) == inf:
-        second_term = np.sqrt(2 / pi)
-    elif float(p) == 2.0:
-        pstar = 2.0
-        second_term = np.sqrt(2) / np.sqrt(pi) ** (1 / pstar) * (np.sqrt(pi) / 2) ** (1 / pstar)
+    # if float(p) == inf:
+    #     second_term = np.sqrt(2 / pi)
+    # elif float(p) == 2.0:
+    #     pstar = 2.0
+    #     second_term = np.sqrt(2) / np.sqrt(pi) ** (1 / pstar) * (np.sqrt(pi) / 2) ** (1 / pstar)
 
-    AA = epsilon * first_term * second_term
+    # AA = epsilon * first_term * second_term
+
+    if gamma <= 1 and float(p) == inf:
+        AA = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
+    elif gamma <= 1 and float(p) == 2.0:
+        AA = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(gamma)
+    elif gamma > 1 and float(p) == inf:
+        AA = np.sqrt(q_features - m**2 / gamma) * np.sqrt(2 / np.pi) / np.sqrt(gamma)
+    elif gamma > 1 and float(p) == 2.0:
+        AA = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(gamma)
+
+    AA = epsilon * AA
 
     return dblquad(
         lambda nu, lamb: (
