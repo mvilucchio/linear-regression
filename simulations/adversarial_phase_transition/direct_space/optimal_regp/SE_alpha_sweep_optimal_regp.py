@@ -90,7 +90,7 @@ def fun_to_min(reg_param, alpha, init_cond, error_metric="misclass"):
         return flipped_error_direct_space(m_se, q_se, P_se, eps_test, pstar)
 
 
-data_folder = "./data/direct_space_model_training_optimal"
+data_folder = "./data/direct_space_model_training_optimal_new"
 
 file_name_misclass = f"SE_optimal_regp_misclass_direct_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
 file_name_adverr = f"SE_optimal_regp_adverr_direct_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas:d}_pstar_{pstar:.1f}_reg_{reg_p:.1f}.csv"
