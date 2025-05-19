@@ -35,8 +35,8 @@ print(f"Hyperparamètres fixes : lambda={REG_PARAM:.2f}, tau={TAU:.2f}")
 
 # Plage pour alpha
 ALPHA_MIN =0.5
-ALPHA_MAX = 300
-N_ALPHA_PTS = 20
+ALPHA_MAX = 100000
+N_ALPHA_PTS = 10000
 
 # Options d'intégration (utilisées pour RS si CALCULATE_RS=True)
 INTEGRATION_BOUND = 5

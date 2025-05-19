@@ -41,10 +41,10 @@ IMG_FORMATS = ["pdf", "png"]
 
 # --- Paramètres de la Simulation (pour retrouver le fichier) ---
 # Doivent correspondre à ceux du script de calcul !
-NOM_LOSS = "Tukey_mod_xigamma_c0"
-ALPHA_MIN = 10
-ALPHA_MAX = 1000
-N_ALPHA_PTS = 50
+NOM_LOSS = "Tukey_fast"
+ALPHA_MIN = 0.5
+ALPHA_MAX = 100000
+N_ALPHA_PTS = 10000
 DELTA_IN = 0.1
 DELTA_OUT = 1.0
 PERCENTAGE = 0.1
@@ -149,13 +149,13 @@ fig, ax1 = plt.subplots(figsize=(fig_width_in, fig_height_in))
 
 # --- Tracé des Données (Axe Y Principal) ---
 ax1.plot(alphas, gen_error, marker='.', linestyle='-', markersize=3, color='tab:blue', label='$E_{gen}^e$')
-# ax1.plot(alphas, one_ms, marker='.', linestyle='-', markersize=3, color='tab:green', label='$1-m$')
-# ax1.plot(alphas, one_qs, marker='.', linestyle='-', markersize=3, color='tab:red', label='$1-q$')
-# ax1.plot(alphas, Vs, marker='.', linestyle='-', markersize=3, color='tab:purple', label='$V$')
-# ax1.plot(alphas, m2_q, marker='.', linestyle='-', markersize=3, color='tab:cyan', label='$1-m^2/q$')
-# ax1.plot(alphas, estim_err, marker='.', linestyle='-', markersize=3, color='tab:orange', label='$E_estim$')
-ax1.plot(alphas, gen_error_in, marker='.', linestyle='-', markersize=3, color='tab:gray', label='$E_{gen,in}$')
-ax1.plot(alphas, gen_error_out, marker='.', linestyle='-', markersize=3, color='tab:brown', label='$E_{gen,out}$')
+ax1.plot(alphas, one_ms, marker='.', linestyle='-', markersize=3, color='tab:green', label='$1-m$')
+ax1.plot(alphas, one_qs, marker='.', linestyle='-', markersize=3, color='tab:red', label='$1-q$')
+ax1.plot(alphas, Vs, marker='.', linestyle='-', markersize=3, color='tab:purple', label='$V$')
+ax1.plot(alphas, m2_q, marker='.', linestyle='-', markersize=3, color='tab:cyan', label='$1-m^2/q$')
+ax1.plot(alphas, estim_err, marker='.', linestyle='-', markersize=3, color='tab:orange', label='$E_estim$')
+# ax1.plot(alphas, gen_error_in, marker='.', linestyle='-', markersize=3, color='tab:gray', label='$E_{gen,in}$')
+# ax1.plot(alphas, gen_error_out, marker='.', linestyle='-', markersize=3, color='tab:brown', label='$E_{gen,out}$')
 #ax1.plot(alphas, gen_error_actual, marker='.', linestyle='-', markersize=3, color='tab:olive', label='$E_{gen}$')
 #ax1.plot(alphas, gen_error - gen_error_in-gen_error_out, marker='.', linestyle='-', markersize=3, color='tab:blue', label='difference')
 
@@ -163,7 +163,7 @@ ax1.plot(alphas, gen_error_out, marker='.', linestyle='-', markersize=3, color='
 ax1.set_xlabel(r'$\alpha = n/d$')
 ax1.set_ylabel(r'Valeurs des Overlaps / $E_{gen}$')
 ax1.set_xscale('log')
-ax1.set_yscale('linear')
+ax1.set_yscale('log')
 ax1.grid(True, which='both', linestyle=':', linewidth=0.5, alpha=0.7)
 ax1.tick_params(axis='y', labelcolor='black')
 # Définir les limites si nécessaire (souvent utile en log-log)
