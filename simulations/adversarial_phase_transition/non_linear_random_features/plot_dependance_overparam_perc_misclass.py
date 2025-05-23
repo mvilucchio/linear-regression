@@ -5,25 +5,24 @@ import numpy as np
 from math import gamma as gamma_fun
 from math import sqrt, pi
 import pickle
-from linear_regression.aux_functions.percentage_flipped import percentage_flipped_linear_features
+from linear_regression.aux_functions.percentage_flipped import (
+    percentage_flipped_linear_features,
+    percentage_misclassified_linear_features,
+)
 
 alphas = [1.0]
 gammas = [0.5, 1.0, 1.5, 2.0]
 
 dimensions = [int(2**a) for a in range(7, 8)]
-reps = 10
+reps = 3
 eps_training = 0.0
 pstar_t = 1.0
 p = np.inf
 reg_param = 1e-3
-non_linearity_name = "tanh"
-# non_linearity_name = "logistic"
-# non_linearity_name = "quadratic"
-# non_linearity_name = "gauss"
-# non_linearity_name = "gelu"
+non_linearity_name = "logistic"
 
 data_folder = "./data/non_linear_random_features"
-file_name = f"ERM_non_linear_rf_perc_flipped_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}_{non_linearity_name}.pkl"
+file_name = f"ERM_non_linear_rf_perc_misclass_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}_{non_linearity_name}.pkl"
 
 markers = [".", "x", "1", "2", "+", "3", "4"]
 
@@ -68,7 +67,8 @@ for k, alpha in enumerate(alphas):
             print(f"m = {m:.2f}, q = {q:.2f}, rho = {rho:.2f}")
 
             for j, eps in enumerate(eps_dense):
-                out[j] = percentage_flipped_linear_features(m, q, rho, eps, p)
+                # out[j] = percentage_flipped_linear_features(m, q, rho, eps, p)
+                out[j] = percentage_misclassified_linear_features(m, q, rho, eps, p)
 
             plt.plot(eps_dense, out, color=f"C{idx}")
 

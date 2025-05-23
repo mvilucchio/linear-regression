@@ -22,7 +22,7 @@ file_name_rf = f"ERM_linear_rf_perc_flipped_n_features_{{:d}}_alpha_{{:.1f}}_gam
 img_folder = "./imgs/adversarial_phase_transition"
 file_name_img = f"final_plot_overparam_flipped_reps_{reps:d}_p_{p}_reg_param_{reg_param:.1e}_eps_t_{eps_training:.2f}_pstar_t_{pstar_t}.pdf"
 
-dimensions = [int(2**a) for a in range(10, 12)]
+dimensions = [int(2**a) for a in range(10, 11)]
 
 gammas = [0.5, 1.0, 1.5]
 alphas = [0.5, 1.0, 2.0]
@@ -69,17 +69,17 @@ for k, alpha in enumerate(alphas):
                 epss_g,
                 np.mean(vals_g, axis=0),
                 yerr=np.std(vals_g, axis=0),
-                linestyle="",
+                linestyle="-",
                 color=f"C{idx}",
                 marker=mks,
                 markersize=2,
                 label=f"$\\gamma = $ {gamma:.1f}",
             )
 
-        for j, eps_i in enumerate(eps_dense):
-            out[j] = percentage_flipped_linear_features(mean_m, mean_q, mean_rho, eps_i, p)
+        # for j, eps_i in enumerate(eps_dense):
+        #     out[j] = percentage_flipped_linear_features(mean_m, mean_q, mean_rho, eps_i, p)
 
-        ax.plot(eps_dense, out, color=f"C{idx}")
+        # ax.plot(eps_dense, out, color=f"C{idx}")
 
         min_val = min(min_val, np.min(out))
 
@@ -100,16 +100,16 @@ for k, alpha in enumerate(alphas):
             epss_g,
             np.mean(vals_g, axis=0),
             yerr=np.std(vals_g, axis=0),
-            linestyle="",
+            linestyle="-",
             color="k",
             marker=mks,
             markersize=2,
         )
 
-        for j, eps_i in enumerate(eps_dense):
-            out[j] = percentage_flipped_direct_space(mean_m, mean_q, mean_rho, eps_i, p)
+    #     for j, eps_i in enumerate(eps_dense):
+    #         out[j] = percentage_flipped_direct_space(mean_m, mean_q, mean_rho, eps_i, p)
 
-    ax.plot(eps_dense, out, color="k")
+    # ax.plot(eps_dense, out, color="k")
 
     min_val = min(min_val, np.min(out))
 
@@ -128,9 +128,9 @@ for k, alpha in enumerate(alphas):
         )
 
     ax.set_xscale("log")
-    ax.set_xlabel(r"$\varepsilon \, d^{\frac{1}{p} - \frac{1}{2}}$")
+    ax.set_xlabel(r"$\varepsilon_g$")
     if k == 0:
-        ax.set_ylabel(r"$E_{\mathrm{flip}}$")
+        ax.set_ylabel(r"$E_{\mathrm{bnd}}^{\mathrm{cns}}$", labelpad=0.0)
     ax.grid(True)
     if k != 0:
         for tick in ax.yaxis.get_major_ticks():

@@ -146,7 +146,7 @@ for t in range(n_steps):
         p,
         t,
         d_non_linearity,
-        3.0,
+        0.1,
     )
 
     current_delta = new_delta

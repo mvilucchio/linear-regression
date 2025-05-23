@@ -266,6 +266,43 @@ def Dω_proximal_Logistic_loss(y: float, omega: float, V: float) -> float:
     return 1 / (1 + V * DDz_logistic_loss(y, proximal))
 
 
+# ------------------------ adversarial logisic generic ----------------------- #
+@njit(error_model="numpy", fastmath=False)
+def moreau_loss_Logistic_adversarial(
+    x: float, y: float, omega: float, V: float, P: float, ε: float, pstar: float
+) -> float:
+    return (x - omega) ** 2 / (2 * V) + logistic_loss(y, x - y * ε * P ** (1 / pstar))
+
+
+@njit(error_model="numpy", fastmath=False)
+def proximal_Logistic_adversarial(
+    y: float, omega: float, V: float, P: float, ε: float, pstar: float
+) -> float:
+    return brent_minimize_scalar(
+        moreau_loss_Logistic_adversarial,
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+        (y, omega, V, P, ε, pstar),
+    )[0]
+
+
+@njit(error_model="numpy", fastmath=False)
+def Dω_proximal_Logistic_adversarial(
+    y: float, omega: float, V: float, P: float, ε: float, pstar: float
+) -> float:
+    proximal = brent_minimize_scalar(
+        moreau_loss_Logistic_adversarial,
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+        (y, omega, V, P, ε, pstar),
+    )[0]
+    return 1 / (1 + V * DDz_logistic_loss(y, proximal - y * ε * P ** (1 / pstar)))
+
+
 # ------------------------- adversarial logistic loss ------------------------ #
 @njit(error_model="numpy", fastmath=False)
 def moreau_loss_Logistic_adversarial(

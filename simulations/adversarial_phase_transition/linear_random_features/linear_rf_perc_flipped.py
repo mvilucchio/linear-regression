@@ -15,13 +15,14 @@ from tqdm.auto import tqdm
 import os
 import pickle
 import sys
+from cvxpy.error import SolverError
 
 gamma, alpha, eps_training = float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3])
 
 pstar_t = 1.0
 reg_param = 1e-3
-ps = [2, 3, "inf"]
-dimensions = [int(2**a) for a in range(10, 12)]
+ps = ["inf"]
+dimensions = [int(2**a) for a in range(10, 11)]
 epss = np.logspace(-1.5, 1.5, 15)
 reps = 10
 
@@ -48,7 +49,9 @@ for p in tqdm(ps, desc="p", leave=False):
 
         assert F.shape == (d, n_features)
 
-        for j in tqdm(range(reps), desc="reps", leave=False):
+        j = 0
+        while j < reps:
+            # for j in tqdm(range(reps), desc="reps", leave=False):
             cs, ys, cs_gen, ys_gen, wstar = data_generation(
                 measure_gen_no_noise_clasif,
                 n_features=d,
@@ -63,18 +66,22 @@ for p in tqdm(ps, desc="p", leave=False):
 
             assert xs.shape == (n_samples, n_features)
 
-            if eps_training == 0.0:
-                w = find_coefficients_Logistic(ys, xs, reg_param)
-            else:
-                w = find_coefficients_Logistic_adv(
-                    ys,
-                    xs,
-                    0.5 * reg_param,
-                    eps_training,
-                    2.0,
-                    pstar_t,
-                    F.T @ wstar / np.sqrt(d),
-                )
+            try:
+                if eps_training == 0.0:
+                    w = find_coefficients_Logistic(ys, xs, reg_param)
+                else:
+                    w = find_coefficients_Logistic_adv(
+                        ys,
+                        xs,
+                        0.5 * reg_param,
+                        eps_training,
+                        2.0,
+                        pstar_t,
+                        F.T @ wstar / np.sqrt(d),
+                    )
+            except SolverError:
+                print(f"SolverError for d = {d} features = {n_features} p = {p}")
+                continue
 
             estim_vals_rho[j] = np.sum(wstar**2) / d
             estim_vals_m[j] = np.sum(np.dot(wstar, F @ w)) / (d * np.sqrt(n_features))
@@ -87,22 +94,40 @@ for p in tqdm(ps, desc="p", leave=False):
 
             yhat_gen = np.sign(xs_gen @ w)
 
-            for i, eps_i in enumerate(tqdm(epss_rescaled, desc="eps", leave=False)):
-                adv_perturbation = find_adversarial_perturbation_linear_rf(
-                    yhat_gen, cs_gen, w, F, wstar, eps_i, p
-                )
+            i = 0
+            # for i, eps_i in enumerate(tqdm(epss_rescaled, desc="eps", leave=False)):
+            while i < len(epss_rescaled):
+                eps_i = epss_rescaled[i]
 
-                flipped = percentage_flipped_labels_estim(
-                    yhat_gen,
-                    cs_gen,
-                    w,
-                    wstar,
-                    cs_gen + adv_perturbation,
-                    hidden_model=True,
-                    projection_matrix=F,
-                )
+                try:
+                    adv_perturbation = find_adversarial_perturbation_linear_rf(
+                        ys_gen, cs_gen, w, F, wstar, eps_i, p
+                    )
 
-                vals[j, i] = flipped
+                    bound = np.mean(
+                        (ys_gen != np.sign((cs_gen + adv_perturbation) @ F @ w))
+                        * (ys_gen == yhat_gen)
+                    )
+                except (ValueError, SolverError) as e:
+                    print(
+                        f"minimization didn't converge on iteration {j} for gamma {gamma:.2f}. Trying again."
+                    )
+                    continue
+
+                # flipped = percentage_flipped_labels_estim(
+                #     yhat_gen,
+                #     cs_gen,
+                #     w,
+                #     wstar,
+                #     cs_gen + adv_perturbation,
+                #     hidden_model=True,
+                #     projection_matrix=F,
+                # )
+
+                vals[j, i] = bound
+                i += 1
+
+            j += 1
 
         mean_m, std_m = np.mean(estim_vals_m), np.std(estim_vals_m)
         mean_q, std_q = np.mean(estim_vals_q), np.std(estim_vals_q)

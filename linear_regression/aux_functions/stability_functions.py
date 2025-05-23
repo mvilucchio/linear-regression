@@ -279,7 +279,6 @@ def integrand_stability_Exponential_no_noise_classif(z, ω, m, q, V):
 
 
 def stability_Exponential_no_noise_classif(m: float, q: float, V: float, alpha: float) -> float:
-    print(" m = {:.3f} q = {:.3f} q - m^2 = {:.3f}".format(m, q, q - m**2))
     domains_z, domains_ω = stability_integration_domains()
     integral_value = 0.0
     for domain_z, domain_ω in zip(domains_z, domains_ω):

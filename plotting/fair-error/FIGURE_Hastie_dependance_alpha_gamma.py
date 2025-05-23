@@ -87,7 +87,6 @@ gamma_min, gamma_max, n_gammas_se, alphas = 0.1, 3.0, 50, [0.1, 1.0, 2.0]
 eps_t = 0.1
 reg_param = 1e-2
 
-# File name templates
 pstar = 1.0
 data_folder = "./data/hastie_model_training"
 file_name_sweep_alpha = f"SE_training_gamma_{{gamma:.2f}}_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas_se:d}_eps_{eps_t:.2f}_reg_param_{reg_param:.1e}_pstar_{pstar:.1f}.csv"

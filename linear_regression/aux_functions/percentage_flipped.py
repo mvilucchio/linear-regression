@@ -78,6 +78,7 @@ def boundary_error_fair_hastie_model(
         AA = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(gamma)
     elif gamma > 1 and float(p) == inf:
         AA = np.sqrt(q_features - m**2 / gamma) * np.sqrt(2 / np.pi) / np.sqrt(gamma)
+        # AA = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(2 / np.pi) * np.sqrt(gamma)
     elif gamma > 1 and float(p) == 2.0:
         AA = np.sqrt(q_latent - m**2 / gamma) * np.sqrt(gamma)
 

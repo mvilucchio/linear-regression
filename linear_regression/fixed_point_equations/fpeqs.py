@@ -9,8 +9,6 @@ from ..fixed_point_equations import (
 )
 from ..utils.errors import ConvergenceError
 from ..aux_functions.misc import damped_update, max_difference
-
-# import numpy as np
 from numpy import array, roll, zeros
 from numpy.linalg import lstsq, LinAlgError
 
@@ -51,8 +49,6 @@ def fixed_point_finder(
     while err > abs_tol or iter_nb < min_iter:
         y = f_hat_func(*x, **f_hat_kwargs)
         new_x = f_func(*y, **f_kwargs)
-
-        # print(f"\t\t\tnew_x = {new_x}")
 
         err = error_function(new_x, x)
 

@@ -2,12 +2,13 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 
-gamma_min, gamma_max, n_gammas_ERM, n_gammas_SE = 0.5, 3.0, 10, 50
+gamma_min_se, gamma_max_se, n_gammas_SE = 0.1, 3.0, 50
+gamma_min_ERM, gamma_max_ERM, n_gammas_ERM = 0.5, 2.0, 10
 alphas = [1.0]
-d = 300
+d = 500
 delta = 0.0
 reps = 10
-eps_t = 0.1
+eps_t = 0.0
 pstar_t = 1.0
 reg_param = 1e-2
 pstar = 1.0
@@ -15,11 +16,12 @@ pstar = 1.0
 # Define colors for each alpha value
 colors = [f"C{k}" for k in range(len(alphas))]
 
+data_folder = f"./data/hastie_model_training/"
+
 plt.figure(figsize=(15, 6))
 
 for k, alpha in enumerate(alphas):
-    data_folder = f"./data/hastie_model_training"
-    file_name_ERM = f"ERM_training_alpha_{{alpha:.2f}}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas_ERM:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_eps_{eps_t:.2f}_reg_param_{reg_param:.1e}_pstar_{pstar:.1f}.csv".format(
+    file_name_ERM = f"ERM_training_alpha_{{alpha:.2f}}_gammas_{gamma_min_ERM:.1f}_{gamma_max_ERM:.1f}_{n_gammas_ERM:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_eps_{eps_t:.2f}_reg_param_{reg_param:.1e}_pstar_{pstar:.1f}.csv".format(
         alpha=alpha
     )
     file_path = os.path.join(data_folder, file_name_ERM)
@@ -130,7 +132,7 @@ for k, alpha in enumerate(alphas):
     else:
         print(f"File {file_path} does not exist. Skipping...")
 
-    file_name_SE = f"SE_training_alpha_{alpha:.2f}_gammas_{gamma_min:.1f}_{gamma_max:.1f}_{n_gammas_SE:d}_eps_{eps_t:.2f}_reg_param_{reg_param:.1e}_pstar_{pstar:.1f}.csv"
+    file_name_SE = f"SE_training_alpha_{alpha:.2f}_gammas_{gamma_min_se:.1f}_{gamma_max_se:.1f}_{n_gammas_SE:d}_eps_{eps_t:.2f}_reg_param_{reg_param:.1e}_pstar_{pstar:.1f}.csv"
     file_path = os.path.join(data_folder, file_name_SE)
 
     if os.path.exists(file_path):

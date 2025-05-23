@@ -81,12 +81,12 @@ plt.style.use("./plotting/latex_ready.mplstyle")
 tuple_size = set_size(width, fraction=0.50)
 
 # Define parameters
-data_folder = "./data/hastie_model_training_optimal"
+data_folder = "./data/hastie_model_training_optimal_cluster"
 reps = 10
 reg_param = 1e-2
 eps_min, eps_max, n_epss = 0.1, 10, 15
 
-param_pairs = [(2.0, 0.5, 2**10), (0.01, 3.0, 2**10)]  # (alpha, gamma, d)
+param_pairs = [(1.0, 0.5, 2**10)]  # (alpha, gamma, d)
 # param_pairs = []  # (alpha, gamma, d)
 # param_pairs = [(3.0, 0.5, 2**10)]  # (alpha, gamma, d)
 
@@ -100,8 +100,11 @@ file_name_misclass_adv = file_name_flipped_adv.replace("flipped", "misclass")
 
 marker_size = 3
 fig, axs = plt.subplots(
-    2, 1, sharex=True, figsize=(tuple_size[0], tuple_size[0]), gridspec_kw={"hspace": 0}
+    1, 1, sharex=True, figsize=(tuple_size[0], tuple_size[1]), gridspec_kw={"hspace": 0}
 )
+# fig, axs = plt.subplots(
+#     2, 1, sharex=True, figsize=(tuple_size[0], tuple_size[1]), gridspec_kw={"hspace": 0}
+# )
 
 eps_dense = np.logspace(-1.2, 1.2, 50)
 out = np.empty_like(eps_dense)
@@ -159,7 +162,6 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
             linestyle="--",
             label=f"Theory $\\alpha$={alpha}, $\\gamma$={gamma}",
         )
-
     except FileNotFoundError:
         print(f"Error: File not found - {file_path_flipped_no_adv}")
 
@@ -218,6 +220,7 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
     )
 
     try:
+        print(f"Loading {file_path_misclass_no_adv}")
         with open(file_path_misclass_no_adv, "rb") as f:
             data = pickle.load(f)
 
@@ -232,7 +235,7 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
                 mean_q = data["mean_q"]
                 mean_P = data["mean_P"]
 
-            axs[1].errorbar(
+            axs.errorbar(
                 epss_g,
                 mean_misclass,
                 yerr=std_misclass,
@@ -252,13 +255,12 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
                 m_se, q_se, q_latent_se, q_features_se, 1, eps_i, gamma, "inf"
             )
 
-        axs[1].plot(
+        axs.plot(
             eps_dense,
             out,
             color=color,
             linestyle="--",
         )
-
     except FileNotFoundError:
         print(f"Error: File not found - {file_path_misclass_no_adv}")
 
@@ -268,6 +270,7 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
     )
 
     try:
+        print(f"Loading {file_path_misclass_adv}")
         with open(file_path_misclass_adv, "rb") as f:
             data = pickle.load(f)
 
@@ -283,7 +286,7 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
                 mean_q = data["mean_q"]
                 mean_P = data["mean_P"]
 
-            axs[1].errorbar(
+            axs.errorbar(
                 epss_g,
                 mean_misclass,
                 yerr=std_misclass,
@@ -302,7 +305,7 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
                 m_se, q_se, q_latent_se, q_features_se, 1, eps_i, gamma, "inf"
             )
 
-        axs[1].plot(
+        axs.plot(
             eps_dense,
             out,
             color=color,
@@ -312,7 +315,7 @@ for i, (alpha, gamma, dimension) in enumerate(param_pairs):
         print(f"Error: File not found - {file_path_misclass_adv}")
 
 # Set subplot properties
-for i, ax in enumerate(axs):
+for i, ax in enumerate([axs]):
     ax.set_xscale("log")
     if i == 0:
         ax.set_ylim(0, 1)
@@ -320,34 +323,12 @@ for i, ax in enumerate(axs):
     ax.grid(which="both", alpha=0.3)
 
     # Set y-labels
-    if i == 0:
+    if i == 1:
         ax.set_ylabel(r"$E_{\mathrm{flip}}$")
     else:
         ax.set_ylabel(r"$E_{\mathrm{flip}}^{\mathrm{true}}$")
 
-axs[1].set_xlabel(r"$\varepsilon_g$")
-
-# # Replace the legend creation section with this updated implementation
-# custom_lines = []
-# custom_labels = []
-
-# for i, (alpha, gamma) in enumerate(param_pairs):
-#     color = colors[i % len(colors)]
-#     custom_lines.append(plt.Line2D([0], [0], color=color, lw=2))
-#     custom_labels.append(f"$(\\alpha,\\gamma)=({alpha:.1f},{gamma:.1f})$")  # Removed spaces
-
-# plt.figlegend(
-#     custom_lines,
-#     custom_labels,
-#     loc="upper center",
-#     bbox_to_anchor=(0.5, 1.0),
-#     ncol=min(4, len(custom_labels)),
-#     frameon=True,
-#     # fontsize=10,
-#     handletextpad=0.5,
-#     columnspacing=0.0,
-#     borderpad=0.3,
-# )
+axs.set_xlabel(r"$\varepsilon_g$")
 
 plt.tight_layout()
 plt.subplots_adjust(top=0.88)

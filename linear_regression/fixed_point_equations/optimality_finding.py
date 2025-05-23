@@ -1,6 +1,5 @@
 from numpy import empty
 from numba import njit
-
 from scipy.optimize import minimize
 from ..utils.errors import MinimizationError
 from .fpeqs import fixed_point_finder
@@ -101,8 +100,9 @@ def find_optimal_reg_and_huber_parameter_function(
     copy_f_hat_kwargs = f_hat_kwargs.copy()
 
     def minimize_fun(x):
+        print("\t\tλ = {:.5f}, τ = {:.5f}".format(x[0], x[1]))
         copy_f_kwargs.update({"reg_param": x[0]})
-        copy_f_hat_kwargs.update({"a": x[1]})
+        copy_f_hat_kwargs.update({"tau": x[1]})
 
         m, q, V = fixed_point_finder(
             f_func,
@@ -130,7 +130,7 @@ def find_optimal_reg_and_huber_parameter_function(
         reg_param_opt, a_opt = obj.x
 
         copy_f_kwargs.update({"reg_param": reg_param_opt})
-        copy_f_hat_kwargs.update({"a": a_opt})
+        copy_f_hat_kwargs.update({"tau": a_opt})
         out_values = empty(n_observables)
         m, q, V = fixed_point_finder(
             f_func,

@@ -20,8 +20,8 @@ alpha, eps_training = float(sys.argv[1]), float(sys.argv[2])
 
 reg_param = 1e-3
 pstar_t = 1.0
-ps = [2, 3, "inf"]
-dimensions = [int(2**a) for a in range(10, 12)]
+ps = ["inf"]
+dimensions = [int(2**a) for a in range(10, 11)]
 
 epss = np.logspace(-1.5, 1.5, 15)
 reps = 10
@@ -68,13 +68,16 @@ for p in tqdm(ps, desc="p", leave=False):
                     yhat, xs_gen, w, wstar, eps_i, p
                 )
 
-                flipped = percentage_flipped_labels_estim(
-                    yhat,
-                    xs_gen,
-                    w,
-                    wstar,
-                    xs_gen + adv_perturbation,
+                flipped = np.mean(
+                    (ys_gen != np.sign((xs_gen + adv_perturbation) @ w)) * (ys_gen == yhat)
                 )
+                # flipped = percentage_flipped_labels_estim(
+                #     yhat,
+                #     xs_gen,
+                #     w,
+                #     wstar,
+                #     xs_gen + adv_perturbation,
+                # )
 
                 vals[j, i] = flipped
 

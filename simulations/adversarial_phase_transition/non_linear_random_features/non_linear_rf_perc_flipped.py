@@ -19,20 +19,75 @@ from numba import njit
 import os
 import sys
 import pickle
+from scipy.special import erf
 from time import time
+
+
+# @njit(error_model="numpy", fastmath=True, parallel=True)
+# def non_linearity(x):
+#     return np.tanh(x + np.float32(6.0))
+
+
+# @njit(error_model="numpy", fastmath=True, parallel=True)
+# def D_non_linearity(x):
+#     return 1 - np.tanh(x + np.float32(6.0)) ** 2
 
 
 @njit(error_model="numpy", fastmath=True, parallel=True)
 def non_linearity(x):
-    return np.tanh(x)
+    # gelu non linearity
+    return 0.5 * x * (1 + erf(x / np.sqrt(2)))
 
 
 @njit(error_model="numpy", fastmath=True, parallel=True)
 def D_non_linearity(x):
-    return 1 - np.tanh(x) ** 2
+    # derivative of gelu non linearity
+    return 0.5 * (1 + erf(x / np.sqrt(2))) + 0.5 * x * np.exp(-(x**2) / 2) / np.sqrt(np.pi)
 
 
-non_linearity_name = "tanh"
+# @njit(error_model="numpy", fastmath=True, parallel=True)
+# def non_linearity(x):
+#     return np.divide(1, np.add(1, np.exp(-x)))
+
+
+# @njit(error_model="numpy", fastmath=True, parallel=True)
+# def D_non_linearity(x):
+#     return non_linearity(x) * (1 - non_linearity(x))
+
+
+# @njit
+# def non_linearity(x):
+#     # implement the relu function
+#     return np.maximum(0, x)
+
+
+# @njit
+# def D_non_linearity(x):
+#     # implement the derivative of the relu function
+#     return (x > 0).astype(np.float32)
+
+
+# @njit
+# def non_linearity(x):
+#     return np.square(x)
+
+
+# @njit
+# def D_non_linearity(x):
+#     return 2 * x
+
+
+# @njit
+# def non_linearity(x):
+#     return np.exp(-(x**2))
+
+
+# @njit
+# def D_non_linearity(x):
+#     return -2 * x * np.exp(-(x**2))
+
+
+non_linearity_name = "gelu"
 
 
 gamma, alpha, eps_training = float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3])
@@ -43,11 +98,11 @@ pstar_t = 1.0
 reg_param = 1e-3
 ps = [np.float32("inf")]
 dimensions = [int(2**a) for a in range(7, 8)]
-epss = np.logspace(-1.5, 1.5, 10, dtype=np.float32)
-reps = 10
+epss = np.logspace(-1, 1, 7, dtype=np.float32)
+reps = 3
 
 data_folder = "./data/non_linear_random_features"
-file_name = f"stoc_ERM_non_linear_rf_perc_flipped_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}_{non_linearity_name}.pkl"
+file_name = f"ERM_non_linear_rf_perc_flipped_n_features_{{:d}}_alpha_{{:.1f}}_gamma_{{:.1f}}_reps_{reps:d}_p_{{}}_reg_param_{{:.1e}}_eps_t_{{:.2f}}_pstar_t_{{}}_{non_linearity_name}.pkl"
 
 # for p in tqdm(ps, desc="p", leave=False):
 for p in ps:
@@ -81,7 +136,7 @@ for p in ps:
                 measure_gen_no_noise_clasif,
                 n_features=d,
                 n_samples=max(n_samples, 1),
-                n_generalization=1000,
+                n_generalization=500,
                 measure_fun_args={},
             )
 
@@ -109,8 +164,8 @@ for p in ps:
             w = w.astype(np.float32)
 
             estim_vals_rho[j] = np.sum(wstar**2) / d
-            estim_vals_m[j] = np.sum(np.dot(wstar, F @ w)) / d
-            estim_vals_q[j] = np.sum((F @ w) ** 2) / d
+            estim_vals_m[j] = np.sum(np.dot(wstar, F @ w)) / (d * np.sqrt(n_features))
+            estim_vals_q[j] = np.sum((F @ w) ** 2) / (d * n_features)
 
             yhat = np.sign(xs @ w)
 
@@ -145,7 +200,7 @@ for p in ps:
                     abs_tol=1e-4,
                     step_block=50,
                     max_iterations=100,
-                    adv_pert=adv_pert,
+                    adv_pert=(adv_pert + np.random.normal(0, 1, adv_pert.shape)).astype(np.float32),
                     test_iters=20,
                 )
                 print(f"Time taken: {time() - start_time:.3f}")
@@ -153,7 +208,7 @@ for p in ps:
                 print(
                     f"Max norm adversarial perturbation: {np.max(np.linalg.norm(adv_pert, ord=p, axis=1)):.3f}\n"
                     + f"Mean norm adversarial perturbation: {np.mean(np.linalg.norm(adv_pert, ord=p, axis=1)):.3f}\n"
-                    + f"Max orthogonalities: {np.max(np.abs(np.dot(adv_pert, wstar)))}\n"
+                    + f"Max orthogonalities: {np.max(np.abs(np.dot(adv_pert, wstar)))} eps {eps}\n"
                 )
 
                 start_time = time()

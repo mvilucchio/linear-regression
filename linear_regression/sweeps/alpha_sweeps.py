@@ -258,8 +258,8 @@ def sweep_alpha_optimal_lambda_hub_param_fixed_point(
     old_reg_param_opt = inital_guess_params[0]
     old_hub_param_opt = inital_guess_params[1]
     for idx, alpha in enumerate(alphas):
-        # print(f"\talpha = {alpha}")
-        copy_f_hat_kwargs.update({"alpha": alpha, "a": old_hub_param_opt})
+        print(f"\talpha = {alpha}")
+        copy_f_hat_kwargs.update({"alpha": alpha, "tau": old_hub_param_opt})
         copy_f_kwargs.update({"reg_param": old_reg_param_opt})
 
         if update_f_min_args:

@@ -135,7 +135,6 @@ for ax in [
         labels.append(label)
 
 # legend_ax.legend(handles, labels, loc="center", title="Legend")
-
 # plt.tight_layout()
 
 if save:

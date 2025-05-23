@@ -56,10 +56,12 @@ else:
         0.5,
     )
 
+gamma = 1.0
+
 # DO NOT CHANGE, NOT IMPLEMENTED FOR OTHERS
 pstar_t = 1.0
 
-d = 500
+d = 1000
 reps = 25
 
 epss = np.logspace(np.log10(eps_min), np.log10(eps_max), n_epss)
@@ -101,39 +103,60 @@ epss_rescaled = epss * (d ** (-1 / 2))
 
 m_vals = []
 rep = 0
-while rep < reps:
-    xs, ys, zs, xs_gen, ys_gen, zs_gen, wstar, F, noise, noise_gen = data_generation_hastie(
-        measure_gen_no_noise_clasif,
-        d=d,
-        n=max(n, 1),
-        n_gen=1000,
-        measure_fun_args={},
-        gamma=gamma,
-        noi=True,
-    )
+# while rep < reps:
+xs, ys, zs, xs_gen, ys_gen, zs_gen, wstar, F, noise, noise_gen = data_generation_hastie(
+    measure_gen_no_noise_clasif,
+    d=d,
+    n=max(n, 1),
+    n_gen=1000,
+    measure_fun_args={},
+    gamma=gamma,
+    noi=True,
+)
 
-    try:
-        # if eps_training == 0.0:
-        #     w = find_coefficients_Logistic(ys, xs, reg_param)
-        # else:
-        #     w = find_coefficients_Logistic_adv(
-        #         ys, xs, 0.5 * reg_param, eps_training, 2.0, pstar_t, F @ wstar
-        #     )
-        w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, 0.5 * reg_param, eps_training)
-    except ValueError as e:
-        print("Error in finding coefficients:", e)
-        continue
+try:
+    # if eps_training == 0.0:
+    #     w = find_coefficients_Logistic(ys, xs, reg_param)
+    # else:
+    #     w = find_coefficients_Logistic_adv(
+    #         ys, xs, 0.5 * reg_param, eps_training, 2.0, pstar_t, F @ wstar
+    #     )
+    w = find_coefficients_Logistic_adv_Linf_L2(ys, xs, 0.5 * reg_param, eps_training)
+except ValueError as e:
+    print("Error in finding coefficients:", e)
 
-    m_vals.append(np.dot(wstar, F.T @ w) / (p * np.sqrt(gamma)))
-    print(f"rep {rep} done")
-    rep += 1
+    # m_vals.append(np.dot(wstar, F.T @ w) / (p * np.sqrt(gamma)))
+    # print(f"rep {rep} done")
+    # rep += 1
+
+# print(F)
+wtilde = F.T @ w
+
+print(np.count_nonzero(np.abs(wtilde) < 1e-2) / p)
+
+xi = np.random.randn(d)
+
+plt.hist(wtilde[:p], bins=50, density=True, alpha=0.5, label=f"w")
+aaa = m_se / np.sqrt(gamma) * wstar + np.sqrt(q_latent_se - m_se**2 / gamma) * xi
 
 plt.hist(
-    m_vals,
+    aaa,
+    bins=50,
     density=True,
     alpha=0.5,
-    label=f"w, d={d}, eps={eps_training:.2f}",
+    label=f"m_se / sqrt(gamma) * wstar + sqrt(q_latent_se - m_se**2 / gamma) * xi",
 )
+
+print(np.std(wtilde[:p]))
+print(np.std(aaa))
+print(q_features_se)
+
+# plt.hist(
+#     m_vals,
+#     density=True,
+#     alpha=0.5,
+#     label=f"w, d={d}, eps={eps_training:.2f}",
+# )
 
 # plt.hist(
 #     np.dot(zs_gen, F.T @ w) / np.sqrt(p),
@@ -152,40 +175,40 @@ plt.hist(
 # )
 
 # plot the mean and std of the distribution
-plt.axvline(
-    np.mean(m_vals),
-    color="black",
-    linestyle="-",
-    label=f"$\\mu$ (empirical)",
-)
-plt.axvline(
-    np.mean(m_vals) - np.std(m_vals),
-    color="black",
-    linestyle="--",
-    label=f"$\\mu - \\sigma$ (empirical)",
-)
-plt.axvline(
-    np.mean(m_vals) + np.std(m_vals),
-    color="black",
-    linestyle="--",
-    label=f"$\\mu + \\sigma$ (empirical)",
-)
+# plt.axvline(
+#     np.mean(m_vals),
+#     color="black",
+#     linestyle="-",
+#     label=f"$\\mu$ (empirical)",
+# )
+# plt.axvline(
+#     np.mean(m_vals) - np.std(m_vals),
+#     color="black",
+#     linestyle="--",
+#     label=f"$\\mu - \\sigma$ (empirical)",
+# )
+# plt.axvline(
+#     np.mean(m_vals) + np.std(m_vals),
+#     color="black",
+#     linestyle="--",
+#     label=f"$\\mu + \\sigma$ (empirical)",
+# )
 
-plt.axvline(
-    m_se,
-    color="red",
-    linestyle="--",
-)
-plt.axvline(
-    m_se / np.sqrt(gamma),
-    color="blue",
-    linestyle="--",
-)
-plt.axvline(
-    m_se * np.sqrt(gamma),
-    color="green",
-    linestyle="--",
-)
+# plt.axvline(
+#     m_se,
+#     color="red",
+#     linestyle="--",
+# )
+# plt.axvline(
+#     m_se / np.sqrt(gamma),
+#     color="blue",
+#     linestyle="--",
+# )
+# plt.axvline(
+#     m_se * np.sqrt(gamma),
+#     color="green",
+#     linestyle="--",
+# )
 
 # xx = np.linspace(-5, 5, 100)
 # q = np.dot(w, w) / p

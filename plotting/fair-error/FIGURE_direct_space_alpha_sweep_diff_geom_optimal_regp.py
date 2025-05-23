@@ -1,0 +1,245 @@
+import matplotlib.pyplot as plt
+import os
+import numpy as np
+import pickle
+from linear_regression.aux_functions.percentage_flipped import (
+    percentage_misclassified_hastie_model,
+    percentage_flipped_hastie_model,
+)
+from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
+from linear_regression.fixed_point_equations.regularisation.hastie_model_pstar_attacks import (
+    f_hastie_L2_reg_Linf_attack,
+    q_latent_hastie_L2_reg_Linf_attack,
+    q_features_hastie_L2_reg_Linf_attack,
+)
+from linear_regression.fixed_point_equations.classification.Adv_train_p_norm_hastie import (
+    f_hat_Logistic_no_noise_Linf_adv_classif,
+)
+
+
+IMG_DIRECTORY = "./imgs"
+
+
+def save_plot(fig, name, formats=["pdf"], date=True):
+    for f in formats:
+        fig.savefig(
+            os.path.join(IMG_DIRECTORY, "{}".format(name) + "." + f),
+            format=f,
+        )
+
+
+def set_size(width, fraction=1, subplots=(1, 1)):
+    if width == "thesis":
+        width_pt = 426.79135
+    elif width == "beamer":
+        width_pt = 307.28987
+    else:
+        width_pt = width
+
+    fig_width_pt = width_pt * fraction
+    inches_per_pt = 1 / 72.27
+
+    golden_ratio = (5**0.5 - 1) / 2
+
+    fig_width_in = fig_width_pt * inches_per_pt
+    fig_height_in = fig_width_in * (golden_ratio) * (subplots[0] / subplots[1])
+
+    return (fig_width_in, fig_height_in)
+
+
+def compute_theory_overlaps(reg_param, eps_train, alpha, gamma, init_cond):
+    f_kwargs = {"reg_param": reg_param, "gamma": gamma}
+    f_hat_kwargs = {"alpha": alpha, "gamma": gamma, "ε": eps_train}
+
+    m_se, q_se, V_se, P_se = fixed_point_finder(
+        f_hastie_L2_reg_Linf_attack,
+        f_hat_Logistic_no_noise_Linf_adv_classif,
+        init_cond,
+        f_kwargs,
+        f_hat_kwargs,
+        abs_tol=1e-6,
+    )
+
+    m_hat, q_hat, V_hat, P_hat = f_hat_Logistic_no_noise_Linf_adv_classif(
+        m_se, q_se, V_se, P_se, eps_train, alpha, gamma
+    )
+
+    q_latent_se = q_latent_hastie_L2_reg_Linf_attack(m_hat, q_hat, V_hat, P_hat, reg_param, gamma)
+    q_features_se = q_features_hastie_L2_reg_Linf_attack(
+        m_hat, q_hat, V_hat, P_hat, reg_param, gamma
+    )
+
+    return m_se, q_se, q_latent_se, q_features_se, V_se, P_se
+
+
+width = 458.63788
+
+plt.style.use("./plotting/latex_ready.mplstyle")
+
+tuple_size = set_size(width, fraction=0.50)
+
+alpha_min, alpha_max, n_alphas_se = 0.2, 3.0, 20
+pstar_t, reg_t = 2.0, 2.0
+
+attack_pstar_list = [1.0, 2.0]
+attack_labels = [r"$L_{\infty}$ attack", "$L_2$ attack"]
+
+data_folder = "./data/direct_space_model_training_optimal"
+
+file_name_sweep_alpha_misclass_regp = f"SE_optimal_regp_misclass_direct_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas_se:d}_pstar_{pstar_t:.1f}_{{:.1f}}_reg_{reg_t:.1f}.csv"
+file_name_sweep_alpha_bound_regp = f"SE_optimal_regp_bound_direct_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas_se:d}_pstar_{pstar_t:.1f}_{{:.1f}}_reg_{reg_t:.1f}.csv"
+file_name_sweep_alpha_adverr_regp = f"SE_optimal_regp_adverr_direct_alphas_{alpha_min:.1f}_{alpha_max:.1f}_{n_alphas_se:d}_pstar_{pstar_t:.1f}_{{:.1f}}_reg_{reg_t:.1f}.csv"
+
+d = 500
+reps = 10
+alpha_min_erm, alpha_max_erm, n_alphas_erm = max(0.5, alpha_min), min(5.0, alpha_max), 10
+delta = 0.0
+
+file_name_misclass_regp = f"ERM_optimal_regp_misclass_direct_alphas_{alpha_min_erm:.1f}_{alpha_max_erm:.1f}_{n_alphas_erm:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar_t:.1f}_{{:.1f}}_reg_{reg_t:.1f}.csv"
+file_name_adverr_regp = f"ERM_optimal_regp_adverr_direct_alphas_{alpha_min_erm:.1f}_{alpha_max_erm:.1f}_{n_alphas_erm:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar_t:.1f}_{{:.1f}}_reg_{reg_t:.1f}.csv"
+file_name_bound_regp = f"ERM_optimal_regp_bound_direct_alphas_{alpha_min_erm:.1f}_{alpha_max_erm:.1f}_{n_alphas_erm:d}_delta_{delta:.2f}_d_{d:d}_reps_{reps:d}_pstar_{pstar_t:.1f}_{{:.1f}}_reg_{reg_t:.1f}.csv"
+
+fig, axs = plt.subplots(
+    3, 1, sharex=True, figsize=(tuple_size[0], tuple_size[0]), gridspec_kw={"hspace": 0}
+)
+fig.subplots_adjust(left=0.20)
+fig.subplots_adjust(bottom=0.12)
+fig.subplots_adjust(top=0.92)
+fig.subplots_adjust(right=0.96)
+
+for k, pstar_g in enumerate(attack_pstar_list):
+    print(f"pstar: {pstar_g}")
+    # ---------------------------------------------------------------------------- #
+    #                                State evolution                               #
+    # ---------------------------------------------------------------------------- #
+    file_path = os.path.join(data_folder, file_name_sweep_alpha_misclass_regp.format(pstar_g))
+
+    try:
+        data = np.loadtxt(file_path, delimiter=",", skiprows=1)
+
+        alphas_se = data[:, 0]
+        misclas_fair = data[:, 11]
+        loaded_reg_param = data[:, -1]
+
+        axs[2].plot(alphas_se, misclas_fair, color=f"C{k}")
+
+    except (FileNotFoundError, IOError):
+        print(f"SE data file not found: {file_path}. Skipping...")
+
+    file_path = os.path.join(data_folder, file_name_sweep_alpha_bound_regp.format(pstar_g))
+
+    try:
+        data = np.loadtxt(file_path, delimiter=",", skiprows=1)
+
+        alphas_se = data[:, 0]
+        bound_err = data[:, 12]
+        loaded_reg_param = data[:, -1]
+
+        axs[1].plot(alphas_se, bound_err, color=f"C{k}")
+
+    except (FileNotFoundError, IOError):
+        print(f"SE data file not found: {file_path}. Skipping...")
+
+    file_path = os.path.join(data_folder, file_name_sweep_alpha_adverr_regp.format(pstar_g))
+
+    try:
+        data = np.loadtxt(file_path, delimiter=",", skiprows=1)
+
+        alphas_se = data[:, 0]
+        adv_err = data[:, 8]
+        loaded_reg_param = data[:, -1]
+
+        axs[0].plot(alphas_se, adv_err, color=f"C{k}")
+
+    except (FileNotFoundError, IOError):
+        print(f"SE data file not found: {file_path}. Skipping...")
+
+    # ---------------------------------------------------------------------------- #
+    #                                      ERM                                     #
+    # ---------------------------------------------------------------------------- #
+    file_path = os.path.join(data_folder, file_name_misclass_regp.format(pstar_g))
+
+    try:
+        data = np.loadtxt(file_path, delimiter=",", skiprows=1)
+
+        alphas_erm = data[:, 0]
+        misclas_fairs_mean, misclas_fairs_std = data[:, 13], data[:, 14]
+
+        axs[2].errorbar(
+            alphas_erm,
+            misclas_fairs_mean,
+            yerr=misclas_fairs_std,
+            color=f"C{k}",
+            fmt=".",
+        )
+
+    except (FileNotFoundError, IOError):
+        print(f"ERM data file not found: {file_path}. Skipping...")
+
+    file_path = os.path.join(data_folder, file_name_bound_regp.format(pstar_g))
+
+    try:
+        data = np.loadtxt(file_path, delimiter=",", skiprows=1)
+
+        alphas_erm = data[:, 0]
+        bound_err_mean, bound_err_std = data[:, 15], data[:, 16]
+
+        axs[1].errorbar(
+            alphas_erm,
+            bound_err_mean,
+            yerr=bound_err_std,
+            color=f"C{k}",
+            fmt=".",
+        )
+
+    except (FileNotFoundError, IOError):
+        print(f"ERM data file not found: {file_path}. Skipping...")
+
+    file_path = os.path.join(data_folder, file_name_adverr_regp.format(pstar_g))
+
+    try:
+        data = np.loadtxt(file_path, delimiter=",", skiprows=1)
+
+        alphas_erm = data[:, 0]
+        adv_errors_mean, adv_errors_std = data[:, 9], data[:, 10]
+
+        axs[0].errorbar(
+            alphas_erm,
+            adv_errors_mean,
+            yerr=adv_errors_std,
+            color=f"C{k}",
+            fmt=".",
+        )
+
+    except (FileNotFoundError, IOError):
+        print(f"ERM data file not found: {file_path}. Skipping...")
+
+
+axs[2].set_xlabel(f"$\\alpha = n / d$")
+axs[2].set_xlim([0.3, 2.5])
+axs[0].set_ylabel(r"$E_{\mathrm{rob}}$")
+axs[1].set_ylabel(r"$E_{\mathrm{bnd}}^{\mathrm{cns}}$")
+axs[2].set_ylabel(r"$E_{\mathrm{rob}}^{\mathrm{cns}}$")
+for ax in axs:
+    ax.grid(which="both", alpha=0.7)
+
+# Remove the title
+# axs[0].set_title(r"$\mathrm{Direct\ Space\ Model}\ \mathrm{optimal} \lambda$")
+
+# Add a legend at the top
+handles = [plt.Line2D([0], [0], color=f"C{k}", lw=2) for k in range(len(attack_pstar_list))]
+fig.legend(
+    handles,
+    attack_labels,
+    loc="upper center",
+    bbox_to_anchor=(0.5, 1.0),
+    ncol=len(attack_pstar_list),
+    frameon=False,
+)
+
+# Adjust the top margin to make room for the legend
+fig.subplots_adjust(top=0.92)  # Reduced from 0.92 to make space for the legend
+
+save_plot(fig, "direct_space_alpha_sweep_different_attacks_optimal_regp", formats=["pdf", "png"])
+
+plt.show()

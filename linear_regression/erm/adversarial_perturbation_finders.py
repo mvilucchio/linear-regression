@@ -122,13 +122,17 @@ def find_adversarial_perturbation_linear_rf(
     objective = Minimize(wtilde.T @ delta)
 
     problem = Problem(objective, constraints)
-    solver_opts = {
-        "abstol": 1e-5,  # Absolute tolerance
-        "reltol": 1e-5,  # Relative tolerance
-        "feastol": 1e-5,  # Feasibility tolerance
-        "max_iters": 10_000,  # Maximum iterations
-    }
-    problem.solve(solver="ECOS", verbose=False, **solver_opts)
+    # solver_opts = {
+    #     "abstol": 5e-4,  # Absolute tolerance
+    #     "reltol": 5e-4,  # Relative tolerance
+    #     "feastol": 1e-3,  # Feasibility tolerance
+    #     "max_iters": 10_000,  # Maximum iterations
+    # }
+    # problem.solve(solver="ECOS", verbose=True, **solver_opts)
+
+    problem.solve(verbose=False)
+    # print(problem.status)
+    # print(delta.value)
 
     return ys[:, None] * tile(delta.value, (len(ys), 1))
 

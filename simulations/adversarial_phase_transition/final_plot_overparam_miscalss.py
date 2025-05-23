@@ -33,7 +33,7 @@ out = np.empty_like(eps_dense)
 
 min_val = 1.0
 
-plt.style.use("./latex_ready.mplstyle")
+plt.style.use("./plotting/latex_ready.mplstyle")
 columnwidth = 469.75502
 fig_width_pt = columnwidth
 inches_per_pt = 1.0 / 72.27
@@ -128,9 +128,10 @@ for k, alpha in enumerate(alphas):
         )
 
     ax.set_xscale("log")
-    ax.set_xlabel(r"$\varepsilon \, d^{\frac{1}{p} - \frac{1}{2}}$")
+    # ax.set_xlabel(r"$\varepsilon \, d^{\frac{1}{p} - \frac{1}{2}}$")
+    ax.set_xlabel(r"$\varepsilon_g$")
     if k == 0:
-        ax.set_ylabel(r"$E_{\mathrm{flip}}^{\mathrm{true}}$")
+        ax.set_ylabel(r"$E_{\mathrm{rob}}^{\mathrm{cns}}$", labelpad=0.0)
     ax.grid(True)
     if k != 0:
         for tick in ax.yaxis.get_major_ticks():
