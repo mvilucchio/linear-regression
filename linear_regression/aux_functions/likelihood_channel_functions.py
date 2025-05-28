@@ -2,6 +2,7 @@ from numba import vectorize
 from math import exp, sqrt, pow, erf, pi, log
 from ..aux_functions.misc import gaussian
 import numpy as np
+from numba import njit
 
 
 @vectorize("float64(float64, float64, float64, float64)")
@@ -156,6 +157,7 @@ def log_Z_out_Bayes_decorrelated_noise(
 
 # ----------------------------------- Matéo begins
 
+@njit(error_model="numpy", fastmath=False)
 def L_cal_single_noise(delta: float, m,q,V,rho =1.0,z_0 = 0.0, beta=0.0, sigma_sq = 1.0):
     """ Calculates the density of the random variable delta for a single noise model."""
     eta = m**2 / (rho*q)
@@ -164,6 +166,7 @@ def L_cal_single_noise(delta: float, m,q,V,rho =1.0,z_0 = 0.0, beta=0.0, sigma_s
     denum = sqrt(2 * pi * sigma_delta_sq)
     return exp(exponent) /denum
 
+@njit(error_model="numpy", fastmath=False)
 def L_cal_multi_decorrelated_noise(
     delta: float,
     m: float,
@@ -177,25 +180,12 @@ def L_cal_multi_decorrelated_noise(
 ):
     """ Calculates the list of weighted densities of the random variable delta for multiple decorrelated noise models."""
 
-    # Checking lenghts
-    n = len(z_0s)
-    if not all(len(x) == n for x in [betas, sigma_sqs, proportions]):
-        raise ValueError("All input lists must have the same length.")
-    
-    # Checking proportions
-    if not np.isclose(np.sum(proportions), 1.0):
-        raise ValueError("Proportions must sum to 1.")
-    
-    # Checking if all sigma_sqs are not too small
-    if np.any(sigma_sqs < 1e-10):
-        raise ValueError("All sigma_sqs must be greater than or equal to 1e-10 to avoid division by zero.")
-
     eta = m**2 / (rho * q)
     sigma_delta_sqs = sigma_sqs + q + betas**2 - 2 * m * betas / sqrt(rho)
     
     exponent = -((delta - z_0s) ** 2) / (2 * sigma_delta_sqs)
-    denum = sqrt(2 * pi * sigma_delta_sqs)
-    densities = exp(exponent) / denum
+    denum = np.sqrt(2 * pi * sigma_delta_sqs)
+    densities = np.exp(exponent) / denum
     
     return proportions* densities
 
