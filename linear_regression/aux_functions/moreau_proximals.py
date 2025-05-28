@@ -68,6 +68,43 @@ def Dω_proximal_Tukey_loss(y: float, omega: float, V: float, τ: float) -> floa
     return 1 / (1 + V * DDz_tukey_loss(y, proximal, τ))
 
 
+# Matéo begins 
+
+@njit(error_model="numpy", fastmath=False)
+def moreau_loss_Tukey_TI(
+    r: float, delta: float, V: float, τ: float
+) -> float:
+    """
+    Moreau loss for the Tukey loss using the translation invariance property.
+    """
+    return (delta-r) ** 2 / 2 + V*tukey_loss(r, 0, τ)
+
+@njit(error_model="numpy", fastmath=False)
+def proximal_Tukey_loss_TI(delta :float, V : float, τ : float) -> float:
+    """
+    Proximal operator fo the Tukey loss using the translation invariance property.
+    """
+
+    return brent_minimize_scalar(
+        moreau_loss_Tukey_TI,
+        -BIG_NUMBER,
+        BIG_NUMBER,
+        TOL_BRENT_MINIMIZE,
+        MAX_ITER_BRENT_MINIMIZE,
+        (delta, V, τ)
+    )[0]
+
+@njit(error_model="numpy", fastmath=False)
+def Ddelta_proximal_Tukey_loss_TI(delta: float, V: float, τ: float) -> float:
+    """
+    Derivative of the proximal operator of the Tukey loss using the translation invariance property.
+    """
+    proximal = proximal_Tukey_loss_TI(delta, V, τ)
+
+    return 1 / (1 + V * DDz_tukey_loss(proximal, 0, τ))
+
+# Matéo ends
+
 # ---------------------------- modified tukey loss --------------------------- #
 @njit(error_model="numpy", fastmath=False)
 def moreau_loss_Tukey_modified_cubic(
