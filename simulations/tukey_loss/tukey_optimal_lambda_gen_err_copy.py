@@ -10,7 +10,7 @@ import traceback
 from linear_regression.sweeps.alpha_sweeps import sweep_alpha_optimal_lambda_fixed_point
 # Fonctions SE
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
-from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import f_hat_xigamma_mod_Tukey_decorrelated_noise
+from linear_regression.fixed_point_equations.regression.mod_Tukey_loss import f_hat_fast
 # Observables & Erreurs
 from linear_regression.aux_functions.observables_state_evolution import (
     gen_error,
@@ -35,10 +35,10 @@ from linear_regression.erm.erm_solvers import find_coefficients_mod_Tukey
 integration_bound = 7 # Limite d'intégration pour RS_E2
 
 # --- Définition des Paramètres ---
-alpha_min, alpha_max = 10, 5000
-n_alpha_pts = 30
+alpha_min, alpha_max = 50, 10000
+n_alpha_pts = 200
 # Paramètres du bruit et du modèle
-delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0.2
+delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0
 # Paramètres de la perte Tukey (c=0 pour Tukey standard)
 tau = 1.0
 c = 0.0
@@ -49,7 +49,7 @@ barrier_V_threshold = 1.24 #5.0 / 4.0 # Seuil pour V
 barrier_RS_threshold = 1.0 # Seuil pour RS = alpha * V^2 * E2
 barrier_penalty = 1e10
 # Nouveaux paramètres pour le plot et sauvegarde
-plot_gen_error_vs_lambda = True # Activer/Désactiver les plots intermédiaires
+plot_gen_error_vs_lambda = False # Activer/Désactiver les plots intermédiaires
 plot_every_n_alpha = 10          # Afficher le plot tous les N alpha
 lambda_pts_plot_gen_error = 30
 lambda_size_plot_gen_error = 100
@@ -60,7 +60,7 @@ force_recompute = False       # Mettre à True pour ignorer les fichiers existan
 data_folder = "./data/mod_Tukey_decorrelated_noise_c0_lambda_opt_multi_barrier"
 os.makedirs(data_folder, exist_ok=True)
 
-file_name_base = f"optimal_lambda_se_tukey_xigamma_alpha_min_{alpha_min}_max_{alpha_max}_delta_in_{delta_in}_delta_out_{delta_out}_percentage_{percentage}_beta_{beta}_tau_{tau}_c_{c}_barrierV{barrier_V_threshold:.2f}"
+file_name_base = f"optimal_lambda_se_tukey_evolved_alpha_min_{alpha_min}_max_{alpha_max}_delta_in_{delta_in}_delta_out_{delta_out}_percentage_{percentage}_beta_{beta}_tau_{tau}_c_{c}_barrierV{barrier_V_threshold:.2f}"
 file_name_se_pkl = f"{file_name_base}.pkl"
 file_name_se_csv = f"{file_name_base}.csv"
 full_path_se_pkl = os.path.join(data_folder, file_name_se_pkl)
@@ -241,7 +241,7 @@ if not loaded_from_pickle and not loaded_from_csv:
             f_min_val, current_reg_param_opt, (m, q, V), current_funs_values = \
                 find_optimal_reg_param_function(
                     f_func=f_L2_reg,
-                    f_hat_func=f_hat_xigamma_mod_Tukey_decorrelated_noise,
+                    f_hat_func=f_hat_fast,
                     f_kwargs=f_kwargs.copy(), # Passe une copie
                     f_hat_kwargs=current_f_hat_kwargs,
                     initial_guess_reg_param=old_reg_param_opt,
@@ -320,7 +320,7 @@ if not loaded_from_pickle and not loaded_from_csv:
                     # Attention: Utiliser une copie des kwargs de f_hat aussi
                     temp_f_hat_kwargs = current_f_hat_kwargs.copy()
                     m_plot, q_plot, V_plot = fixed_point_finder(
-                        f_L2_reg, f_hat_xigamma_mod_Tukey_decorrelated_noise,
+                        f_L2_reg, f_hat_fast,
                         plot_initial_cond, temp_f_kwargs, temp_f_hat_kwargs,
                         verbose=False
                     )

@@ -2,7 +2,7 @@ from numba import njit
 import numpy as np
 from math import exp, erf, sqrt, pi
 from scipy.integrate import quad, dblquad
-from ...aux_functions.moreau_proximals import proximal_Tukey_modified_quad
+from ...aux_functions.moreau_proximals import (proximal_Tukey_modified_quad, Dω_proximal_Tukey_loss, proximal_Tukey_loss)
 from ...aux_functions.misc import gaussian
 from ...aux_functions.loss_functions import DDz_mod_tukey_loss_cubic
 from ...aux_functions.likelihood_channel_functions import (

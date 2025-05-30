@@ -37,9 +37,9 @@ def gen_error_with_barrier(m, q, V, barrier_threshold=5./4., penalty=1e10, **kwa
 alpha_min, alpha_max = 50, 10000
 n_alpha_pts = 200
 # Paramètres du bruit et du modèle
-delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0.0
+delta_in, delta_out, percentage, beta = 1.0, 0.5, 0.6, 0.0
 # Paramètres de la perte Tukey (c=0 pour Tukey standard)
-tau = 2.0
+tau = 1.0
 c = 0.0
 # Paramètres de l'optimisation et simulation
 min_reg_param_bound = 1e-8 # Borne inférieure pour lambda
@@ -47,9 +47,9 @@ barrier_V_threshold = 1.24 #5.0 / 4.0 # Seuil pour V
 barrier_penalty = 1e10 # Pénalité si V >= seuil
 
 # --- Configuration Fichiers ---
-data_folder = "./data/Tukey_evolved_lambda_opt_barrier"
+data_folder = "./data/Huber_lambda_opt_barrier"
 os.makedirs(data_folder, exist_ok=True)
-file_name_se = f"optimal_lambda_se_tukey_evolved_alpha_min_{alpha_min}_max_{alpha_max}_n_alpha_pts_{n_alpha_pts}_delta_in_{delta_in}_delta_out_{delta_out}_percentage_{percentage}_beta_{beta}_tau_{tau}_c_{c}.pkl"
+file_name_se = f"optimal_lambda_se_huber_alpha_min_{alpha_min}_max_{alpha_max}_n_alpha_pts_{n_alpha_pts}_delta_in_{delta_in}_delta_out_{delta_out}_percentage_{percentage}_beta_{beta}_tau_{tau}_c_{c}.pkl"
 full_path_se = os.path.join(data_folder, file_name_se)
 
 # --- Calcul Théorique (State Evolution) ---
@@ -58,14 +58,14 @@ if not os.path.exists(full_path_se):
     # Condition initiale pour m, q, V (à ajuster si besoin)
     init_cond_fpe = (0.8, 0.9, 0.1) # Important d'avoir V < 5/4 initialement
     # Estimation initiale pour lambda (sera optimisé)
-    initial_guess_lambda = 0.1
+    initial_guess_lambda = alpha_min/20
 
     # Dictionnaires d'arguments pour les fonctions SE
     f_kwargs = {}
     f_hat_kwargs = {
         "delta_in": delta_in, "delta_out": delta_out,
         "percentage": percentage, "beta": beta,
-        "tau": tau, "c": c,
+        "a": tau, #"c": c,
         #"integration_bound": 7, "epsabs": 1e-12, "epsrel": 1e-8
     }
     # Arguments pour la fonction à minimiser (gen_error) et son wrapper
@@ -91,7 +91,7 @@ if not os.path.exists(full_path_se):
             funs_values_se,      # Valeurs des observables
         ) = sweep_alpha_optimal_lambda_fixed_point(
             f_func=f_L2_reg,
-            f_hat_func=f_hat_fast,
+            f_hat_func=f_hat_Huber_decorrelated_noise,
             alpha_min=alpha_min, alpha_max=alpha_max, n_alpha_pts=n_alpha_pts,
             inital_guess_lambda=initial_guess_lambda,
             f_kwargs=f_kwargs, f_hat_kwargs=f_hat_kwargs,
