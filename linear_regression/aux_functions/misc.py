@@ -354,33 +354,33 @@ def margin_probit_classif(m, q, V, delta):
 
 
 # errors
-def gen_error(m, q, V, delta_in, delta_out, percentage, beta):
+def gen_error(m, q, V, Delta_in, Delta_out, percentage, beta):
     return q - 2 * m * (1 + (-1 + beta) * percentage) + 1 + percentage * (-1 + beta**2)
 
 
-def excess_gen_error(m, q, V, delta_in, delta_out, percentage, beta):
+def excess_gen_error(m, q, V, Delta_in, Delta_out, percentage, beta):
     gen_err_BO_alpha_inf = (1 - percentage) * percentage**2 * (1 - beta) ** 2 + percentage * (
         1 - percentage
     ) ** 2 * (beta - 1) ** 2
-    return gen_error(m, q, V, delta_in, delta_out, percentage, beta) - gen_err_BO_alpha_inf
+    return gen_error(m, q, V, Delta_in, Delta_out, percentage, beta) - gen_err_BO_alpha_inf
 
 
-def excess_gen_error_oracle_rescaling(m, q, V, delta_in, delta_out, percentage, beta):
+def excess_gen_error_oracle_rescaling(m, q, V, Delta_in, Delta_out, percentage, beta):
     oracle_norm = 1 - percentage + percentage * beta
     m_prime = oracle_norm * m / sqrt(q)
     q_prime = oracle_norm**2
 
-    return excess_gen_error(m_prime, q_prime, V, delta_in, delta_out, percentage, beta)
+    return excess_gen_error(m_prime, q_prime, V, Delta_in, Delta_out, percentage, beta)
 
 
-def estimation_error_rescaled(m, q, V, delta_in, delta_out, percentage, beta, norm_const):
+def estimation_error_rescaled(m, q, V, Delta_in, Delta_out, percentage, beta, norm_const):
     m = m / norm_const
     q = q / (norm_const**2)
 
     return estimation_error(m, q, V)
 
 
-def estimation_error_oracle_rescaling(m, q, V, delta_in, delta_out, percentage, beta):
+def estimation_error_oracle_rescaling(m, q, V, Delta_in, Delta_out, percentage, beta):
     oracle_norm = 1.0  # abs(1 - percentage + percentage * beta)
     m_prime = oracle_norm * m / sqrt(q)
     q_prime = oracle_norm**2
@@ -388,14 +388,14 @@ def estimation_error_oracle_rescaling(m, q, V, delta_in, delta_out, percentage, 
     return estimation_error(m_prime, q_prime, V)
 
 
-def gen_error_BO(m, q, V, delta_in, delta_out, percentage, beta):
+def gen_error_BO(m, q, V, Delta_in, Delta_out, percentage, beta):
     return (1 + percentage * (-1 + beta**2) - (1 + percentage * (-1 + beta)) ** 2 * q) - (
         (1 - percentage) * percentage**2 * (1 - beta) ** 2
         + percentage * (1 - percentage) ** 2 * (beta - 1) ** 2
     )
 
 
-def gen_error_BO_old(m, q, V, delta_in, delta_out, percentage, beta):
+def gen_error_BO_old(m, q, V, Delta_in, Delta_out, percentage, beta):
     q = (1 - percentage + percentage * beta) ** 2 * q
     m = (1 - percentage + percentage * beta) * m
 

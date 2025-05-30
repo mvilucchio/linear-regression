@@ -274,7 +274,7 @@ def E2_RS_Tukey_int_decorrelated_noise_TI_out(delta, m, q, V, z_0s, betas, sigma
         rho
     )
 
-def RS_decorrelated_noise_TI_l2_reg(m, q, V, alpha, Delta_in, Delta_out, percentage, beta, tau, reg_param, rho = 1.0):
+def RS_decorrelated_noise_TI_l2_reg(m, q, V, alpha, Delta_in, Delta_out, percentage, beta, tau, reg_param, rho = 1.0, **integration_args):
     
     z_0s= np.array([0.0, 0.0])
     betas = np.array([1.0, beta])
