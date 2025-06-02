@@ -13,7 +13,7 @@ from linear_regression.utils.errors import ConvergenceError
 from linear_regression.fixed_point_equations import TOL_FPE, MIN_ITER_FPE, MAX_ITER_FPE, BLEND_FPE
 
 # Loss specific hyperparameters
-loss_fun_name = "Tukey"
+loss_fun_name = "Tukey_test"
 loss_parameters = {"tau": 1.0}
 
 # Regularization hyperparameter

@@ -4,7 +4,7 @@ from math import exp, erf, sqrt, pi
 from scipy.integrate import quad, dblquad
 from ...aux_functions.moreau_proximals import (proximal_Logistic_loss, Dω_proximal_Logistic_loss, proximal_Tukey_loss_TI, Ddelta_proximal_Tukey_loss_TI)
 from ...aux_functions.misc import gaussian
-from ...aux_functions.loss_functions import logistic_loss, DDz_logistic_loss
+from ...aux_functions.loss_functions import logistic_loss, DDz_logistic_loss, Dr_tukey_loss, DDr_tukey_loss
 from ...aux_functions.likelihood_channel_functions import L_cal_multi_decorrelated_noise
 
 BIG_NUMBER = 20
@@ -131,22 +131,63 @@ def V_int_Tukey_multi_decorrelated_noise_TI(delta, m, q, V, z_0s, betas, sigma_s
     return (1- Dprox) / V * densities
 
 @njit(error_model="numpy", fastmath=False)
-def q_int_Tukey_decorrelated_noise_TI_in(delta, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho=1.0):
-    return q_int_Tukey_multi_decorrelated_noise_TI(delta, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho)[0]
+def q_int_Tukey_decorrelated_noise_TI_delta(delta, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho=1.0, i=0):
+    return q_int_Tukey_multi_decorrelated_noise_TI(delta, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho)[i]
 
 @njit(error_model="numpy", fastmath=False)
-def q_int_Tukey_decorrelated_noise_TI_out(delta, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho=1.0):
-    return q_int_Tukey_multi_decorrelated_noise_TI(delta, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho)[1]
+def V_int_Tukey_decorrelated_noise_TI_delta(delta, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho=1.0, i=0):
+    return V_int_Tukey_multi_decorrelated_noise_TI(delta, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho)[i]
 
 @njit(error_model="numpy", fastmath=False)
-def V_int_Tukey_decorrelated_noise_TI_in(delta, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho=1.0):
-    return V_int_Tukey_multi_decorrelated_noise_TI(delta, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho)[0]
+def q_int_Tukey_multi_decorrelated_noise_TI_r(r, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho=1.0):
+    Dr_Tukey = Dr_tukey_loss(r,tau)
+    DDr_Tukey = DDr_tukey_loss(r,tau)
+
+    densities = L_cal_multi_decorrelated_noise(
+        r+V*Dr_Tukey,
+        m,
+        q,
+        V,
+        z_0s,
+        betas,
+        sigma_sqs,
+        proportions,
+        rho
+    )
+
+    return Dr_Tukey**2 * (1+V*DDr_Tukey)*densities
 
 @njit(error_model="numpy", fastmath=False)
-def V_int_Tukey_decorrelated_noise_TI_out(delta, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho=1.0):
-    return V_int_Tukey_multi_decorrelated_noise_TI(delta, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho)[1]
+def V_int_Tukey_multi_decorrelated_noise_TI_r(r, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho=1.0):
+    Dr_Tukey = Dr_tukey_loss(r,tau)
+    DDr_Tukey = DDr_tukey_loss(r,tau)
 
-def f_hat_Tukey_decorrelated_noise_TI(m, q, V, alpha, Delta_in, Delta_out, percentage, beta, tau, rho = 1.0):
+    densities = L_cal_multi_decorrelated_noise(
+        r+V*Dr_Tukey,
+        m,
+        q,
+        V,
+        z_0s,
+        betas,
+        sigma_sqs,
+        proportions,
+        rho
+    )
+
+    return DDr_Tukey*densities
+
+@njit(error_model="numpy", fastmath=False)
+def q_int_Tukey_decorrelated_noise_TI_r(r, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho=1.0, i=0):
+    return q_int_Tukey_multi_decorrelated_noise_TI_r(r, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho)[i]
+
+@njit(error_model="numpy", fastmath=False)
+def V_int_Tukey_decorrelated_noise_TI_r(r, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho=1.0, i=0):
+    return V_int_Tukey_multi_decorrelated_noise_TI_r(r, m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho)[i]
+
+def f_hat_Tukey_decorrelated_noise_TI(m, q, V, alpha, Delta_in, Delta_out, percentage, beta, tau, rho = 1.0, 
+                                      q_int_loss_decorrelated_noise_x=q_int_Tukey_decorrelated_noise_TI_r,
+                                      V_int_loss_decorrelated_noise_x=V_int_Tukey_decorrelated_noise_TI_r,
+                                      ):
     
     z_0s= np.array([0.0, 0.0])
     betas = np.array([1.0, beta])
@@ -154,31 +195,31 @@ def f_hat_Tukey_decorrelated_noise_TI(m, q, V, alpha, Delta_in, Delta_out, perce
     proportions = np.array([1-percentage, percentage])
 
     qhat_in = 2 * alpha * quad(
-        q_int_Tukey_decorrelated_noise_TI_in,
+        q_int_loss_decorrelated_noise_x,
         0,
         tau,
-        args=(m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho),
+        args=(m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho, 0),
     )[0]
 
     qhat_out = 2 * alpha * quad(
-        q_int_Tukey_decorrelated_noise_TI_out,
+        q_int_loss_decorrelated_noise_x,
         0,
         tau,
-        args=(m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho),
+        args=(m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho, 1),
     )[0]
 
     Vhat_in = 2 * alpha * quad(
-        V_int_Tukey_decorrelated_noise_TI_in,
+        V_int_loss_decorrelated_noise_x,
         0,
         tau,
-        args=(m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho),
+        args=(m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho, 0),
     )[0]
 
     Vhat_out = 2 * alpha * quad(
-        V_int_Tukey_decorrelated_noise_TI_out,
+        V_int_loss_decorrelated_noise_x,
         0,
         tau,
-        args=(m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho),
+        args=(m, q, V, z_0s, betas, sigma_sqs, proportions, tau, rho, 1),
     )[0]
 
     m_hat_in = betas[0]*Vhat_in

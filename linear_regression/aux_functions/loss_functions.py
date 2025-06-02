@@ -57,6 +57,29 @@ def DDz_tukey_loss(y: float, z: float, τ: float) -> float:
         return 1 + (5 * (y - z) ** 4) / τ**4 - (6 * (y - z) ** 2) / τ**2
     else:
         return 0.0
+    
+# Matéo begins here
+@njit(error_model="numpy",fastmath=False)
+def Dr_tukey_loss(r :float, τ: float) -> float:
+    """
+    Compute the derivative of the Tukey loss with respect to r.
+    """
+    if abs(r) <= τ:
+        return r * (1 - r ** 2 / τ**2) ** 2
+    else:
+        return 0.0
+
+@njit(error_model="numpy",fastmath=False)
+def DDr_tukey_loss(r: float, τ: float) -> float:
+    """
+    Compute the second derivative of the Tukey loss with respect to r.
+    """
+    if abs(r) <= τ:
+        return 1 + (5 * r ** 4) / τ**4 - (6 * r ** 2) / τ**2
+    else:
+        return 0.0
+
+# Matéo ends here
 
 
 # ---------------------- regularised tukey loss (cubic) ---------------------- #
