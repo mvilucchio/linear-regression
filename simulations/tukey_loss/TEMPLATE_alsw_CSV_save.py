@@ -34,7 +34,7 @@ initial_cond_fpe = (0.35947940,0.12170537,3.04138236e-01)
 
 # --- Plotting parameters ---
 
-save_plot = True
+save_plots = True
 
 # Choose what to plot (possible values: "m", "q", "V", "RS", "m_hat", "q_hat", "V_hat", "excess_gen_error", "estim_error", "time")
 plotted_values = ["m", "q", 
@@ -43,7 +43,7 @@ plotted_values = ["m", "q",
                    "excess_gen_error", "estim_error", 
                    "time"]
 
-if save_plot:
+if save_plots:
 
     plot_folder = f"./imgs/alpha_sweeps_{loss_fun_name}_{reg_fun_name}_decorrelated_noise"
 
@@ -62,10 +62,10 @@ if save_plot:
 
 # --- Precision parameters ---
 
-# Used for RS stability condition computation
-integration_bound_RS = 5
-integration_epsabs_RS = 1e-7
-integration_epsrel_RS = 1e-4
+# Integration parameters (not used for flat tailed losses)
+integration_bound = 5
+integration_epsabs = 1e-7
+integration_epsrel = 1e-4
 
 # Fixed Point Finder precision parameters (optional)
 abs_tol_FPE = TOL_FPE
@@ -78,19 +78,20 @@ blend_FPE = BLEND_FPE
 save_CSV = True
 save_pickle = True
 
-data_folder = f"./data/alpha_sweeps_{loss_fun_name}_{reg_fun_name}_decorrelated_noise"
+if save_CSV or save_pickle:
+    data_folder = f"./data/alpha_sweeps_{loss_fun_name}_{reg_fun_name}_decorrelated_noise"
 
-if not os.path.exists(data_folder):
-    os.makedirs(data_folder)
+    if not os.path.exists(data_folder):
+        os.makedirs(data_folder)
 
-data_subfolder = f"./data/alpha_sweeps_{loss_fun_name}_{reg_fun_name}_decorrelated_noise/loss_param_{loss_parameters['tau']:.1f}_reg_param_{reg_param:.1f}_noise_{noise['Delta_in']:.2f}_{noise['Delta_out']:.2f}_{noise['percentage']:.2f}_{noise['beta']:.2f}"
+    data_subfolder = f"./data/alpha_sweeps_{loss_fun_name}_{reg_fun_name}_decorrelated_noise/loss_param_{loss_parameters['tau']:.1f}_reg_param_{reg_param:.1f}_noise_{noise['Delta_in']:.2f}_{noise['Delta_out']:.2f}_{noise['percentage']:.2f}_{noise['beta']:.2f}"
 
-if not os.path.exists(data_subfolder):
-    os.makedirs(data_subfolder)
+    if not os.path.exists(data_subfolder):
+        os.makedirs(data_subfolder)
 
-file_name_base = f"alsw_alpha_min_{alpha_min:.1f}_max_{alpha_max:.1f}_n_pts_{n_alpha_pts}"
-file_path_CSV = os.path.join(data_subfolder, file_name_base + ".csv")
-file_path_pkl = os.path.join(data_subfolder, file_name_base + ".pkl")
+    file_name_base = f"alsw_alpha_min_{alpha_min:.1f}_max_{alpha_max:.1f}_n_pts_{n_alpha_pts}"
+    file_path_CSV = os.path.join(data_subfolder, file_name_base + ".csv")
+    file_path_pkl = os.path.join(data_subfolder, file_name_base + ".pkl")
 
 # --- Initialization ---
 alphas = np.logspace(np.log10(alpha_min), np.log10(alpha_max), n_alpha_pts)
@@ -111,10 +112,10 @@ rs_values_results = np.full(n_alpha_pts, np.nan)
 time_results = np.full(n_alpha_pts, np.nan)
 
 # CSV Header
-header_CSV = "alpha,m,q,V,m_hat,q_hat,V_hat,gen_error,estim_error,rs_value,time_sec\n"
-
-with open(file_path_CSV, "w") as f:
-    f.write(header_CSV)
+if save_CSV:
+    header_CSV = "alpha,m,q,V,m_hat,q_hat,V_hat,gen_error,estim_error,rs_value,time_sec\n"
+    with open(file_path_CSV, "w") as f:
+        f.write(header_CSV)
 
 # --- Alpha sweep with incremental save ---
 
@@ -173,9 +174,9 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
                     **loss_parameters,
                     "reg_param":reg_param,
                     **noise,
-                    "integration_bound": integration_bound_RS,
-                    "integration_epsabs": integration_epsabs_RS,
-                    "integration_epsrel": integration_epsrel_RS
+                    "integration_bound": integration_bound,
+                    "integration_epsabs": integration_epsabs,
+                    "integration_epsrel": integration_epsrel
                 }
                 rs_value = RS_Tukey_decorrelated_noise_TI_l2_reg(m, q, V, **rs_kwargs)
             except Exception as e_rs:
@@ -204,54 +205,55 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
         rs_values_results[idx] = rs_value
         time_results[idx] = point_duration
 
-        try:
-            with open(file_path_CSV, "a") as f:
-                rs_str = f"{rs_value:.8e}" if np.isfinite(rs_value) else "0.0"
-                f.write(f"{alpha:.8e},{m:.8e},{q:.8e},{V:.8e},{m_hat:.8e},{q_hat:.8e},{V_hat:.8e},{excess_gen_err:.8e},{estim_err:.8e} {rs_str},{point_duration:.4f}\n")
-                f.flush()
-        except IOError as e:
-            print(f"Error writing to {file_path_CSV}: {e}")
+        if save_CSV:
+            try:
+                with open(file_path_CSV, "a") as f:
+                    rs_str = f"{rs_value:.8e}" if np.isfinite(rs_value) else "0.0"
+                    f.write(f"{alpha:.8e},{m:.8e},{q:.8e},{V:.8e},{m_hat:.8e},{q_hat:.8e},{V_hat:.8e},{excess_gen_err:.8e},{estim_err:.8e} {rs_str},{point_duration:.4f}\n")
+                    f.flush()
+            except IOError as e:
+                print(f"Error writing to {file_path_CSV}: {e}")
 
 # --- Final save with pickle ---
-
-final_results_dict = {
-    "description": f"Alpha sweep for {loss_fun_name} loss with {reg_fun_name} regularization",
-    "loss_fun": loss_fun_name,
-    "loss_parameters": loss_parameters,
-    "reg_fun": reg_fun_name,
-    "reg_param": reg_param,
-    "noise_model": "decorrelated_noise",
-    "noise_parameters": noise,
-    "integration_bound": integration_bound_RS,
-    "integration_epsabs": integration_epsabs_RS,
-    "integration_epsrel": integration_epsrel_RS,
-    "alpha_range": {"min": alpha_min, "max": alpha_max, "n_points": n_alpha_pts},
-    "alphas": alphas,
-    "ms": ms_results,
-    "qs": qs_results,
-    "Vs": Vs_results,
-    "m_hats": m_hat_results,
-    "q_hats": q_hat_results,
-    "V_hats": V_hat_results,
-    "excess_gen_error": excess_gen_error_results,
-    "estim_error": estim_error_results,
-    "rs_values": rs_values_results,
-    "times_sec": time_results
-}
-
-print(f"Saving final results to {file_path_pkl}...")
-try:
-    with open(file_path_pkl, "wb") as f:
-        pickle.dump(final_results_dict, f)
-    print("Final save completed.")
-except Exception as e:
-    print(f"Error during final pickle save: {e}")
+if save_pickle:
+    final_results_dict = {
+        "description": f"Alpha sweep for {loss_fun_name} loss with {reg_fun_name} regularization",
+        "loss_fun": loss_fun_name,
+        "loss_parameters": loss_parameters,
+        "reg_fun": reg_fun_name,
+        "reg_param": reg_param,
+        "noise_model": "decorrelated_noise",
+        "noise_parameters": noise,
+        "integration_bound": integration_bound,
+        "integration_epsabs": integration_epsabs,
+        "integration_epsrel": integration_epsrel,
+        "alpha_range": {"min": alpha_min, "max": alpha_max, "n_points": n_alpha_pts},
+        "alphas": alphas,
+        "ms": ms_results,
+        "qs": qs_results,
+        "Vs": Vs_results,
+        "m_hats": m_hat_results,
+        "q_hats": q_hat_results,
+        "V_hats": V_hat_results,
+        "excess_gen_error": excess_gen_error_results,
+        "estim_error": estim_error_results,
+        "rs_values": rs_values_results,
+        "times_sec": time_results
+    }
+    
+    print(f"Saving final results to {file_path_pkl}...")
+    try:
+        with open(file_path_pkl, "wb") as f:
+            pickle.dump(final_results_dict, f)
+        print("Final save completed.")
+    except Exception as e:
+        print(f"Error during final pickle save: {e}")
 
 print("Alpha sweep computation finished.")
 
 # --- Plotting results ---
 
-if save_plot:
+if save_plots:
     print("Plotting results...")
 
     def safe_plot(x, y, label, **kwargs):
