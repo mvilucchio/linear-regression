@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
-from linear_regression.fixed_point_equations.regression.Tukey_loss import f_hat_Tukey_decorrelated_noise_TI, RS_decorrelated_noise_TI_l2_reg
+from linear_regression.fixed_point_equations.regression.Tukey_loss import f_hat_Tukey_decorrelated_noise_TI, RS_Tukey_decorrelated_noise_TI_l2_reg
 from linear_regression.aux_functions.misc import excess_gen_error, estimation_error
 from linear_regression.utils.errors import ConvergenceError
 from linear_regression.fixed_point_equations import TOL_FPE, MIN_ITER_FPE, MAX_ITER_FPE, BLEND_FPE
@@ -177,7 +177,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
                     "integration_epsabs": integration_epsabs_RS,
                     "integration_epsrel": integration_epsrel_RS
                 }
-                rs_value = RS_decorrelated_noise_TI_l2_reg(m, q, V, **rs_kwargs)
+                rs_value = RS_Tukey_decorrelated_noise_TI_l2_reg(m, q, V, **rs_kwargs)
             except Exception as e_rs:
                 print(f"\nWarning: RS computation failed for alpha={alpha:.2e}: {e_rs}")
 
