@@ -63,10 +63,50 @@ def load_or_create_pickle(data_path: str) -> dict:
     except IOError as e:
         print(f"Warning: Could not write pickle file {pickle_path}: {e}")
 
+    if "alpha" in data_dict:
+        # Rename 'alpha' to 'alphas' for consistency
+        data_dict["alphas"] = data_dict.pop("alpha")
     return data_dict
 
+def load_pickle_ERM(pickle_path, ERM_name: str = "ERM") -> dict:
+    """
+    Load a pickle file containing ERM data.
 
-def load_multiple_runs(data_paths: list, run_names: list = None, print_keys = False) -> dict:
+    Args:
+        pickle_path (str or str list) : Path to the pickle file.
+
+    Returns:
+        data_dict: dict where keys are column names and values are lists of column values (floats).
+    """
+    if not os.path.exists(pickle_path):
+        raise FileNotFoundError(f"Pickle file not found: {pickle_path}")
+
+    with open(pickle_path, "rb") as f:
+        data = pickle.load(f)
+
+    if not isinstance(data, dict):
+        raise ValueError(f"Expected a dictionary in the pickle file, got {type(data)} instead.")
+    
+    data["source"] = "ERM"
+    data["description"] = ERM_name
+
+    required = {"alphas", "m_mean", "m_std", "q_mean", "q_std", "estim_err_mean", "estim_err_std", "gen_err_mean", "gen_err_std"}
+    if not required.issubset(data):
+        missing = required - set(data.keys())
+        raise ValueError(f"'{pickle_path}' is missing required keys: {missing}. Ensure it contains the expected data structure.")
+
+    #rename keys to match expected format m_mean -> m
+    if "alpha" in data:
+        data["alphas"] = data.pop("alpha")
+    data["m"] = data.pop("m_mean")
+    data["q"] = data.pop("q_mean")
+    data["estim_err"] = data.pop("estim_err_mean")
+    data["gen_err"] = data.pop("gen_err_mean")
+
+    return data
+
+
+def load_multiple_runs(data_paths: list, run_names: list = None, print_keys = False, ERM_data_pickle_paths: list = None, ERM_names:list = None) -> dict:
     """
     Given a list of directories or file bases, each containing a CSV and/or PKL file,
     load all data into a dictionary of run_name -> data_dict.
@@ -118,6 +158,22 @@ def load_multiple_runs(data_paths: list, run_names: list = None, print_keys = Fa
                 print(f"Warning: Duplicate run name '{run_names[idx_data]}' found. Skipping.")
                 continue
             runs_data[run_names[idx_data]] = dict_run_data
+
+    if ERM_data_pickle_paths is not None:
+        if ERM_names is None:
+            ERM_names = [f"ERM_{i}" for i in range(len(ERM_data_pickle_paths))]
+        elif len(ERM_names) != len(ERM_data_pickle_paths):
+            raise ValueError("If ERM_names is provided, it must match the length of ERM_data_pickle_paths.")
+
+        for ERM_path, ERM_name in zip(ERM_data_pickle_paths, ERM_names):
+            try:
+                ERM_data = load_pickle_ERM(ERM_path, ERM_name)
+                if ERM_name in runs_data:
+                    print(f"Warning: Duplicate ERM name '{ERM_name}' found. Skipping.")
+                    continue
+                runs_data[ERM_name] = ERM_data
+            except Exception as e:
+                print(f"Error loading ERM data from {ERM_path}: {e}")
     return runs_data
 
 
@@ -145,13 +201,22 @@ def plot_comparison(runs_data: dict, x_key: str, y_key, logx: bool = True, logy:
             continue
         x_vals = data[x_key]
         y_vals = data[y_key_local]
-        # Filter out NaNs
-        filtered = [(x, y) for x, y in zip(x_vals, y_vals) if not (np.isnan(x) or np.isnan(y))]
+        if y_key_local + "_std" in data:
+            y_std = data[y_key_local + "_std"]
+            # Filter out NaNs
+            filtered = [(x, y, s) for x, y, s in zip(x_vals, y_vals, y_std) if not (np.isnan(x) or np.isnan(y) or np.isnan(s))]
+        else:
+            filtered = [(x, y) for x, y in zip(x_vals, y_vals) if not (np.isnan(x) or np.isnan(y))]
         if not filtered:
             print(f"Warning: No valid data for '{run_name}' on keys {x_key}, {y_key_local}.")
             continue
-        xs, ys = zip(*filtered)
-        plt.plot(xs, ys, linestyle='-', label=run_name)
+
+        if y_key_local + "_std" in data:
+            xs, ys, y_stds = zip(*filtered)
+            plt.errorbar(xs, ys, yerr=y_stds, fmt='-', label=run_name)
+        else:
+            xs, ys = zip(*filtered)
+            plt.plot(xs, ys, linestyle='-', label=run_name)
 
     if logx:
         plt.xscale("log")
@@ -183,6 +248,11 @@ base_paths = [
     "./data/Tukey_evolved_lambda_opt_barrier/optimal_lambda_se_tukey_evolved_alpha_min_50_max_10000_n_alpha_pts_200_delta_in_0.1_delta_out_1.0_percentage_0.1_beta_0.0_tau_1.0_c_0.0", 
     "./data/alpha_sweeps_Tukey_L2_decorrelated_noise_opt_reg_param_for_excess_gen_error/loss_param_1.0_noise_0.10_1.00_0.10_0.00/alsw_alpha_min_50.0_max_10000.0_n_pts_200_min_reg_param_0.0",
 ]
+
+ERM_data_pickle_paths = [
+    "./data/ERM_mod_Tukey_decorrelated_noise/ERM_mod_Tukey_1.00_1.00_alpha_sweep_50.00_10000.000_200_reps_10_d_500_decorrelated_noise_0.10_1.00_0.10_0.10.pkl",
+]
+ERM_names = ["ERM_Tukey"]
 
 runs = load_multiple_runs(base_paths, 
                           run_names=["Tukey", "Tukey_new"],
