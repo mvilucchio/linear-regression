@@ -9,14 +9,15 @@ from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
 from linear_regression.fixed_point_equations.regression.Tukey_loss import f_hat_Tukey_decorrelated_noise_TI, RS_Tukey_decorrelated_noise_TI_l2_reg
 from linear_regression.aux_functions.misc import excess_gen_error, estimation_error, angle_teacher_student
-from linear_regression.fixed_point_equations.optimality_finding import find_optimal_reg_param_function_
+from linear_regression.fixed_point_equations.optimality_finding import find_optimal_reg_and_loss_param_function
 from linear_regression.utils.errors import ConvergenceError, MinimizationError
 from linear_regression.fixed_point_equations import TOL_FPE, MIN_ITER_FPE, MAX_ITER_FPE, BLEND_FPE
 
 # Loss specific hyperparameters
 loss_fun_name = "Tukey"
-loss_parameter_name = "tau"
-loss_parameters = {loss_parameter_name:1.0}
+loss_param_name = "tau"
+min_loss_param = 1e-9 #tau_min
+loss_parameters = {} # Additional parameters for the loss function, if any
 
 # Regularization hyperparameter
 reg_fun_name = "L2"
@@ -34,8 +35,9 @@ decreasing_alpha = True
 
 initial_cond_fpe = (0.9,0.82,3.04138236e-05)
 initial_guess_reg_param = 1000
+initial_guess_loss_param = 1.0
 
-f_min = estimation_error # Function to minimize
+f_min = excess_gen_error # Function to minimize
 f_min_args = {**noise} # Arguments for f_min except m,q,V
 barrier_V_threshold = 1.25 # Threshold for V. Can be None for no barrier
 barrier_RS_threshold = 1.0 # Threshold for RS condition. Can be None for no barrier
@@ -45,17 +47,18 @@ barrier_penalty = 1e10 # Penalty for violating barriers
 
 save_plots = True
 
-# Choose what to plot (possible values: "m", "q", "V", "RS", "m_hat", "q_hat", "V_hat", "opt_reg_param", "excess_gen_error", "estim_error", "angle_teacher_student", "time")
+# Choose what to plot (possible values: "m", "q", "V", "RS", "m_hat", "q_hat", "V_hat", "opt_reg_param", "opt_loss_param", "excess_gen_error", "estim_error", "angle_teacher_student", "time")
 plotted_values = ["m", "q", 
                   "V", "RS", "angle_teacher_student",
                    "m_hat", "q_hat", "V_hat", 
                    "opt_reg_param",
+                   "opt_loss_param",
                    "excess_gen_error", "estim_error", 
                    "time"]
 
-folder_name = f"alsw_{loss_fun_name}_{reg_fun_name}_decorrelated_noise_opt_reg_param_{f_min.__name__}"
-subfolder_name = f"loss_param_{loss_parameters[loss_parameter_name]:.1f}_noise_{noise['Delta_in']:.2f}_{noise['Delta_out']:.2f}_{noise['percentage']:.2f}_{noise['beta']:.2f}"
-file_name_base = f"alpha_min_{alpha_min:.0e}_max_{alpha_max:.0e}_n_pts_{n_alpha_pts}_min_reg_param_{min_reg_param:.0e}"
+folder_name = f"alsw_{loss_fun_name}_{reg_fun_name}_decorrelated_noise_opt_reg_and_loss_param_{f_min.__name__}"
+subfolder_name = f"noise_{noise['Delta_in']:.2f}_{noise['Delta_out']:.2f}_{noise['percentage']:.2f}_{noise['beta']:.2f}"
+file_name_base = f"alpha_min_{alpha_min:.0e}_max_{alpha_max:.0e}_n_pts_{n_alpha_pts}_min_reg_and_loss_param_{min_reg_param:.0e}_{min_loss_param:.0e}"
 
 if save_plots:
 
@@ -114,6 +117,7 @@ if decreasing_alpha:
 
 # Outputs
 opt_reg_param_results = np.full(n_alpha_pts, np.nan)
+opt_loss_param_results = np.full(n_alpha_pts, np.nan)
 ms_results = np.full(n_alpha_pts, np.nan)
 qs_results = np.full(n_alpha_pts, np.nan)
 Vs_results = np.full(n_alpha_pts, np.nan)
@@ -128,22 +132,24 @@ time_results = np.full(n_alpha_pts, np.nan)
 
 # CSV Header
 if save_CSV:
-    header_CSV = "alpha,opt_reg_param,m,q,V,m_hat,q_hat,V_hat,gen_error,estim_error,angle_teacher_student,rs_value,time_sec\n"
+    header_CSV = "alpha,opt_reg_param,opt_loss_param,m,q,V,m_hat,q_hat,V_hat,gen_error,estim_error,angle_teacher_student,rs_value,time_sec\n"
     with open(file_path_CSV, "w") as f:
         f.write(header_CSV)
 
 # --- Alpha sweep with incremental save ---
 
-print(f"Starting alpha sweep for {loss_fun_name} loss with parameters: {loss_parameters}")
+print(f"Starting alpha sweep for {loss_fun_name} loss with optimal {loss_param_name} for {f_min.__name__}")
 print(f"Using {reg_fun_name} regularization with optimal parameter for {f_min.__name__}")
 print(f"Alpha range: alpha_min={alpha_min}, alpha_max={alpha_max}, n_alpha_pts={n_alpha_pts}")
 print(f"Noise model parameters: {noise}")
 
 current_initial_cond = tuple(initial_cond_fpe)
 f_kwargs = {"reg_param": initial_guess_reg_param}
+f_hat_kwargs = {loss_param_name: initial_guess_loss_param}
 funs = [excess_gen_error, estimation_error, angle_teacher_student]
 funs_args = [{**noise}, {}, {}]
 last_opt_reg_param = initial_guess_reg_param
+last_opt_loss_param = initial_guess_loss_param
 
 for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
 
@@ -153,20 +159,21 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
         **noise
     }
 
-    opt_reg_param, m, q, V, m_hat, q_hat, V_hat, excess_gen_err, estim_err, rs_value = (np.nan,) * 10 # Initialize to NaN
+    opt_reg_param, opt_loss_param, m, q, V, m_hat, q_hat, V_hat, excess_gen_err, estim_err, rs_value = (np.nan,) * 11 # Initialize to NaN
     success = False
 
     point_start_time = time.time()
     try:
         # Attempt to find optimal regularization parameter
-        opt_reg_param, (m, q, V, m_hat, q_hat, V_hat), errors = \
-            find_optimal_reg_param_function_(
+        (opt_reg_param, opt_loss_param), (m, q, V, m_hat, q_hat, V_hat), errors = \
+            find_optimal_reg_and_loss_param_function(
                 f_func=f_L2_reg,
                 f_hat_func=f_hat_Tukey_decorrelated_noise_TI,
                 f_kwargs=f_kwargs,
                 f_hat_kwargs=f_hat_kwargs,
-                initial_guess_reg_param=last_opt_reg_param,
+                initial_guess_reg_and_loss_param=[last_opt_reg_param, last_opt_loss_param],
                 initial_cond_fpe=current_initial_cond,
+                loss_param_name=loss_param_name,
                 alpha_key='alpha',
                 funs=funs,
                 funs_args=funs_args,
@@ -177,6 +184,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
                 barrier_penalty=barrier_penalty,
                 RS_func= RS_Tukey_decorrelated_noise_TI_l2_reg,
                 min_reg_param= min_reg_param,
+                min_loss_param=min_loss_param,
                 verbose=False
             )
 
@@ -194,6 +202,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
                     "alpha": alpha,
                     **loss_parameters,
                     "reg_param":opt_reg_param,
+                    loss_param_name: opt_loss_param,
                     **noise,
                     "integration_bound": integration_bound,
                     "integration_epsabs": integration_epsabs,
@@ -208,6 +217,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
                 success = True
                 current_initial_cond = (m, q, V)  # Warm start for next alpha
                 last_opt_reg_param = opt_reg_param  # Update last optimal reg param
+                last_opt_loss_param = opt_loss_param  # Update last optimal loss param
 
     except (ConvergenceError, ValueError, FloatingPointError, OverflowError, MinimizationError) as e:
         print(f"\nWarning: optimization failed for alpha={alpha:.2e}. Error: {type(e).__name__}")
@@ -217,6 +227,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
     # --- Save incremental results ---
     if success:
         opt_reg_param_results[idx] = opt_reg_param
+        opt_loss_param_results[idx] = opt_loss_param
         ms_results[idx] = m
         qs_results[idx] = q
         Vs_results[idx] = V
@@ -233,7 +244,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
             try:
                 with open(file_path_CSV, "a") as f:
                     rs_str = f"{rs_value:.8e}" if np.isfinite(rs_value) else "0.0"
-                    f.write(f"{alpha:.8e},{opt_reg_param:.8e},{m:.8e},{q:.8e},{V:.8e},{m_hat:.8e},{q_hat:.8e},{V_hat:.8e},{excess_gen_err:.8e},{estim_err:.8e},{angle_teacher_student_val},{rs_str},{point_duration:.4f}\n")
+                    f.write(f"{alpha:.8e},{opt_reg_param:.8e},{opt_loss_param:.8e},{m:.8e},{q:.8e},{V:.8e},{m_hat:.8e},{q_hat:.8e},{V_hat:.8e},{excess_gen_err:.8e},{estim_err:.8e},{angle_teacher_student_val},{rs_str},{point_duration:.4f}\n")
                     f.flush()
             except IOError as e:
                 print(f"Error writing to {file_path_CSV}: {e}")
@@ -241,7 +252,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
 # --- Final save with pickle ---
 if save_pickle:
     final_results_dict = {
-        "description": f"Alpha sweep for {loss_fun_name} loss with {reg_fun_name} regularization, optimal regularization parameter for {f_min}.",
+        "description": f"Alpha sweep for {loss_fun_name} loss with {reg_fun_name} regularization, optimal regularization and loss ({loss_param_name}) parameters for {f_min}.",
         "loss_fun": loss_fun_name,
         "loss_parameters": loss_parameters,
         "reg_fun": reg_fun_name,
@@ -261,6 +272,7 @@ if save_pickle:
         "alpha_range": {"min": alpha_min, "max": alpha_max, "n_points": n_alpha_pts},
         "alphas": alphas,
         "opt_reg_params": opt_reg_param_results,
+        "opt_loss_params": opt_loss_param_results,
         "ms": ms_results,
         "qs": qs_results,
         "Vs": Vs_results,
@@ -342,7 +354,6 @@ if save_plots:
             safe_plot(alphas, q_hat_results, label="q_hat", linestyle='--')
         if "V_hat" in plotted_values:
             safe_plot(alphas, V_hat_results, label="V_hat", linestyle='-.')
-
         plt.xscale("log")
         plt.xlabel(r"$\alpha$")
         plt.yscale("log")
@@ -388,6 +399,20 @@ if save_plots:
         plt.grid(True)
         plt.tight_layout()
         plt.savefig(os.path.join(figures_folder, "opt_reg_param_vs_alpha.png"))
+        plt.close()
+
+    # ---- PLOT: Optimal loss parameter ----
+    if "opt_loss_param" in plotted_values:
+        plt.figure()
+        safe_plot(alphas, opt_loss_param_results, label="Optimal Loss Param", linestyle='-')
+        plt.xscale("log")
+        plt.xlabel(r"$\alpha$")
+        plt.yscale("log")
+        plt.ylabel("Optimal Loss Parameter")
+        plt.title("Optimal Loss Parameter vs alpha")
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(os.path.join(figures_folder, "opt_loss_param_vs_alpha.png"))
         plt.close()
 
     # ---- PLOT: Time ----
