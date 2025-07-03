@@ -1,3 +1,4 @@
+# Matéo begins
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -7,18 +8,35 @@ from tqdm import tqdm
 
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
-from linear_regression.fixed_point_equations.regression.Tukey_loss import f_hat_Tukey_decorrelated_noise_TI, RS_Tukey_decorrelated_noise_TI_l2_reg
+from linear_regression.fixed_point_equations.regression.translation_invariant_losses.f_hat_mixture_of_Gaussian import (f_hat_decorrelated_noise_TI, f_hat_multi_decorrelated_noise_TI)
+from linear_regression.fixed_point_equations.regression.translation_invariant_losses.Tukey_loss_TI import (
+    RS_Tukey_decorrelated_noise_TI_l2_reg,
+    RS_Tukey_multi_decorrelated_noise_TI_l2_reg,
+    q_int_Tukey_decorrelated_noise_TI_r,
+    V_int_Tukey_decorrelated_noise_TI_r,
+    q_int_Tukey_multi_decorrelated_noise_TI_r,
+    V_int_Tukey_multi_decorrelated_noise_TI_r,
+    q_int_Tukey_decorrelated_noise_TI_delta, 
+    V_int_Tukey_decorrelated_noise_TI_delta,
+    q_int_Tukey_multi_decorrelated_noise_TI,
+    V_int_Tukey_multi_decorrelated_noise_TI,
+    )
 from linear_regression.aux_functions.misc import excess_gen_error, estimation_error, angle_teacher_student
 from linear_regression.utils.errors import ConvergenceError
 from linear_regression.fixed_point_equations import TOL_FPE, MIN_ITER_FPE, MAX_ITER_FPE, BLEND_FPE
 
 # Loss specific hyperparameters
-loss_fun_name = "Tukey_test"
-loss_parameters = {"tau": 1.0}
+loss_fun_name = "Tukey_p"
+loss_parameters = {"tau": 1.0, "q_int_loss_decorrelated_noise_x": q_int_Tukey_decorrelated_noise_TI_r, "V_int_loss_decorrelated_noise_x": V_int_Tukey_decorrelated_noise_TI_r}
 
 # Regularization hyperparameter
 reg_fun_name = "L2"
 reg_param = 2.0  # Lambda
+
+# f, f_hat and RS functions
+f_func = f_L2_reg
+f_hat_func = f_hat_decorrelated_noise_TI
+RS_func = RS_Tukey_decorrelated_noise_TI_l2_reg
 
 # Decorrelated noise parameters
 noise ={"Delta_in": 0.1, "Delta_out": 1.0, "percentage": 0.1, "beta": 0.0}
@@ -26,11 +44,11 @@ noise ={"Delta_in": 0.1, "Delta_out": 1.0, "percentage": 0.1, "beta": 0.0}
 # --- Alpha Sweep Parameters ---
 
 alpha_min = 10
-alpha_max = 100000
-n_alpha_pts = 10000
+alpha_max = 300
+n_alpha_pts = 200
 decreasing_alpha = True
 
-initial_cond_fpe = (0.35947940,0.12170537,3.04138236e-01)
+initial_cond_fpe = (0.35947940,0.12170537,1e-6)
 
 # --- Plotting parameters ---
 
@@ -143,8 +161,8 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
         point_start_time = time.time()
         # Fixed-point iteration
         m, q, V = fixed_point_finder(
-            f_func=f_L2_reg,
-            f_hat_func=f_hat_Tukey_decorrelated_noise_TI,
+            f_func=f_func,
+            f_hat_func=f_hat_func,
             initial_condition=current_initial_cond,
             f_kwargs=f_kwargs,
             f_hat_kwargs=f_hat_kwargs,
@@ -160,7 +178,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
         point_duration = point_end_time - point_start_time
 
         if np.all(np.isfinite([m, q, V])):
-            m_hat, q_hat, V_hat = f_hat_Tukey_decorrelated_noise_TI(m, q, V, **f_hat_kwargs)
+            m_hat, q_hat, V_hat = f_hat_func(m, q, V, **f_hat_kwargs)
 
             # Compute generalization error
             excess_gen_err = excess_gen_error(m, q, V, **noise)
@@ -182,7 +200,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
                     "integration_epsabs": integration_epsabs,
                     "integration_epsrel": integration_epsrel
                 }
-                rs_value = RS_Tukey_decorrelated_noise_TI_l2_reg(m, q, V, **rs_kwargs)
+                rs_value = RS_func(m, q, V, **rs_kwargs)
             except Exception as e_rs:
                 print(f"\nWarning: RS computation failed for alpha={alpha:.2e}: {e_rs}")
 

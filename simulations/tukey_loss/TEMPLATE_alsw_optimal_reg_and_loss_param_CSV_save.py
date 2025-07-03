@@ -7,7 +7,8 @@ from tqdm import tqdm
 
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
-from linear_regression.fixed_point_equations.regression.Tukey_loss import f_hat_Tukey_decorrelated_noise_TI, RS_Tukey_decorrelated_noise_TI_l2_reg
+from linear_regression.fixed_point_equations.regression.translation_invariant_losses.Tukey_loss_TI import q_int_Tukey_decorrelated_noise_TI_r, V_int_Tukey_decorrelated_noise_TI_r, RS_Tukey_decorrelated_noise_TI_l2_reg
+from linear_regression.fixed_point_equations.regression.translation_invariant_losses.f_hat_mixture_of_Gaussian import f_hat_decorrelated_noise_TI
 from linear_regression.aux_functions.misc import excess_gen_error, estimation_error, angle_teacher_student
 from linear_regression.fixed_point_equations.optimality_finding import find_optimal_reg_and_loss_param_function
 from linear_regression.utils.errors import ConvergenceError, MinimizationError
@@ -17,7 +18,9 @@ from linear_regression.fixed_point_equations import TOL_FPE, MIN_ITER_FPE, MAX_I
 loss_fun_name = "Tukey"
 loss_param_name = "tau"
 min_loss_param = 1e-9 #tau_min
-loss_parameters = {} # Additional parameters for the loss function, if any
+loss_parameters = {"q_int_loss_decorrelated_noise_x": q_int_Tukey_decorrelated_noise_TI_r,
+                   "m_int_loss_decorrelated_noise_x": None,
+                   "V_int_loss_decorrelated_noise_x" : V_int_Tukey_decorrelated_noise_TI_r} # Additional parameters for the loss function, if any
 
 # Regularization hyperparameter
 reg_fun_name = "L2"
@@ -168,7 +171,7 @@ for idx, alpha in enumerate(tqdm(alphas, desc="Alpha Sweep")):
         (opt_reg_param, opt_loss_param), (m, q, V, m_hat, q_hat, V_hat), errors = \
             find_optimal_reg_and_loss_param_function(
                 f_func=f_L2_reg,
-                f_hat_func=f_hat_Tukey_decorrelated_noise_TI,
+                f_hat_func=f_hat_decorrelated_noise_TI,
                 f_kwargs=f_kwargs,
                 f_hat_kwargs=f_hat_kwargs,
                 initial_guess_reg_and_loss_param=[last_opt_reg_param, last_opt_loss_param],

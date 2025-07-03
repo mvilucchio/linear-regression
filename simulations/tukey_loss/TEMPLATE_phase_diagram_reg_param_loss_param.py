@@ -8,10 +8,8 @@ import matplotlib.colors as mcolors
 
 from linear_regression.fixed_point_equations.fpeqs import fixed_point_finder
 from linear_regression.fixed_point_equations.regularisation.L2_reg import f_L2_reg
-from linear_regression.fixed_point_equations.regression.Tukey_loss import (
-    f_hat_Tukey_decorrelated_noise_TI,
-    RS_Tukey_decorrelated_noise_TI_l2_reg,
-)
+from linear_regression.fixed_point_equations.regression.translation_invariant_losses.f_hat_mixture_of_Gaussian import f_hat_decorrelated_noise_TI
+from linear_regression.fixed_point_equations.regression.translation_invariant_losses.Tukey_loss_TI import q_int_Tukey_decorrelated_noise_TI_r, V_int_Tukey_decorrelated_noise_TI_r, RS_Tukey_decorrelated_noise_TI_l2_reg
 from linear_regression.aux_functions.misc import excess_gen_error, estimation_error
 from linear_regression.utils.errors import ConvergenceError
 from linear_regression.fixed_point_equations import TOL_FPE, MIN_ITER_FPE, MAX_ITER_FPE, BLEND_FPE
@@ -22,7 +20,9 @@ from linear_regression.fixed_point_equations import TOL_FPE, MIN_ITER_FPE, MAX_I
 
 # Loss configuration
 loss_fun_name = "Tukey"
-loss_parameters = {} # Except the parameter which is sweeped
+loss_parameters = {"q_int_loss_decorrelated_noise_x": q_int_Tukey_decorrelated_noise_TI_r,
+                   "m_int_loss_decorrelated_noise_x": None,
+                   "V_int_loss_decorrelated_noise_x" : V_int_Tukey_decorrelated_noise_TI_r} # Except the parameter which is sweeped
 
 # Regularization configuration
 reg_fun_name = "L2"
@@ -201,7 +201,7 @@ for i_iter, reg_param in enumerate(tqdm(reg_params_iter, desc="Reg Param Sweep")
             # Solve fixed-point equations for (m, q, V)
             m, q, V = fixed_point_finder(
                 f_func=f_L2_reg,
-                f_hat_func=f_hat_Tukey_decorrelated_noise_TI,
+                f_hat_func=f_hat_decorrelated_noise_TI,
                 initial_condition=current_initial_cond,
                 f_kwargs=f_kwargs,
                 f_hat_kwargs=f_hat_kwargs,
@@ -219,7 +219,7 @@ for i_iter, reg_param in enumerate(tqdm(reg_params_iter, desc="Reg Param Sweep")
             # If the solver returned finite values, compute the rest
             if np.all(np.isfinite([m, q, V])):
                 # Compute the "hat" variables
-                m_hat, q_hat, V_hat = f_hat_Tukey_decorrelated_noise_TI(m, q, V, **f_hat_kwargs)
+                m_hat, q_hat, V_hat = f_hat_decorrelated_noise_TI(m, q, V, **f_hat_kwargs)
 
                 # Compute generalization and estimation errors
                 excess_gen_err = excess_gen_error(m, q, V, **noise)

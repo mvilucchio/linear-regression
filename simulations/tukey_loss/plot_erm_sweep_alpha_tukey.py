@@ -40,13 +40,13 @@ else:
     d = 500
     reps = 30
     alpha_min, alpha_max, n_alpha_pts = 1.0, 300, 25
-    tau, c = 1.0, 0.001
+    tau, c = 1.0, 0.0
     reg_param = 2.0
 
-delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0.1
+delta_in, delta_out, percentage, beta = 0.1, 1.0, 0.1, 0.0
 
-data_folder = "./data/mod_Tukey_decorrelated_noise/"
-file_name = f"ERM_mod_Tukey_{tau:.2f}_{c:.2e}_alpha_sweep_{alpha_min:.2f}_{alpha_max:.3f}_{n_alpha_pts:d}_reps_{reps:d}_d_{d:d}_decorrelated_noise_{delta_in:.2f}_{delta_out:.2f}_{percentage:.2f}_{beta:.2f}.pkl"
+data_folder = "./data/alpha_sweeps_Tukey_p_L2_decorrelated_noise/loss_param_1.0_reg_param_2.0_noise_0.10_1.00_0.10_0.00"
+file_name = f"ERM_alpha_min_{alpha_min:.2f}_max_{alpha_max:.3f}_n_pts_{n_alpha_pts:d}_reps_{reps:d}_d_{d:d}.pkl"
 
 data = np.loadtxt(
     join(data_folder, file_name),

@@ -8,7 +8,6 @@ from tqdm import tqdm
 import warnings
 import matplotlib.lines as mlines
 
-from linear_regression.aux_functions.stability_functions import (RS_E2_mod_Tukey_decorrelated_noise, RS_E2_xigamma_mod_Tukey_decorrelated_noise)
 from linear_regression.aux_functions.moreau_proximals import DƔ_proximal_L2
 
 # --- Helpers de Plotting --- Matéo
@@ -141,11 +140,11 @@ if PLOT_RS:
             current_tau = taus[j]
             if np.all(np.isfinite([m, q, V, V_hat])):
                 try:
-                    integral_rs = RS_E2_xigamma_mod_Tukey_decorrelated_noise(
-                        m, q, V, DELTA_IN, DELTA_OUT, PERCENTAGE, BETA,
-                        current_tau, C_TUKEY,
-                        INTEGRATION_BOUND, INTEGRATION_EPSABS, INTEGRATION_EPSREL
-                    )
+                    integral_rs = 0 # RS_E2_xigamma_mod_Tukey_decorrelated_noise(
+                    #     m, q, V, DELTA_IN, DELTA_OUT, PERCENTAGE, BETA,
+                    #     current_tau, C_TUKEY,
+                    #     INTEGRATION_BOUND, INTEGRATION_EPSABS, INTEGRATION_EPSREL
+                    # ) This is outdated
                     dprox_val_sq = DƔ_proximal_L2(0.0, V_hat, current_reg_param)**2
                     if not np.isnan(integral_rs):
                         RS_values[i, j] = ALPHA * dprox_val_sq * integral_rs
