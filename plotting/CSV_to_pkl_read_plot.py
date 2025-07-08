@@ -1,3 +1,6 @@
+# Matéo begins
+# This file contains functions to load data from pkl files or CSV files and convert them to a dictionary format, and plot comparisons of different runs. ERM data can also be loaded from pkl files.
+# Beware of the variable names in the dictionnaries, as they are not standardized.
 import os
 import pickle
 import csv
@@ -91,13 +94,13 @@ def load_pickle_ERM(pickle_path, ERM_name: str = "ERM") -> dict:
     data["description"] = ERM_name
     if "alpha" in data:
         data["alphas"] = data.pop("alpha")
-    required = {"alphas", "m_mean", "m_std", "q_mean", "q_std", "estim_err_mean", "estim_err_std", "gen_err_mean", "gen_err_std"}
+    required = {"alphas", "m_mean", "m_std", "q_mean", "q_std", "estim_err_mean", "estim_err_std", "gen_err_mean", "gen_err_std"} # here standard names are used.
     if not required.issubset(data):
         missing = required - set(data.keys())
         raise ValueError(f"'{pickle_path}' is missing required keys: {missing}. Ensure it contains the expected data structure.")
 
     #rename keys to match expected format m_mean -> m
-    data["m"] = data.pop("m_mean")
+    data["m"] = data.pop("m_mean") # This will allow for a search "m_std" in the pkl file from ERMs.
     data["q"] = data.pop("q_mean")
     data["estim_err"] = data.pop("estim_err_mean")
     data["gen_err"] = data.pop("gen_err_mean")
@@ -181,7 +184,8 @@ def load_multiple_runs(data_paths: list, run_names: list = None, print_keys = Fa
 
 def plot_comparison(runs_data: dict, x_key: str, y_key, logx: bool = True, logy: bool = False, title: str = None, save_plot: bool = False, save_dir: str = "./imgs/comparison_plots/", file_name: str = None):
     """
-    Plot y_key vs x_key for multiple runs on the same figure. If y_key is a list, it will plot each element of the corresponding run's data_dict against x_key.
+    Plot y_key vs x_key for multiple runs on the same figure.
+    If y_key is a list, it will plot the values of the element of the corresponding run's data_dict against x_key. This allows for different naming conventions for y_keys. This is not the case for x_key, which must be the same for all runs.
 
     runs_data: dict of run_name -> data_dict
     x_key, y_key: column names to plot (must exist in all runs' data_dict)
@@ -225,7 +229,7 @@ def plot_comparison(runs_data: dict, x_key: str, y_key, logx: bool = True, logy:
     if logy:
         plt.yscale("log")
 
-    y_key_final = y_key if isinstance(y_key, str) else y_key[0]
+    y_key_final = y_key if isinstance(y_key, str) else y_key[0] # This is for the label of the y-axis.
 
     plt.xlabel(x_key)
     plt.ylabel(y_key_final)
@@ -244,27 +248,29 @@ def plot_comparison(runs_data: dict, x_key: str, y_key, logx: bool = True, logy:
     else:
         plt.show()
 
+# ------------ User inputs
 
-
-base_paths = [
+base_paths = [ # Copy and paste the entire path WITHOUT CSV or PKL at the end. Both formats are supported, and a PKL file will be created if it does not exist.
     "./data/alpha_sweeps_Tukey_p_L2_decorrelated_noise/loss_param_1.0_reg_param_2.0_noise_0.10_1.00_0.10_0.00/alsw_alpha_min_10.0_max_300.0_n_pts_200", 
-    #"./data/alpha_sweeps_Tukey_L2_decorrelated_noise_opt_reg_param_for_excess_gen_error/loss_param_1.0_noise_0.10_1.00_0.10_0.00/alsw_alpha_min_50.0_max_10000.0_n_pts_200_min_reg_param_0.0",
 ]
+run_names = ["Tukey SE"] # Name as many runs as there are base_paths. If None, the run names will be inferred from the data_dicts.
 
-ERM_data_pickle_paths = [
+ERM_data_pickle_paths = [ # Copy and paste the entire path to the ERM data pickle file WITH the extension. It must be a valid pickle file containing the expected data structure.
     "./data/alpha_sweeps_Tukey_p_L2_decorrelated_noise/loss_param_1.0_reg_param_2.0_noise_0.10_1.00_0.10_0.00/ERM_alpha_min_10.00_max_300.000_n_pts_25_reps_30_d_500.pkl",
 ]
-ERM_names = ["ERM_Tukey"]
+ERM_names = ["ERM_Tukey"] # Name as many ERM data pickle files as there are ERM_data_pickle_paths. If None, the names will be inferred from the file names.
 
 runs = load_multiple_runs(base_paths, 
-                          run_names=["Tukey SE"],
+                          run_names=run_names,
                           print_keys=True,
                           ERM_data_pickle_paths=ERM_data_pickle_paths,
                            ERM_names=ERM_names
                         )
 print(f"Loaded runs: {list(runs.keys())}")
 
-# plot_comparison(runs, x_key="alphas", y_key=["gen_error","excess_gen_error"], logx=True, logy=True, save_plot=True, save_dir="./imgs/comparison_plots/alpha_sweeps", file_name="Tukey_excess_gen_error_vs_alphas.png")
+plot_comparison(runs, x_key="alphas", y_key=["ms","m"], # 
+                logx=True, logy=True, save_plot=True, 
+                save_dir="./imgs/comparison_plots/alpha_sweeps", 
+                file_name="Tukey_m_vs_alphas_SE_ERM.png")
 
-# plot_comparison(runs, x_key="alphas", y_key=["reg_params_opt","opt_reg_params"], logx=True, logy=True, save_plot=True, save_dir="./imgs/comparison_plots/alpha_sweeps", file_name="Tukey_opt_reg_params_vs_alphas.png")
-plot_comparison(runs, x_key="alphas", y_key=["ms","m"], logx=True, logy=True, save_plot=True, save_dir="./imgs/comparison_plots/alpha_sweeps", file_name="Tukey_m_vs_alphas_SE_ERM.png")
+#Matéo ends

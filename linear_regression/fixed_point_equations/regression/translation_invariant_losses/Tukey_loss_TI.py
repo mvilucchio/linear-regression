@@ -170,7 +170,6 @@ def E2_RS_Tukey_int_decorrelated_noise_TI_r(
 
 def RS_Tukey_decorrelated_noise_TI_l2_reg(m, q, V, alpha, Delta_in, Delta_out, percentage, beta, tau, reg_param, rho = 1.0, 
                                           f_hat_loss_decorrelated_noise=f_hat_decorrelated_noise_TI,
-                                          m_int_loss_decorrelated_noise_x=None,
                                           q_int_loss_decorrelated_noise_x=q_int_Tukey_decorrelated_noise_TI_r,
                                           V_int_loss_decorrelated_noise_x=V_int_Tukey_decorrelated_noise_TI_r,
                                           E2_RS_loss_int_decorrelated_noise_x=E2_RS_Tukey_int_decorrelated_noise_TI_r,
@@ -185,9 +184,9 @@ def RS_Tukey_decorrelated_noise_TI_l2_reg(m, q, V, alpha, Delta_in, Delta_out, p
 
     m_hat, q_hat, V_hat = f_hat_loss_decorrelated_noise(
         m, q, V, alpha, Delta_in, Delta_out, percentage, beta, tau, rho,
-        m_int_loss_decorrelated_noise_x=m_int_loss_decorrelated_noise_x,
         q_int_loss_decorrelated_noise_x=q_int_loss_decorrelated_noise_x,
         V_int_loss_decorrelated_noise_x=V_int_loss_decorrelated_noise_x,
+        even_loss=True,  # The Tukey loss is even
     )
     E1 = E1_RS_l2_reg(reg_param, V_hat)
     E2_in = quad(
@@ -207,10 +206,10 @@ def RS_Tukey_decorrelated_noise_TI_l2_reg(m, q, V, alpha, Delta_in, Delta_out, p
 
 def RS_Tukey_multi_decorrelated_noise_TI_l2_reg(m, q, V, alpha, z_0s, betas, sigma_sqs, proportions, tau, reg_param, rho = 1.0,
                                             f_hat_loss_decorrelated_noise=f_hat_multi_decorrelated_noise_TI,
-                                            m_int_loss_decorrelated_noise_x=None,
                                             q_int_loss_decorrelated_noise_x=q_int_Tukey_decorrelated_noise_TI_r, 
                                             V_int_loss_decorrelated_noise_x=V_int_Tukey_decorrelated_noise_TI_r,
                                             E2_RS_loss_int_decorrelated_noise_x=E2_RS_Tukey_int_decorrelated_noise_TI_r,
+                                            even_loss=True,
                                             **integration_args):
     """ Returns the RS value for the Tukey loss function with translation invariance, using the decorrelated mixture of Gaussians model and l2 regularization.
     Depending on *_int_loss_decorrelated_noise, the integrand computed is a function of delta or r."""
@@ -226,9 +225,9 @@ def RS_Tukey_multi_decorrelated_noise_TI_l2_reg(m, q, V, alpha, z_0s, betas, sig
     
     mhat, qhat, Vhat = f_hat_loss_decorrelated_noise(
         m, q, V, alpha, z_0s, betas, sigma_sqs, proportions, tau, rho,
-        m_int_loss_decorrelated_noise_x=m_int_loss_decorrelated_noise_x,
         q_int_loss_decorrelated_noise_x=q_int_loss_decorrelated_noise_x,
-        V_int_loss_decorrelated_noise_x=V_int_loss_decorrelated_noise_x
+        V_int_loss_decorrelated_noise_x=V_int_loss_decorrelated_noise_x,
+        even_loss=even_loss,  # The Tukey loss is even
     )
 
     E1 = E1_RS_l2_reg(reg_param, Vhat)

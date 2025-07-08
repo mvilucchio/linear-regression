@@ -1,3 +1,4 @@
+# Matéo begins
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -19,10 +20,10 @@ from linear_regression.fixed_point_equations import TOL_FPE, MIN_ITER_FPE, MAX_I
 # =============================================================================
 
 # Loss configuration
-loss_fun_name = "Tukey"
+loss_fun_name = "Tukey_pjgg"
 loss_parameters = {"q_int_loss_decorrelated_noise_x": q_int_Tukey_decorrelated_noise_TI_r,
-                   "m_int_loss_decorrelated_noise_x": None,
-                   "V_int_loss_decorrelated_noise_x" : V_int_Tukey_decorrelated_noise_TI_r} # Except the parameter which is sweeped
+                   "V_int_loss_decorrelated_noise_x" : V_int_Tukey_decorrelated_noise_TI_r,
+                   "even_loss": True} # Except the parameter which is sweeped
 
 # Regularization configuration
 reg_fun_name = "L2"
@@ -40,19 +41,19 @@ noise = {
 
 # lambda - loss_param sweep parameters
 
-reg_param_min = 0.5
-reg_param_max = 2.0
-n_reg_param_pts = 100
+reg_param_min = 0.1
+reg_param_max = 10
+n_reg_param_pts = 300
 use_reg_logspace = False
 
-loss_param_min = 0.4
+loss_param_min = 0.5
 loss_param_max = 2.0
 n_loss_param_pts = 100
 use_loss_logspace = False
 
 initial_cond_fpe = (0.9, 0.8, 0.06)
 
-# Integration parameters (not used for flat tailed losses)
+# Integration parameters
 integration_bound = 5
 integration_epsabs = 1e-7
 integration_epsrel = 1e-4
@@ -655,3 +656,5 @@ if save_plots:
             print(f"Failed to plot time heatmap: {e}")
 
     print(f"All figures saved in '{figures_folder}'.")
+
+# Matéo ends

@@ -493,3 +493,5 @@ def find_optimal_reg_and_loss_param_function(
         observables_out[idx] = fun(m_opt, q_opt, V_opt, **args)
 
     return (reg_param_opt, loss_param_opt), (m_opt, q_opt, V_opt, m_hat_opt, q_hat_opt, V_hat_opt), observables_out
+
+# Matéo ends here
